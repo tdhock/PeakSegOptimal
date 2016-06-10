@@ -1,0 +1,12 @@
+An R package for computing constrained optimal segmentation models
+
+** Installation
+
+#+BEGIN_SRC R
+install.packages("devtools")
+devtools::install_github("tdhock/coseg")
+#+END_SRC
+
+** Usage
+
+
