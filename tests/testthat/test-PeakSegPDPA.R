@@ -1,3 +1,8 @@
+library(coseg)
+data.vec <- c(1, 10, 14, 13)
+fit <- PeakSegPDPA(data.vec, rep(1, 4), 2L)
+fit
+
 ploss <- function(dt, x){
   ## need to make a new data table, otherwise ifelse may only get one
   ## element, and return only one element.
