@@ -1,5 +1,5 @@
 library(coseg)
-data.vec <- c(1, 10, 14, 13)
+data.vec <- as.integer(c(1, 10, 14, 13))
 fit <- PeakSegPDPA(data.vec, rep(1, 4), 3L)
 
 test_that("first segment is OK", {

@@ -10,6 +10,8 @@ PeakSegPDPA <- function
 ### integer of length 1: maximum number of segments.
 ){
   n.data <- length(count.vec)
+  stopifnot(is.integer(count.vec))
+  stopifnot(is.numeric(weight.vec))
   stopifnot(n.data==length(weight.vec))
   stopifnot(0 < weight.vec)
   stopifnot(is.integer(max.segments))
