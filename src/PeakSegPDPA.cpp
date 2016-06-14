@@ -34,8 +34,23 @@ void PeakSegPDPA
     cost_model_vec[data_i] = cost_model;
   }
 
-  // For every segment gr
-  //for
+  // DP.
+  PiecewisePoissonLoss prev_cost_model;
+  for(int total_changes=1; total_changes<maxSegments; total_changes++){
+    int prev_i = total_changes-1;
+    prev_cost_model = cost_model_vec[prev_i + prev_i*data_count];
+    if(total_changes % 2){
+      prev_cost_model.min_less();
+    }else{
+      prev_cost_model.min_more();
+    }
+    prev_cost_model.add
+      (weight_vec[total_changes],
+       -data_vec[total_changes]*weight_vec[total_changes],
+       0.0);
+    prev_cost_model.set_prev_seg_end(prev_i);
+    cost_model_vec[total_changes + total_changes*data_count] = prev_cost_model;
+  }
 
   double best_cost, best_mean;
   double *best_mean_vec;

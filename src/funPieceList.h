@@ -41,13 +41,20 @@ typedef std::list<PoissonLossPiece> PoissonLossPieceList;
 class PiecewisePoissonLoss {
  public:
   PoissonLossPieceList piece_list;
-  void addPiece(PoissonLossPiece new_piece){
+  void add(double Linear, double Log, double Constant){
     PoissonLossPieceList::iterator it;
     for(it=piece_list.begin(); it != piece_list.end(); it++){
       PoissonLossPiece it_piece = *it;
-      it_piece.Linear += new_piece.Linear;
-      it_piece.Log += new_piece.Log;
-      it_piece.Constant += new_piece.Constant;
+      it_piece.Linear += Linear;
+      it_piece.Log += Log;
+      it_piece.Constant += Constant;
+    }
+  }
+  void set_prev_seg_end(int prev_seg_end){
+    PoissonLossPieceList::iterator it;
+    for(it=piece_list.begin(); it != piece_list.end(); it++){
+      PoissonLossPiece it_piece = *it;
+      it_piece.data_i = prev_seg_end;
     }
   }
   void findMean(double mean, int *seg_end, bool *equality_constraint_active){
