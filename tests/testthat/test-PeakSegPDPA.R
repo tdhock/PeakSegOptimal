@@ -13,6 +13,19 @@ test_that("first segment is OK", {
   }
 })
 
+test_that("second segment is OK", {
+  expected22 <- PoissonLoss(c(1,10), c(1,10))
+  expect_equal(fit$cost.mat[2,2], expected22)
+  expected23 <- PoissonLoss(c(1,10,14), c(1,12,12))
+  expect_equal(fit$cost.mat[2,3], expected23)
+  mean3 <- (10+14+13)/3
+  mean24.vec <- c(1, rep(mean3, 3))
+  expected24 <- PoissonLoss(data.vec, mean24.vec)
+  expect_equal(fit$cost.mat[2,4], expected24)
+  expect_equal(fit$ends.mat[1,2], 1)
+  expect_equal(fit$mean.mat[2,1:2], c(1, mean3))
+})
+
 ploss <- function(dt, x){
   ## need to make a new data table, otherwise ifelse may only get one
   ## element, and return only one element.
@@ -504,25 +517,14 @@ MinEnvelope <- function(dt1, dt2){
   do.call(rbind, new.dt.list)
 }
 
-PeakSegPDPAchrom <- function(chrom.dt, maxPeaks=9L){
-  stopifnot(c("chromStart", "chromEnd", "count") %in% names(chrom.dt))
-  chrom.dt[, weight := chromEnd - chromStart]
-  fit <- PeakSegPDPA(chrom.dt, maxPeaks)
-  fit$segments[, chromStart := chrom.dt$chromStart[segment.start]]
-  fit$segments[, chromEnd := chrom.dt$chromEnd[segment.end]]
-  fit$peaks <- fit$segments[seg.i %% 2 == 0,]
-  fit
-}
-
-PeakSegPDPA <- function
+PeakSegPDPAR <- function
 ### Compute the PeakSeg constrained, Poisson loss, Segment Neighborhood
 ### model using a constrained version of the Pruned Dynamic
 ### Programming Algorithm.
 (input.dt,
 ### data.table  with columns count and weight.
- max.segments=NULL
-### maximum number of segments, or NULL which means to keep going
-### until an active equality constraint is found.
+ max.segments
+### integer: maximum number of segments.
 ){
   stopifnot(is.data.table(input.dt))
   stopifnot(2 <= max.segments && max.segments <= nrow(input.dt))
@@ -541,7 +543,6 @@ PeakSegPDPA <- function
   for(data.i in 1:nrow(C1.dt)){
     cost.models.list[[paste(1, data.i)]] <- C1.dt[data.i,]
   }
-  max.segments <- maxPeaks*2+1
   stopifnot(max.segments <= nrow(input.dt))
   intervals.list <- list()
   for(total.segments in 2:max.segments){
@@ -651,6 +652,12 @@ PeakSegPDPA <- function
        models=do.call(rbind, cost.list),
        intervals=do.call(rbind, intervals.list))
 }
+
+library(data.table)
+data.dt <- data.table(count=data.vec, weight=1)
+fitR <- PeakSegPDPAR(data.dt, max.segments=3)
+
+
 
 if(FALSE){
 
