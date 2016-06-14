@@ -19,8 +19,7 @@ void PeakSegPDPA
       max_mean = data_vec[data_i];
     }
   }
-  std::vector<PiecewisePoissonLoss> cost_model_vec;
-  cost_model_vec.reserve(data_count * maxSegments);
+  std::vector<PiecewisePoissonLoss> cost_model_vec(data_count * maxSegments);
   double Log_cumsum = 0;
   double Linear_cumsum = 0;
   PoissonLossPiece piece;
@@ -32,18 +31,23 @@ void PeakSegPDPA
       (Linear_cumsum, Log_cumsum, 0.0, min_mean, max_mean, -1, false);
     cost_model.piece_list.clear();
     cost_model.piece_list.push_back(piece);
-    cost_model_vec.push_back(cost_model);
+    cost_model_vec[data_i] = cost_model;
   }
+
+  // For every segment gr
+  //for
+
   double best_cost, best_mean;
   double *best_mean_vec;
   int *prev_seg_vec;
   bool equality_constraint_active;
   int prev_seg_end;
-  for(int total_changes=0; total_changes<maxSegments;total_changes++){
-    for(int data_i=0; data_i<data_count; data_i++){
-      cost_mat[data_i + total_changes*data_count] = INFINITY;
-    }
-  }
+  // for(int total_changes=0; total_changes<maxSegments;total_changes++){
+  //   for(int data_i=0; data_i<data_count; data_i++){
+  //     cost_mat[data_i + total_changes*data_count] = INFINITY;
+  //   }
+  // }
+  
   // Decoding the cost_model_vec, and writing to the output matrices.
   maxSegments=1;//TODO change.
   for(int total_changes=0; total_changes<maxSegments;total_changes++){
