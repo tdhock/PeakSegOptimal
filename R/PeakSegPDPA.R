@@ -5,19 +5,19 @@ PeakSegPDPA <- function
 (count.vec,
 ### integer vector of count data.
  weight.vec=rep(1, length(count.vec)),
-### numeric vector of positive weights.
+### numeric vector (same length as count.vec) of positive weights.
  max.segments=NULL
-### maximum number of segments, or NULL which means to keep going
-### until an active equality constraint is found.
+### integer of length 1: maximum number of segments.
 ){
   n.data <- length(count.vec)
   stopifnot(n.data==length(weight.vec))
+  stopifnot(0 < weight.vec)
   stopifnot(is.integer(max.segments))
   stopifnot(length(max.segments)==1)
   stopifnot(2 <= max.segments && max.segments <= n.data)
-  mean.mat <- double(n.data*max.segments)
+  cost.mat <- double(n.data*max.segments)
   ends.mat <- integer(max.segments*max.segments)
-  cost.mat <- double(max.segments*max.segments)
+  mean.mat <- double(max.segments*max.segments)
   result.list <- .C(
     "PeakSegPDPA_interface",
     count.vec=as.double(count.vec),

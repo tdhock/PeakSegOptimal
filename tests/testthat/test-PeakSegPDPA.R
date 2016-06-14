@@ -1,7 +1,17 @@
 library(coseg)
 data.vec <- c(1, 10, 14, 13)
-fit <- PeakSegPDPA(data.vec, rep(1, 4), 2L)
-fit
+fit <- PeakSegPDPA(data.vec, rep(1, 4), 3L)
+
+test_that("first segment is OK", {
+  cumsum.vec <- cumsum(data.vec)
+  n.vec <- seq_along(data.vec)
+  mean.vec <- cumsum.vec/n.vec
+  expect_equal(fit$mean.mat[1, 1], mean.vec[4])
+  for(i in n.vec){
+    expected.loss <- PoissonLoss(data.vec[1:i], mean.vec[i])
+    expect_equal(fit$cost.mat[1,i], expected.loss)
+  }
+})
 
 ploss <- function(dt, x){
   ## need to make a new data table, otherwise ifelse may only get one
