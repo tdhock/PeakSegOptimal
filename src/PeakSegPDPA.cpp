@@ -3,6 +3,7 @@
 #include <vector>
 #include "funPieceList.h"
 
+
 void PeakSegPDPA
 (double *data_vec, double *weight_vec, int data_count,
  int maxSegments,
@@ -35,21 +36,22 @@ void PeakSegPDPA
   }
 
   // DP.
-  PiecewisePoissonLoss prev_cost_model;
+  PiecewisePoissonLoss *prev_cost_model;
+  PiecewisePoissonLoss candidate;
   for(int total_changes=1; total_changes<maxSegments; total_changes++){
     int prev_i = total_changes-1;
-    prev_cost_model = cost_model_vec[prev_i + prev_i*data_count];
+    prev_cost_model = &cost_model_vec[prev_i + prev_i*data_count];
     if(total_changes % 2){
-      prev_cost_model.min_less();
+      prev_cost_model->min_less(&candidate);
     }else{
-      prev_cost_model.min_more();
+      prev_cost_model->min_more(&candidate);
     }
-    prev_cost_model.add
+    candidate.add
       (weight_vec[total_changes],
        -data_vec[total_changes]*weight_vec[total_changes],
        0.0);
-    prev_cost_model.set_prev_seg_end(prev_i);
-    cost_model_vec[total_changes + total_changes*data_count] = prev_cost_model;
+    candidate.set_prev_seg_end(prev_i);
+    cost_model_vec[total_changes + total_changes*data_count] = candidate;
   }
 
   double best_cost, best_mean;
