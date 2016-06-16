@@ -3,6 +3,7 @@
 #include "funPieceList.h"
 #include <list>
 #include <math.h>
+
 #include <gsl/gsl_sf_lambert.h>
 #include <gsl/gsl_sf_result.h>
 #include <gsl/gsl_errno.h>
@@ -275,4 +276,4 @@ void PiecewisePoissonLoss::Minimize(double *best_cost,
       }
     }
   }
-}    
+}

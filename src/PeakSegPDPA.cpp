@@ -22,7 +22,6 @@ void PeakSegPDPA
   std::vector<PiecewisePoissonLoss> cost_model_vec(data_count * maxSegments);
   double Log_cumsum = 0;
   double Linear_cumsum = 0;
-  PoissonLossPiece piece;
   PiecewisePoissonLoss cost_model;
   for(int data_i=0; data_i<data_count; data_i++){
     Linear_cumsum += weight_vec[data_i];

@@ -17,7 +17,6 @@ class PoissonLossPiece {
   double max_mean;
   int data_i;
   bool equality_constraint_active;
-  PoissonLossPiece();
   PoissonLossPiece
     (double li, double lo, double co, double m, double M, int i, bool a);
   double getDiscriminant(double add_constant);
@@ -42,3 +41,4 @@ class PiecewisePoissonLoss {
 		int *data_i,
 		bool *equality_constraint_active);
 };
+
