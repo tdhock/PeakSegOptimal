@@ -3,7 +3,6 @@
 #include <vector>
 #include "funPieceList.h"
 
-
 void PeakSegPDPA
 (double *data_vec, double *weight_vec, int data_count,
  int maxSegments,
