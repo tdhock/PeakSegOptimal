@@ -27,10 +27,9 @@ void PeakSegPDPA
   for(int data_i=0; data_i<data_count; data_i++){
     Linear_cumsum += weight_vec[data_i];
     Log_cumsum += -data_vec[data_i]*weight_vec[data_i];
-    piece = PoissonLossPiece
-      (Linear_cumsum, Log_cumsum, 0.0, min_mean, max_mean, -1, false);
     cost_model.piece_list.clear();
-    cost_model.piece_list.push_back(piece);
+    cost_model.piece_list.emplace_back
+      (Linear_cumsum, Log_cumsum, 0.0, min_mean, max_mean, -1, false);
     cost_model_vec[data_i] = cost_model;
   }
 
