@@ -22,14 +22,16 @@ void PeakSegPDPA
   std::vector<PiecewisePoissonLoss> cost_model_vec(data_count * maxSegments);
   double Log_cumsum = 0;
   double Linear_cumsum = 0;
-  PiecewisePoissonLoss cost_model;
   for(int data_i=0; data_i<data_count; data_i++){
     Linear_cumsum += weight_vec[data_i];
     Log_cumsum += -data_vec[data_i]*weight_vec[data_i];
-    cost_model.piece_list.clear();
-    cost_model.piece_list.emplace_back
+    PiecewisePoissonLoss *cost_model = &cost_model_vec[data_i];
+    cost_model->piece_list.emplace_back
       (Linear_cumsum, Log_cumsum, 0.0, min_mean, max_mean, -1, false);
-    cost_model_vec[data_i] = cost_model;
+    // cost_model.piece_list.clear();
+    // cost_model.piece_list.emplace_back
+    //   (Linear_cumsum, Log_cumsum, 0.0, min_mean, max_mean, -1, false);
+    // cost_model_vec[data_i] = cost_model;
   }
 
   // DP.
@@ -66,9 +68,11 @@ void PeakSegPDPA
   maxSegments=1;//TODO change.
   for(int total_changes=0; total_changes<maxSegments;total_changes++){
     for(int data_i=0; data_i<data_count; data_i++){
-      cost_model = cost_model_vec[data_i + total_changes*data_count];
-      cost_model.Minimize(&best_cost, &best_mean,
-			  &prev_seg_end, &equality_constraint_active);
+      PiecewisePoissonLoss *cost_model =
+	&cost_model_vec[data_i + total_changes*data_count];
+      cost_model->Minimize
+	(&best_cost, &best_mean,
+	 &prev_seg_end, &equality_constraint_active);
       // for the models up to any data point, we store the best cost.
       cost_mat[data_i + total_changes*data_count] = best_cost;
       if(data_i == data_count-1){
@@ -80,12 +84,12 @@ void PeakSegPDPA
 	best_mean_vec[total_changes] = best_mean;
 	prev_seg_vec[total_changes] = prev_seg_end;
 	for(int seg_i=total_changes-1; 0 <= seg_i; seg_i--){
-	  cost_model = cost_model_vec[prev_seg_end + seg_i*data_count];
+	  cost_model = &cost_model_vec[prev_seg_end + seg_i*data_count];
 	  if(equality_constraint_active){
-	    cost_model.findMean
+	    cost_model->findMean
 	      (best_mean, &prev_seg_end, &equality_constraint_active);
 	  }else{
-	    cost_model.Minimize(&best_cost, &best_mean,
+	    cost_model->Minimize(&best_cost, &best_mean,
 				&prev_seg_end, &equality_constraint_active);
 	  }
 	  best_mean_vec[seg_i] = best_mean;
