@@ -35,7 +35,9 @@ class PiecewisePoissonLoss {
   void set_to_min_more_of(PiecewisePoissonLoss *);
   void set_to_min_env_of(PiecewisePoissonLoss *, PiecewisePoissonLoss *);
   void push_min_pieces
-    (PoissonLossPieceList::iterator, PoissonLossPieceList::iterator);
+    (PiecewisePoissonLoss *, PiecewisePoissonLoss *,
+     PoissonLossPieceList::iterator, PoissonLossPieceList::iterator);
+  void push_piece(PoissonLossPieceList::iterator, double, double);
   void add(double Linear, double Log, double Constant);
   void set_prev_seg_end(int prev_seg_end);
   void findMean(double mean, int *seg_end, bool *equality_constraint_active);
@@ -45,3 +47,4 @@ class PiecewisePoissonLoss {
 		bool *equality_constraint_active);
 };
 
+bool sameFuns(PoissonLossPieceList::iterator, PoissonLossPieceList::iterator);

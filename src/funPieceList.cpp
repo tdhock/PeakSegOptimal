@@ -286,7 +286,7 @@ void PiecewisePoissonLoss::set_to_min_env_of
   this->piece_list.clear();
   while(it1 != fun1->piece_list.end() &&
 	it2 != fun2->piece_list.end()){
-    push_min_pieces(it1, it2);
+    push_min_pieces(fun1, fun2, it1, it2);
     double last_max_mean = piece_list.back().max_mean;
     if(it1->max_mean == last_max_mean){
       it1++;
@@ -297,8 +297,90 @@ void PiecewisePoissonLoss::set_to_min_env_of
   }
 }
 
-void PiecewisePoissonLoss::push_min_pieces
+bool sameFuns
 (PoissonLossPieceList::iterator it1,
  PoissonLossPieceList::iterator it2){
+  return it1->Linear == it2->Linear &&
+    it1->Log == it2->Log &&
+    it1->Constant == it2->Constant;
+}
   
+
+void PiecewisePoissonLoss::push_min_pieces
+(PiecewisePoissonLoss *fun1,
+ PiecewisePoissonLoss *fun2,
+ PoissonLossPieceList::iterator it1,
+ PoissonLossPieceList::iterator it2){
+  bool same_at_left;
+  double last_min_mean;
+  PoissonLossPieceList::iterator prev2 = it2;
+  prev2--;
+  PoissonLossPieceList::iterator prev1 = it1;
+  prev1--;
+  if(it1->min_mean < it2->min_mean){
+    //it1 function piece starts to the left of it2.
+    same_at_left = sameFuns(prev2, it1);
+    last_min_mean = it2->min_mean;
+  }else{
+    //it1 function piece DOES NOT start to the left of it2.
+    last_min_mean = it1->min_mean;
+    if(it2->min_mean < it1->min_mean){
+      //it2 function piece starts to the left of it1.
+      same_at_left = sameFuns(prev1, it2);
+    }else{
+      //it1 and it2 start at the same min_mean value.
+      if(it1==fun1->piece_list.begin() &&
+	 it2==fun2->piece_list.begin()){
+	same_at_left = false;
+      }else{
+	same_at_left = sameFuns(prev1, prev2);
+      }
+    }
+  }
+  PoissonLossPieceList::iterator next2 = it2;
+  next2++;
+  PoissonLossPieceList::iterator next1 = it1;
+  next1++;
+  bool same_at_right;
+  double first_max_mean;
+  if(it1->max_mean < it2->max_mean){
+    // it2 function piece continues to the right of it1.
+    same_at_right = sameFuns(next1, it2);
+    first_max_mean = it1->max_mean;
+  }else{
+    first_max_mean = it2->max_mean;
+    if(it2->max_mean < it1->max_mean){
+      // it2 function piece ends before it1.
+      same_at_right = sameFuns(it1, next2);
+    }else{
+      if(next1==fun1->piece_list.end() &&
+	 next2==fun2->piece_list.end()){
+	same_at_right = false;
+      }else{
+	same_at_right = sameFuns(next1, next2);
+      }
+    }
+  }
+  if(sameFuns(it1, it2)){
+    // The functions are exactly equal over the entire interval so we
+    // can push either of them.
+    push_piece(it1, last_min_mean, first_max_mean);
+  }
+}
+
+void PiecewisePoissonLoss::push_piece
+(PoissonLossPieceList::iterator it, double min_mean, double max_mean){
+  PoissonLossPieceList::iterator last=piece_list.end();
+  if(piece_list.size() && sameFuns(--last, it)){
+    //it is the same function as last, so just make last extend
+    //further to the right.
+    last->max_mean = max_mean;
+  }else{
+    //it is a different function than last, so push it on to the end
+    //of the list.
+    piece_list.emplace_back
+      (it->Linear, it->Log, it->Constant,
+       min_mean, max_mean,
+       it->data_i, it->equality_constraint_active);
+  }
 }
