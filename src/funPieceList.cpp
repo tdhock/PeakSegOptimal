@@ -58,12 +58,12 @@ double PoissonLossPiece::PoissonLoss(double mean){
 }
 
 
-void PiecewisePoissonLoss::min_less(PiecewisePoissonLoss *output){
+void PiecewisePoissonLoss::set_to_min_less_of(PiecewisePoissonLoss *input){
   double prev_min_cost = INFINITY, prev_min_mean;
   int prev_data_i = -2;
-  output->piece_list.clear();
-  PoissonLossPieceList::iterator it = piece_list.begin();
-  while(it != piece_list.end()){
+  piece_list.clear();
+  PoissonLossPieceList::iterator it = input->piece_list.begin();
+  while(it != input->piece_list.end()){
     if(prev_min_cost == INFINITY){
       // Look for min achieved in this interval.
       double mu = it->getMinMean();
@@ -79,7 +79,7 @@ void PiecewisePoissonLoss::min_less(PiecewisePoissonLoss *output){
 	// Minimum in this interval, so add a convex piece up to the
 	// min, and keep track of the min cost to create a constant
 	// piece later.
-	output->piece_list.emplace_back
+	piece_list.emplace_back
 	  (it->Linear, it->Log, it->Constant, prev_min_mean, mu,
 	   it->data_i, true); // equality constraint active on convex piece.
 	prev_min_mean = mu;
@@ -89,7 +89,7 @@ void PiecewisePoissonLoss::min_less(PiecewisePoissonLoss *output){
 	// Minimum after this interval, so this function is
 	// decreasing on this entire interval, and so we can just
 	// store it as is.
-	output->piece_list.emplace_back
+	piece_list.emplace_back
 	  (it->Linear, it->Log, it->Constant, prev_min_mean, it->max_mean,
 	   it->data_i, true); // equality constraint active on convex piece.
 	prev_min_mean = it->max_mean;
@@ -125,7 +125,7 @@ void PiecewisePoissonLoss::min_less(PiecewisePoissonLoss *output){
 	    // The smaller intersection point occurs within the
 	    // interval, so the constant interval ends here, and we
 	    // can store it immediately.
-	    output->piece_list.emplace_back
+	    piece_list.emplace_back
 	      (0.0, 0.0, prev_min_cost, prev_min_mean, mu, prev_data_i,
 	       false);// equality constraint inactive on constant piece.
 	    prev_min_cost = INFINITY;
@@ -140,18 +140,18 @@ void PiecewisePoissonLoss::min_less(PiecewisePoissonLoss *output){
   if(prev_data_i != -2){
     // ending on a constant piece -- we never have a convex piece at
     // the end, because the end is the maximum observed data.
-    output->piece_list.emplace_back
+    piece_list.emplace_back
       (0.0, 0.0, prev_min_cost, prev_min_mean, it->max_mean, prev_data_i,
        false);//equality constraint inactive on constant piece.
   }
 }
 
-void PiecewisePoissonLoss::min_more(PiecewisePoissonLoss *output){
+void PiecewisePoissonLoss::set_to_min_more_of(PiecewisePoissonLoss *input){
   double prev_min_cost = INFINITY, prev_max_mean;
   int prev_data_i = -2;
-  output->piece_list.clear();
-  PoissonLossPieceList::iterator it = piece_list.end();
-  while(it != piece_list.begin()){
+  piece_list.clear();
+  PoissonLossPieceList::iterator it = input->piece_list.end();
+  while(it != input->piece_list.begin()){
     it--;
     if(prev_min_cost == INFINITY){
       // Look for min achieved in this interval.
@@ -166,7 +166,7 @@ void PiecewisePoissonLoss::min_more(PiecewisePoissonLoss *output){
 	// Minimum in this interval, so add a convex piece up to the
 	// min, and keep track of the min cost to create a constant
 	// piece later.
-	output->piece_list.emplace_front
+	piece_list.emplace_front
 	  (it->Linear, it->Log, it->Constant, prev_max_mean, mu,
 	   it->data_i, true); // equality constraint active on convex piece.
 	prev_max_mean = mu;
@@ -176,7 +176,7 @@ void PiecewisePoissonLoss::min_more(PiecewisePoissonLoss *output){
 	// Minimum before this interval, so this function is
 	// increasing on this entire interval, and so we can just
 	// store it as is.
-	output->piece_list.emplace_front
+	piece_list.emplace_front
 	  (it->Linear, it->Log, it->Constant, it->min_mean, prev_max_mean,
 	   it->data_i, true); // equality constraint active on convex piece.
 	prev_max_mean = it->min_mean;
@@ -209,7 +209,7 @@ void PiecewisePoissonLoss::min_more(PiecewisePoissonLoss *output){
 	// The smaller intersection point occurs within the
 	// interval, so the constant interval ends here, and we
 	// can store it immediately.
-	output->piece_list.emplace_front
+	piece_list.emplace_front
 	  (0.0, 0.0, prev_min_cost,
 	   mu, prev_max_mean,
 	   prev_data_i,
@@ -223,7 +223,7 @@ void PiecewisePoissonLoss::min_more(PiecewisePoissonLoss *output){
   if(prev_data_i != -2){
     // ending on a constant piece -- we never have a convex piece at
     // the start, because the end is the min observed data.
-    output->piece_list.emplace_back
+    piece_list.emplace_back
       (0.0, 0.0, prev_min_cost,
        it->min_mean, prev_max_mean,
        prev_data_i,

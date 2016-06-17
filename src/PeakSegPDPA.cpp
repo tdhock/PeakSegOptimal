@@ -6,10 +6,10 @@
 void PeakSegPDPA
 (double *data_vec, double *weight_vec, int data_count,
  int maxSegments,
- // the following matrices are for output, data_count x maxSegments.
- double *cost_mat,
- int *end_mat,
- double *mean_mat){
+ // the following matrices are for output:
+ double *cost_mat, //data_count x maxSegments.
+ int *end_mat,//maxSegments x maxSegments(model up to last data point).
+ double *mean_mat){//maxSegments x maxSegments(model up to last data point).
   double min_mean=data_vec[0], max_mean=data_vec[0];
   for(int data_i=1; data_i<data_count; data_i++){
     if(data_vec[data_i] < min_mean){
@@ -28,29 +28,31 @@ void PeakSegPDPA
     PiecewisePoissonLoss *cost_model = &cost_model_vec[data_i];
     cost_model->piece_list.emplace_back
       (Linear_cumsum, Log_cumsum, 0.0, min_mean, max_mean, -1, false);
-    // cost_model.piece_list.clear();
-    // cost_model.piece_list.emplace_back
-    //   (Linear_cumsum, Log_cumsum, 0.0, min_mean, max_mean, -1, false);
-    // cost_model_vec[data_i] = cost_model;
   }
 
-  // DP.
-  PiecewisePoissonLoss *prev_cost_model;
-  PiecewisePoissonLoss candidate;
+  // DP: compute functional model of best cost in S segments up to
+  // data point N.
+  PiecewisePoissonLoss *prev_cost_model, *new_cost_model;
+  PiecewisePoissonLoss min_prev_cost, cost_model;
   for(int total_changes=1; total_changes<maxSegments; total_changes++){
-    int prev_i = total_changes-1;
-    prev_cost_model = &cost_model_vec[prev_i + prev_i*data_count];
-    if(total_changes % 2){
-      prev_cost_model->min_less(&candidate);
-    }else{
-      prev_cost_model->min_more(&candidate);
+    cost_model.piece_list.clear();
+    for(int data_i=total_changes; data_i<data_count; data_i++){
+      int prev_i = data_i-1;
+      prev_cost_model = &cost_model_vec[prev_i + (total_changes-1)*data_count];
+      if(total_changes % 2){
+	min_prev_cost.set_to_min_less_of(prev_cost_model);
+      }else{
+	min_prev_cost.set_to_min_more_of(prev_cost_model);
+      }
+      new_cost_model = &cost_model_vec[data_i + total_changes*data_count];
+      new_cost_model->set_to_min_env_of(&min_prev_cost, &cost_model);
+      new_cost_model->add
+	(weight_vec[total_changes],
+	 -data_vec[total_changes]*weight_vec[total_changes],
+	 0.0);
+      new_cost_model->set_prev_seg_end(prev_i);
+      cost_model = *new_cost_model;
     }
-    candidate.add
-      (weight_vec[total_changes],
-       -data_vec[total_changes]*weight_vec[total_changes],
-       0.0);
-    candidate.set_prev_seg_end(prev_i);
-    cost_model_vec[total_changes + total_changes*data_count] = candidate;
   }
 
   double best_cost, best_mean;

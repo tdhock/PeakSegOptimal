@@ -31,8 +31,9 @@ typedef std::list<PoissonLossPiece> PoissonLossPieceList;
 class PiecewisePoissonLoss {
  public:
   PoissonLossPieceList piece_list;
-  void min_less(PiecewisePoissonLoss *);
-  void min_more(PiecewisePoissonLoss *);
+  void set_to_min_less_of(PiecewisePoissonLoss *);
+  void set_to_min_more_of(PiecewisePoissonLoss *);
+  void set_to_min_env_of(PiecewisePoissonLoss *, PiecewisePoissonLoss *);
   void add(double Linear, double Log, double Constant);
   void set_prev_seg_end(int prev_seg_end);
   void findMean(double mean, int *seg_end, bool *equality_constraint_active);
