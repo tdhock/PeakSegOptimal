@@ -517,267 +517,130 @@ MinEnvelope <- function(dt1, dt2){
   do.call(rbind, new.dt.list)
 }
 
-PeakSegPDPAR <- function
-### Compute the PeakSeg constrained, Poisson loss, Segment Neighborhood
-### model using a constrained version of the Pruned Dynamic
-### Programming Algorithm.
-(input.dt,
-### data.table  with columns count and weight.
- max.segments
-### integer: maximum number of segments.
-){
-  stopifnot(is.data.table(input.dt))
-  stopifnot(2 <= max.segments && max.segments <= nrow(input.dt))
-  stopifnot(c("weight", "count") %in% names(input.dt))
-  min.mean <- min(input.dt$count)
-  max.mean <- max(input.dt$count)
-  gamma.dt <- input.dt[, data.table(
-    Linear=weight,
-    Log=-count*weight,
-    Constant=0)]
-  C1.dt <- cumsum(gamma.dt)
-  gamma.dt$min.mean <- C1.dt$min.mean <- min.mean
-  gamma.dt$max.mean <- C1.dt$max.mean <- max.mean
-  gamma.dt$data.i <- C1.dt$data.i <- 0
-  cost.models.list <- list()
-  for(data.i in 1:nrow(C1.dt)){
-    cost.models.list[[paste(1, data.i)]] <- C1.dt[data.i,]
-  }
-  stopifnot(max.segments <= nrow(input.dt))
-  intervals.list <- list()
-  for(total.segments in 2:max.segments){
-    prev.cost.model <-
-      cost.models.list[[paste(total.segments-1, total.segments-1)]]
-    if(total.segments %% 2){
-      min.fun.name <- "more"
-    }else{
-      min.fun.name <- "less"
-    }
-    min.fun <- less.more.min.list[[min.fun.name]]
-    first.min <- min.fun(prev.cost.model)
-    first.data <- gamma.dt[total.segments,]
-    first.data$data.i <- total.segments-1
-    cost.model <- AddFuns(first.data, first.min)
-    intervals.list[[paste(total.segments, total.segments)]] <- data.table(
-      total.segments, timestep=total.segments, intervals=nrow(cost.model))
-    cost.models.list[[paste(total.segments, total.segments)]] <- cost.model
-    for(timestep in (total.segments+1):length(input.dt$count)){
-      cat(sprintf("%4d / %4d segments %4d / %4d data points %d intervals\n",
-                  total.segments, max.segments, timestep, length(input.dt$count),
-                  nrow(cost.model)))
-      prev.cost.model <- cost.models.list[[paste(total.segments-1, timestep-1)]]
-      compare.cost <- min.fun(prev.cost.model)
-      compare.cost$data.i <- timestep-1
-      cost.model <- cost.models.list[[paste(total.segments, timestep-1)]]
-      one.env <- MinEnvelope(compare.cost, cost.model)
-      ## gg <- ggplot()+
-      ##   ggtitle(paste(total.segments, "segments,", timestep, "data points"))+
-      ##   geom_line(aes(mean, cost),
-      ##             data=getLines(one.env),
-      ##             color="grey",
-      ##             size=2,
-      ##             alpha=0.5)+
-      ##   geom_line(aes(mean, cost,
-      ##                 color="compare.cost",
-      ##                 group=piece.i),
-      ##             data=getLines(compare.cost))+
-      ##   geom_line(aes(mean, cost,
-      ##                 group=piece.i,
-      ##                 color="cost.model"),
-      ##             data=getLines(cost.model))
-      ## print(gg)
-      ## browser()
-      stopifnot(one.env[, min.mean < max.mean])
-      ## Now that we are done with this step, we can perform the
-      ## recursion by setting the new model of the cost to the min
-      ## envelope, plus a new data point.
-      new.cost.model <- AddFuns(one.env, gamma.dt[timestep,])
-      intervals.list[[paste(total.segments, timestep)]] <- data.table(
-        total.segments, timestep, intervals=nrow(new.cost.model))
-      cost.models.list[[paste(total.segments, timestep)]] <-
-        new.cost.model
-    }#for(timestep
-  }#for(total.segments
-  minima.list <- list()
-  cost.list <- list()
-  for(total.segments in seq(1, max.segments, by=2)){
-    peaks <- (total.segments-1)/2
-    timestep <- length(input.dt$count)
-    cat(sprintf(
-      "decoding %4d / %4d segments\n",
-      total.segments, max.segments))
-    data.i <- timestep
-    seg.i <- total.segments
-    no.constraint <- data.table(
-      min.mean,
-      max.mean,
-      data.i=NA)
-    constraint <- no.constraint
-    segment.end <- timestep
-    while(0 < seg.i && length(data.i)==1){
-      unconstrained.fun <- cost.models.list[[paste(seg.i, data.i)]]
-      min.dt <- Minimize(
-        unconstrained.fun,
-        constraint$min.mean,
-        constraint$max.mean)
-      min.dt$segment.end <- segment.end
-      min.dt$peaks <- peaks
-      min.dt$total.segments <- total.segments
-      min.dt$seg.i <- seg.i
-      min.dt[, segment.start := ifelse(seg.i==1, 1, 1+data.i)]
-      segment.end <- min.dt$data.i
-      if(seg.i==total.segments){
-        cost.row <- min.dt
-        cost.row$constraint <- "inactive"
-      }
-      min.dt$constraint <- if(min.dt[, fun.min.mean == min.cost.mean]){
-        "inactive"
-      }else{
-        cost.row$constraint <- "active"
-        "active"
-      }
-      minima.list[[paste(total.segments, seg.i)]] <- min.dt
-      constraint <- no.constraint
-      constraint.side <- if(seg.i %% 2){
-        constraint$min.mean <- min.dt$min.cost.mean
-      }else{
-        constraint$max.mean <- min.dt$min.cost.mean
-      }
-      data.i <- min.dt$data.i
-      seg.i <- seg.i-1
-    }#while(...
-    cost.list[[paste(total.segments)]] <- cost.row
-  }#for(total.segments
-  list(segments=do.call(rbind, minima.list),
-       models=do.call(rbind, cost.list),
-       intervals=do.call(rbind, intervals.list))
-}
-
 library(data.table)
-data.dt <- data.table(count=data.vec, weight=1)
-fitR <- PeakSegPDPAR(data.dt, max.segments=3)
+input.dt <- data.table(count=data.vec, weight=1)
+max.segments <- 3
 
-
-
-if(FALSE){
-
-  load("data/H3K4me3_XJ_immune/2/counts.RData")
-  counts$bases <- with(counts, chromEnd-chromStart)
-  counts$count <- counts$coverage
-  sample.list <- split(counts, counts$sample.id)
-  sample.id <- "McGill0091"
-  compressed <- data.table(sample.list[[sample.id]])
-  ## This is an interesting data set that starts accumulating lots of
-  ## intervals at around the 100th data point.
-  ggplot()+
-    geom_step(aes(chromStart/1e3, count),
-              data=compressed,
-              color="grey50")
-  ggplot()+
-    geom_step(aes(seq_along(count), count),
-              data=compressed,
-              color="grey50")
-
-  data(chr11ChIPseq, package="PeakSegDP")
-  count.dt <- data.table(chr11ChIPseq$coverage)
-  sid <- "McGill0322"
-  one.sample <- count.dt[sample.id==sid,]
-  one.bins <- binSum(
-    one.sample,
-    bin.chromStart=one.sample$chromStart[1],
-    bin.size=500L,
-    n.bins=100L)
-  input.dt <- data.table(one.bins)#[1:20]
-  fit <- PeakSegPDPAchrom(input.dt[1:10,], 4)
-  fit.rev <- PeakSegPDPAchrom(input.dt[10:1,], 4)
-  stopifnot(fit.rev$models$min.cost==fit.rev$models$min.cost)
-  input.dt[, data.i := seq_along(count)]
-
-  ggplot()+
-    theme_bw()+
-    theme(panel.margin=grid::unit(0, "lines"))+
-    facet_grid(total.segments ~ .)+
-    geom_point(aes(data.i, count),
-               data=input.dt[1:10,])+
-    geom_segment(aes(segment.start-0.3, min.cost.mean,
-                     xend=segment.end+0.3, yend=min.cost.mean),
-                 color="deepskyblue",
-                 size=2,
-                 data=fit$peaks)+
-    geom_segment(aes(segment.start-0.3, min.cost.mean,
-                     xend=segment.end+0.3, yend=min.cost.mean),
-                 color="green",
-                 data=fit$segments)
-
-  n.data <- 40
-  forward <- one.sample[1:n.data,]
-  makeRev <- function(fwd){
-    rev <- data.table(fwd)
-    rev$chromStart <- -fwd$chromEnd
-    rev$chromEnd <- -fwd$chromStart
-    rev[.N:1,]
-  }
-  reverse <- makeRev(forward)
-
-  fit <- PeakSegPDPAchrom(forward, 4)
-
-  fit.rev <- PeakSegPDPAchrom(reverse, 4)
-  fit.rev$peaks.forward <- makeRev(fit.rev$peaks)
-  fit.rev$segments.forward <- makeRev(fit.rev$segments)
-  stopifnot(fit.rev$models$min.cost==fit.rev$models$min.cost)
-  
-  dp.fit <- PeakSegDP(one.sample[1:n.data,], 4L)
-
-  rbind(with(dp.fit$peaks[["1"]], c(chromStart, chromEnd)),
-        fit$peaks[peaks==1, c(chromStart, chromEnd)],
-        fit.rev$peaks.forward[peaks==1, c(chromStart, chromEnd)])
-
-  n.peaks <- 4
-  (pdpa.segs <- fit$segments[peaks==n.peaks,])
-  (cdpa.segs <- subset(dp.fit$segments, peaks==n.peaks))
-  forward$pdpa.mean <- NA
-  forward$cdpa.mean <- NA
-  for(seg.i in 1:nrow(cdpa.segs)){
-    seg <- cdpa.segs[seg.i,]
-    forward$cdpa.mean[seg$first:seg$last] <- seg$mean
-  }
-  for(seg.i in 1:nrow(pdpa.segs)){
-    seg <- pdpa.segs[seg.i,]
-    forward$pdpa.mean[seg$segment.start:seg$segment.end] <- seg$min.cost.mean
-  }
-  with(forward, {
-    rbind(pdpa.fwd=PoissonLoss(count, pdpa.mean, chromEnd-chromStart),
-          cdpa.fwd=PoissonLoss(count, cdpa.mean, chromEnd-chromStart))
-  })
-
-  ggplot()+
-    theme_bw()+
-    theme(panel.margin=grid::unit(0, "lines"))+
-    facet_grid(peaks ~ .)+
-    geom_step(aes(chromStart, count),
-              data=one.sample[1:n.data,])+
-    geom_segment(aes(chromStart, min.cost.mean,
-                     xend=chromEnd, yend=min.cost.mean),
-                 color="deepskyblue",
-                 size=2,
-                 data=fit.rev$peaks.forward)+
-    geom_segment(aes(chromStart, min.cost.mean,
-                     xend=chromEnd, yend=min.cost.mean),
-                 color="green",
-                 data=fit.rev$segments.forward)+
-    geom_segment(aes(chromStart, min.cost.mean,
-                     xend=chromEnd, yend=min.cost.mean),
-                 color="deepskyblue",
-                 size=2,
-                 data=fit$peaks)+
-    geom_segment(aes(chromStart, 0,
-                     xend=chromEnd, yend=0),
-                 color="red",
-                 size=2,
-                 data=do.call(rbind, dp.fit$peaks))+
-    geom_segment(aes(chromStart, min.cost.mean,
-                     xend=chromEnd, yend=min.cost.mean),
-                 color="green",
-                 data=fit$segments)
-
+stopifnot(is.data.table(input.dt))
+stopifnot(2 <= max.segments && max.segments <= nrow(input.dt))
+stopifnot(c("weight", "count") %in% names(input.dt))
+min.mean <- min(input.dt$count)
+max.mean <- max(input.dt$count)
+gamma.dt <- input.dt[, data.table(
+  Linear=weight,
+  Log=-count*weight,
+  Constant=0)]
+C1.dt <- cumsum(gamma.dt)
+gamma.dt$min.mean <- C1.dt$min.mean <- min.mean
+gamma.dt$max.mean <- C1.dt$max.mean <- max.mean
+gamma.dt$data.i <- C1.dt$data.i <- 0
+cost.models.list <- list()
+for(data.i in 1:nrow(C1.dt)){
+  cost.models.list[[paste(1, data.i)]] <- C1.dt[data.i,]
 }
+stopifnot(max.segments <= nrow(input.dt))
+intervals.list <- list()
+for(total.segments in 2:max.segments){
+  prev.cost.model <-
+    cost.models.list[[paste(total.segments-1, total.segments-1)]]
+  if(total.segments %% 2){
+    min.fun.name <- "more"
+  }else{
+    min.fun.name <- "less"
+  }
+  min.fun <- less.more.min.list[[min.fun.name]]
+  first.min <- min.fun(prev.cost.model)
+  first.data <- gamma.dt[total.segments,]
+  first.data$data.i <- total.segments-1
+  cost.model <- AddFuns(first.data, first.min)
+  intervals.list[[paste(total.segments, total.segments)]] <- data.table(
+    total.segments, timestep=total.segments, intervals=nrow(cost.model))
+  cost.models.list[[paste(total.segments, total.segments)]] <- cost.model
+  for(timestep in (total.segments+1):length(input.dt$count)){
+    cat(sprintf("%4d / %4d segments %4d / %4d data points %d intervals\n",
+                total.segments, max.segments, timestep, length(input.dt$count),
+                nrow(cost.model)))
+    prev.cost.model <- cost.models.list[[paste(total.segments-1, timestep-1)]]
+    compare.cost <- min.fun(prev.cost.model)
+    compare.cost$data.i <- timestep-1
+    cost.model <- cost.models.list[[paste(total.segments, timestep-1)]]
+    one.env <- MinEnvelope(compare.cost, cost.model)
+    ## gg <- ggplot()+
+    ##   ggtitle(paste(total.segments, "segments,", timestep, "data points"))+
+    ##   geom_line(aes(mean, cost),
+    ##             data=getLines(one.env),
+    ##             color="grey",
+    ##             size=2,
+    ##             alpha=0.5)+
+    ##   geom_line(aes(mean, cost,
+    ##                 color="compare.cost",
+    ##                 group=piece.i),
+    ##             data=getLines(compare.cost))+
+    ##   geom_line(aes(mean, cost,
+    ##                 group=piece.i,
+    ##                 color="cost.model"),
+    ##             data=getLines(cost.model))
+    ## print(gg)
+    ## browser()
+    stopifnot(one.env[, min.mean < max.mean])
+    ## Now that we are done with this step, we can perform the
+    ## recursion by setting the new model of the cost to the min
+    ## envelope, plus a new data point.
+    new.cost.model <- AddFuns(one.env, gamma.dt[timestep,])
+    intervals.list[[paste(total.segments, timestep)]] <- data.table(
+      total.segments, timestep, intervals=nrow(new.cost.model))
+    cost.models.list[[paste(total.segments, timestep)]] <-
+      new.cost.model
+  }#for(timestep
+}#for(total.segments
+minima.list <- list()
+cost.list <- list()
+for(total.segments in seq(1, max.segments, by=2)){
+  peaks <- (total.segments-1)/2
+  timestep <- length(input.dt$count)
+  cat(sprintf(
+    "decoding %4d / %4d segments\n",
+    total.segments, max.segments))
+  data.i <- timestep
+  seg.i <- total.segments
+  no.constraint <- data.table(
+    min.mean,
+    max.mean,
+    data.i=NA)
+  constraint <- no.constraint
+  segment.end <- timestep
+  while(0 < seg.i && length(data.i)==1){
+    unconstrained.fun <- cost.models.list[[paste(seg.i, data.i)]]
+    min.dt <- Minimize(
+      unconstrained.fun,
+      constraint$min.mean,
+      constraint$max.mean)
+    min.dt$segment.end <- segment.end
+    min.dt$peaks <- peaks
+    min.dt$total.segments <- total.segments
+    min.dt$seg.i <- seg.i
+    min.dt[, segment.start := ifelse(seg.i==1, 1, 1+data.i)]
+    segment.end <- min.dt$data.i
+    if(seg.i==total.segments){
+      cost.row <- min.dt
+      cost.row$constraint <- "inactive"
+    }
+    min.dt$constraint <- if(min.dt[, fun.min.mean == min.cost.mean]){
+      "inactive"
+    }else{
+      cost.row$constraint <- "active"
+      "active"
+    }
+    minima.list[[paste(total.segments, seg.i)]] <- min.dt
+    constraint <- no.constraint
+    constraint.side <- if(seg.i %% 2){
+      constraint$min.mean <- min.dt$min.cost.mean
+    }else{
+      constraint$max.mean <- min.dt$min.cost.mean
+    }
+    data.i <- min.dt$data.i
+    seg.i <- seg.i-1
+  }#while(...
+  cost.list[[paste(total.segments)]] <- cost.row
+}#for(total.segments
+

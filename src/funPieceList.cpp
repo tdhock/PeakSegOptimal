@@ -284,9 +284,9 @@ void PiecewisePoissonLoss::print(){
   PoissonLossPieceList::iterator it;
   printf("%d pieces\n", piece_list.size());
   for(it=piece_list.begin(); it != piece_list.end(); it++){
-    printf("Piece: [%f,%f] data_i=%d Log=%f Linear=%f Constant=%f\n",
+    printf("Piece: [%f,%f] data_i=%d Linear=%f Log=%f Constant=%f\n",
 	   it->min_mean, it->max_mean, it->data_i,
-	   it->Log, it->Linear, it->Constant);
+	   it->Linear, it->Log, it->Constant);
   }
 }
   

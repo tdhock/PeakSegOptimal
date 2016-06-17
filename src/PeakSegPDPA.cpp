@@ -49,13 +49,15 @@ void PeakSegPDPA
       }
       min_prev_cost.set_prev_seg_end(prev_i);
       new_cost_model = &cost_model_vec[data_i + total_changes*data_count];
-      printf("min prev cost\n");
-      min_prev_cost.print();
-      printf("cost model\n");
-      cost_model.print();
       if(data_i==total_changes){//first cost model, only one candidate.
+	printf("new cost model = min prev cost\n");
+	min_prev_cost.print();
 	*new_cost_model = min_prev_cost;
       }else{
+	printf("min prev cost\n");
+	min_prev_cost.print();
+	printf("cost model\n");
+	cost_model.print();
 	new_cost_model->set_to_min_env_of(&min_prev_cost, &cost_model);
       }
       printf("new cost model\n");
@@ -64,6 +66,7 @@ void PeakSegPDPA
 	(weight_vec[total_changes],
 	 -data_vec[total_changes]*weight_vec[total_changes],
 	 0.0);
+      new_cost_model->print();
       cost_model = *new_cost_model;
     }
   }
