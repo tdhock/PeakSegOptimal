@@ -365,7 +365,55 @@ void PiecewisePoissonLoss::push_min_pieces
     // The functions are exactly equal over the entire interval so we
     // can push either of them.
     push_piece(it1, last_min_mean, first_max_mean);
+    return;
   }
+  PoissonLossPiece diff_piece
+    (it1->Linear - it2->Linear,
+     it1->Log - it2->Log,
+     it1->Constant - it2->Constant,
+     last_min_mean, first_max_mean,
+     -5, false);
+  if(diff_piece.Log == 0){
+    if(diff_piece.Linear == 0){
+      // They are offset by a Constant.
+      if(diff_piece.Constant < 0){
+	push_piece(it1, last_min_mean, first_max_mean);
+      }else{
+	push_piece(it2, last_min_mean, first_max_mean);
+      }
+      return;
+    }
+    if(diff_piece.Constant == 0){
+      // The only difference is the Linear coef.
+      if(diff_piece.Linear < 0){
+	push_piece(it1, last_min_mean, first_max_mean);
+      }else{
+	push_piece(it2, last_min_mean, first_max_mean);
+      }
+      return;
+    }
+    double mean_at_equal_cost = -diff_piece.Constant/diff_piece.Linear;
+    if(last_min_mean < mean_at_equal_cost &&
+       mean_at_equal_cost < first_max_mean){
+      // the root is in the interval, so we need to add two intervals.
+      if(0 < diff_piece.Linear){
+	push_piece(it1, last_min_mean, mean_at_equal_cost);
+	push_piece(it2, mean_at_equal_cost, first_max_mean);
+      }else{
+	push_piece(it2, last_min_mean, mean_at_equal_cost);
+	push_piece(it1, mean_at_equal_cost, first_max_mean);
+      }
+      return;
+    }
+    // the root is outside the interval, so one is completely above
+    // the other over this entire interval.
+    if(mean_at_equal_cost < last_min_mean){
+      push_piece(it1, last_min_mean, first_max_mean);
+    }else{
+      push_piece(it2, last_min_mean, first_max_mean);
+    }
+    return;
+  }//if(diff->Log == 0
 }
 
 void PiecewisePoissonLoss::push_piece
