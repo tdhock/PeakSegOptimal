@@ -3,6 +3,7 @@
 #include "funPieceList.h"
 #include <list>
 #include <math.h>
+#include <stdio.h>
 
 #include <gsl/gsl_sf_lambert.h>
 #include <gsl/gsl_sf_result.h>
@@ -78,10 +79,10 @@ double PoissonLossPiece::PoissonDeriv(double mean){
 }
 
 void PiecewisePoissonLoss::set_to_min_less_of(PiecewisePoissonLoss *input){
-  double prev_min_cost = INFINITY, prev_min_mean;
   int prev_data_i = -2;
   piece_list.clear();
   PoissonLossPieceList::iterator it = input->piece_list.begin();
+  double prev_min_cost = INFINITY, prev_min_mean = it->min_mean;
   while(it != input->piece_list.end()){
     if(prev_min_cost == INFINITY){
       // Look for min achieved in this interval.
@@ -159,6 +160,7 @@ void PiecewisePoissonLoss::set_to_min_less_of(PiecewisePoissonLoss *input){
   if(prev_data_i != -2){
     // ending on a constant piece -- we never have a convex piece at
     // the end, because the end is the maximum observed data.
+    it--;
     piece_list.emplace_back
       (0.0, 0.0, prev_min_cost, prev_min_mean, it->max_mean, prev_data_i,
        false);//equality constraint inactive on constant piece.
@@ -166,10 +168,12 @@ void PiecewisePoissonLoss::set_to_min_less_of(PiecewisePoissonLoss *input){
 }
 
 void PiecewisePoissonLoss::set_to_min_more_of(PiecewisePoissonLoss *input){
-  double prev_min_cost = INFINITY, prev_max_mean;
   int prev_data_i = -2;
   piece_list.clear();
   PoissonLossPieceList::iterator it = input->piece_list.end();
+  it--;
+  double prev_min_cost = INFINITY, prev_max_mean = it->max_mean;
+  it++;
   while(it != input->piece_list.begin()){
     it--;
     if(prev_min_cost == INFINITY){
@@ -276,6 +280,17 @@ void PiecewisePoissonLoss::findMean(double mean, int *seg_end, bool *equality_co
   }
 }
 
+void PiecewisePoissonLoss::print(){
+  PoissonLossPieceList::iterator it;
+  printf("%d pieces\n", piece_list.size());
+  for(it=piece_list.begin(); it != piece_list.end(); it++){
+    printf("Piece: [%f,%f] data_i=%d Log=%f Linear=%f Constant=%f\n",
+	   it->min_mean, it->max_mean, it->data_i,
+	   it->Log, it->Linear, it->Constant);
+  }
+}
+  
+
 void PiecewisePoissonLoss::Minimize(double *best_cost,
 	      double *best_mean,
 	      int *data_i,
@@ -302,7 +317,7 @@ void PiecewisePoissonLoss::set_to_min_env_of
   PoissonLossPieceList::iterator
     it1 = fun1->piece_list.begin(),
     it2 = fun2->piece_list.begin();
-  this->piece_list.clear();
+  piece_list.clear();
   while(it1 != fun1->piece_list.end() &&
 	it2 != fun2->piece_list.end()){
     push_min_pieces(fun1, fun2, it1, it2);

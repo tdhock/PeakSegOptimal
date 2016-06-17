@@ -42,6 +42,7 @@ class PiecewisePoissonLoss {
      PoissonLossPieceList::iterator, PoissonLossPieceList::iterator);
   void push_piece(PoissonLossPieceList::iterator, double, double);
   void add(double Linear, double Log, double Constant);
+  void print();
   void set_prev_seg_end(int prev_seg_end);
   void findMean(double mean, int *seg_end, bool *equality_constraint_active);
   void Minimize(double *best_cost,

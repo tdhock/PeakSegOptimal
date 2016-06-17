@@ -1,6 +1,7 @@
 /* -*- compile-command: "R CMD INSTALL .." -*- */
 
 #include <vector>
+#include <stdio.h>
 #include "funPieceList.h"
 
 void PeakSegPDPA
@@ -38,6 +39,9 @@ void PeakSegPDPA
     for(int data_i=total_changes; data_i<data_count; data_i++){
       int prev_i = data_i-1;
       prev_cost_model = &cost_model_vec[prev_i + (total_changes-1)*data_count];
+      printf("DP changes=%d data_i=%d\n", total_changes, data_i);
+      printf("prev cost model\n");
+      prev_cost_model->print();
       if(total_changes % 2){
 	min_prev_cost.set_to_min_less_of(prev_cost_model);
       }else{
@@ -45,11 +49,17 @@ void PeakSegPDPA
       }
       min_prev_cost.set_prev_seg_end(prev_i);
       new_cost_model = &cost_model_vec[data_i + total_changes*data_count];
+      printf("min prev cost\n");
+      min_prev_cost.print();
+      printf("cost model\n");
+      cost_model.print();
       if(data_i==total_changes){//first cost model, only one candidate.
 	*new_cost_model = min_prev_cost;
       }else{
 	new_cost_model->set_to_min_env_of(&min_prev_cost, &cost_model);
       }
+      printf("new cost model\n");
+      new_cost_model->print();
       new_cost_model->add
 	(weight_vec[total_changes],
 	 -data_vec[total_changes]*weight_vec[total_changes],
@@ -70,9 +80,9 @@ void PeakSegPDPA
   // }
   
   // Decoding the cost_model_vec, and writing to the output matrices.
-  maxSegments=1;//TODO change.
   for(int total_changes=0; total_changes<maxSegments;total_changes++){
-    for(int data_i=0; data_i<data_count; data_i++){
+    for(int data_i=total_changes; data_i<data_count; data_i++){
+      printf("decoding changes=%d data_i=%d\n", total_changes, data_i);
       PiecewisePoissonLoss *cost_model =
 	&cost_model_vec[data_i + total_changes*data_count];
       cost_model->Minimize
@@ -89,6 +99,7 @@ void PeakSegPDPA
 	best_mean_vec[total_changes] = best_mean;
 	prev_seg_vec[total_changes] = prev_seg_end;
 	for(int seg_i=total_changes-1; 0 <= seg_i; seg_i--){
+	  printf("seg_i=%d prev_seg_end=%d\n", seg_i, prev_seg_end);
 	  cost_model = &cost_model_vec[prev_seg_end + seg_i*data_count];
 	  if(equality_constraint_active){
 	    cost_model->findMean
