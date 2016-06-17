@@ -22,8 +22,18 @@ test_that("second segment is OK", {
   mean24.vec <- c(1, rep(mean3, 3))
   expected24 <- PoissonLoss(data.vec, mean24.vec)
   expect_equal(fit$cost.mat[2,4], expected24)
-  expect_equal(fit$ends.mat[1,2], 1)
+  expect_equal(fit$ends.mat[2,2], 1)
   expect_equal(fit$mean.mat[2,1:2], c(1, mean3))
+})
+
+test_that("third segment is OK", {
+  expected33 <- PoissonLoss(c(1,10,14), c(1,12,12))
+  expect_equal(fit$cost.mat[3,3], expected33)
+  mean3 <- (10+14+13)/3
+  mean34.vec <- c(1, rep(mean3, 3))
+  expected34 <- PoissonLoss(c(1,10,14,13), mean34.vec)
+  expect_equal(fit$cost.mat[3,4], expected34)
+  expect_equal(fit$mean.mat[3,], c(1, mean3, mean3))
 })
 
 ploss <- function(dt, x){
