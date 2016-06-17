@@ -57,6 +57,11 @@ double PoissonLossPiece::PoissonLoss(double mean){
   return loss;
 }
 
+double PoissonLossPiece::PoissonDeriv(double mean){
+  return Linear + Log/mean;
+}
+
+
 
 void PiecewisePoissonLoss::set_to_min_less_of(PiecewisePoissonLoss *input){
   double prev_min_cost = INFINITY, prev_min_mean;
@@ -414,6 +419,60 @@ void PiecewisePoissonLoss::push_min_pieces
     }
     return;
   }//if(diff->Log == 0
+  double cost_diff_left = diff_piece.PoissonLoss(last_min_mean);
+  double cost_diff_right = diff_piece.PoissonLoss(first_max_mean);
+  double discriminant = diff_piece.getDiscriminant(0.0);
+  bool two_roots = POISSON_THRESH < discriminant;
+  bool fun1_min_on_right;
+  if(!same_at_right){
+    fun1_min_on_right = cost_diff_right < 0;
+  }else{
+    // They are equal on the right limit, so use the first and second
+    // derivatives to see which is minimal just before the right
+    // limit. Do we need to check if they intersect before the right
+    // limit? Only if the sign of the slope of the more curved
+    // function is positive. And in that case we just need to check
+    // the smaller root.
+    double deriv1_right = it1->PoissonDeriv(first_max_mean);
+    double deriv2_right = it2->PoissonDeriv(first_max_mean);
+    bool maybe_cross = (it2->Log < it1->Log && 0 < deriv2_right) ||
+				    (it1->Log < it2->Log && 0 < deriv1_right);
+    if(two_roots && maybe_cross){
+      // there could be a crossing point to the left.
+      double mean_at_equal_cost =
+	diff_piece.discriminant2mean_principal(discriminant);
+      if(last_min_mean < mean_at_equal_cost &&
+	 mean_at_equal_cost && first_max_mean){
+	//the cross point is in the interval.
+	if(cost_diff_left < 0){
+	  push_piece(it1, last_min_mean, mean_at_equal_cost);
+	  push_piece(it2, mean_at_equal_cost, first_max_mean);
+	}else{
+	  push_piece(it2, last_min_mean, mean_at_equal_cost);
+	  push_piece(it1, mean_at_equal_cost, first_max_mean);
+	}
+	return;
+      }
+    }//if(two_roots && maybe cross
+    bool row1_min_before_right;
+    if((deriv1_right < 0 && deriv2_right < 0) ||
+       (0 < deriv1_right && 0 < deriv2_right)){
+      // the derivatives have the same sign on the right, so are
+      // certainly not equal on the left, and we can just compare
+      // their cost values on the left to determine which is larger.
+      row1_min_before_right = cost_diff_left < 0;
+    }else{
+      // the derivatives have the same sign, so we can compare them to
+      // determine which function is larger.
+      row1_min_before_right = deriv2_right < deriv1_right;
+    }
+    if(row1_min_before_right){
+      push_piece(it1, last_min_mean, first_max_mean);
+    }else{
+      push_piece(it2, last_min_mean, first_max_mean);
+    }
+    return;
+  }    
 }
 
 void PiecewisePoissonLoss::push_piece

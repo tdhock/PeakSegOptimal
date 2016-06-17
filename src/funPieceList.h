@@ -24,6 +24,7 @@ class PoissonLossPiece {
   double discriminant2mean_secondary(double discriminant);
   double getMinMean();
   double PoissonLoss(double mean);
+  double PoissonDeriv(double);
 };
 
 typedef std::list<PoissonLossPiece> PoissonLossPieceList;
