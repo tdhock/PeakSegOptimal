@@ -35,7 +35,6 @@ void PeakSegPDPA
   PiecewisePoissonLoss *prev_cost_model, *new_cost_model;
   PiecewisePoissonLoss min_prev_cost, cost_model;
   for(int total_changes=1; total_changes<maxSegments; total_changes++){
-    cost_model.piece_list.clear();
     for(int data_i=total_changes; data_i<data_count; data_i++){
       int prev_i = data_i-1;
       prev_cost_model = &cost_model_vec[prev_i + (total_changes-1)*data_count];
@@ -44,13 +43,17 @@ void PeakSegPDPA
       }else{
 	min_prev_cost.set_to_min_more_of(prev_cost_model);
       }
+      min_prev_cost.set_prev_seg_end(prev_i);
       new_cost_model = &cost_model_vec[data_i + total_changes*data_count];
-      new_cost_model->set_to_min_env_of(&min_prev_cost, &cost_model);
+      if(data_i==total_changes){//first cost model, only one candidate.
+	*new_cost_model = min_prev_cost;
+      }else{
+	new_cost_model->set_to_min_env_of(&min_prev_cost, &cost_model);
+      }
       new_cost_model->add
 	(weight_vec[total_changes],
 	 -data_vec[total_changes]*weight_vec[total_changes],
 	 0.0);
-      new_cost_model->set_prev_seg_end(prev_i);
       cost_model = *new_cost_model;
     }
   }

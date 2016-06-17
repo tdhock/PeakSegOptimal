@@ -277,3 +277,28 @@ void PiecewisePoissonLoss::Minimize(double *best_cost,
     }
   }
 }
+
+void PiecewisePoissonLoss::set_to_min_env_of
+(PiecewisePoissonLoss *fun1, PiecewisePoissonLoss *fun2){
+  PoissonLossPieceList::iterator
+    it1 = fun1->piece_list.begin(),
+    it2 = fun2->piece_list.begin();
+  this->piece_list.clear();
+  while(it1 != fun1->piece_list.end() &&
+	it2 != fun2->piece_list.end()){
+    push_min_pieces(it1, it2);
+    double last_max_mean = piece_list.back().max_mean;
+    if(it1->max_mean == last_max_mean){
+      it1++;
+    }
+    if(it2->max_mean == last_max_mean){
+      it2++;
+    }
+  }
+}
+
+void PiecewisePoissonLoss::push_min_pieces
+(PoissonLossPieceList::iterator it1,
+ PoissonLossPieceList::iterator it2){
+  
+}
