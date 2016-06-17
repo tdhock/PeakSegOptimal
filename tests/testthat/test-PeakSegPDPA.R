@@ -1,7 +1,7 @@
 library(coseg)
 data.vec <- as.integer(c(1, 10, 14, 13))
 fit <- PeakSegPDPA(data.vec, rep(1, 4), 3L)
-
+library(testthat)
 test_that("first segment is OK", {
   cumsum.vec <- cumsum(data.vec)
   n.vec <- seq_along(data.vec)

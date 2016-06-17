@@ -530,8 +530,59 @@ void PiecewisePoissonLoss::push_min_pieces
   // The only remaining case is that the curves are equal neither on
   // the left nor on the right of the interval. However they may be
   // equal inside the interval, so let's check for that.
-  //if(two_roots){
-    
+  double first_mean = INFINITY, second_mean = INFINITY;
+  if(two_roots){
+    double larger_mean = diff_piece.discriminant2mean_larger(discriminant);
+    bool larger_inside =
+      last_min_mean < larger_mean && larger_mean < first_max_mean;
+    double smaller_mean = diff_piece.discriminant2mean_smaller(discriminant);
+    bool smaller_inside =
+      last_min_mean < smaller_mean && smaller_mean < first_max_mean;
+    if(larger_inside){
+      if(smaller_inside){
+	// both are in the interval.
+	first_mean = smaller_mean;
+	second_mean = larger_mean;
+      }else{
+	// smaller mean is not in the interval, but the larger is.
+	first_mean = larger_mean;
+      }
+    }else{
+      // larger mean is not in the interval
+      if(smaller_inside){
+	// smaller mean is in the interval, but not the larger.
+	first_mean = smaller_mean;
+      }
+    }
+  }
+  if(second_mean != INFINITY){
+    // two crossing points.
+    if(fun1_min_on_left){
+      push_piece(it1, last_min_mean, first_mean);
+      push_piece(it2, first_mean, first_max_mean);
+    }else{
+      push_piece(it2, last_min_mean, first_mean);
+      push_piece(it1, first_mean, first_max_mean);
+    }
+  }else if(first_mean != INFINITY){
+    // one crossing point.
+    if(fun1_min_on_left){
+      push_piece(it1, last_min_mean, first_mean);
+      push_piece(it2, first_mean, second_mean);
+      push_piece(it1, second_mean, first_max_mean);
+    }else{
+      push_piece(it2, last_min_mean, first_mean);
+      push_piece(it1, first_mean, second_mean);
+      push_piece(it2, second_mean, first_max_mean);
+    }
+  }else{
+    // zero crossing points.
+    if(fun1_min_on_left){
+      push_piece(it1, last_min_mean, first_max_mean);
+    }else{
+      push_piece(it2, last_min_mean, first_max_mean);
+    }
+  }
 }
 
 void PiecewisePoissonLoss::push_piece
