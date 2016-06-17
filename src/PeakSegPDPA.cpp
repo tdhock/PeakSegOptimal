@@ -3,6 +3,7 @@
 #include <vector>
 #include <stdio.h>
 #include "funPieceList.h"
+#include <math.h>
 
 void PeakSegPDPA
 (double *data_vec, double *weight_vec, int data_count,
@@ -10,7 +11,8 @@ void PeakSegPDPA
  // the following matrices are for output:
  double *cost_mat, //data_count x maxSegments.
  int *end_mat,//maxSegments x maxSegments(model up to last data point).
- double *mean_mat){//maxSegments x maxSegments(model up to last data point).
+ double *mean_mat,
+ int *intervals_mat){//maxSegments x maxSegments(model up to last data point).
   double min_mean=data_vec[0], max_mean=data_vec[0];
   for(int data_i=1; data_i<data_count; data_i++){
     if(data_vec[data_i] < min_mean){
@@ -76,13 +78,16 @@ void PeakSegPDPA
   int *prev_seg_vec;
   bool equality_constraint_active;
   int prev_seg_end;
-  // for(int total_changes=0; total_changes<maxSegments;total_changes++){
-  //   for(int data_i=0; data_i<data_count; data_i++){
-  //     cost_mat[data_i + total_changes*data_count] = INFINITY;
-  //   }
-  // }
   
   // Decoding the cost_model_vec, and writing to the output matrices.
+  for(int i=0; i<maxSegments*maxSegments; i++){
+    intervals_mat[i] = -1;
+    end_mat[i] = -1;
+  }
+  for(int i=0; i<maxSegments*data_count; i++){
+    cost_mat[i] = INFINITY;
+    mean_mat[i] = INFINITY;
+  }
   for(int total_changes=0; total_changes<maxSegments;total_changes++){
     for(int data_i=total_changes; data_i<data_count; data_i++){
       //printf("decoding changes=%d data_i=%d\n", total_changes, data_i);
@@ -91,8 +96,11 @@ void PeakSegPDPA
       cost_model->Minimize
 	(&best_cost, &best_mean,
 	 &prev_seg_end, &equality_constraint_active);
-      // for the models up to any data point, we store the best cost.
+      // for the models up to any data point, we store the best cost
+      // and the total number of intervals.
       cost_mat[data_i + total_changes*data_count] = best_cost;
+      intervals_mat[data_i + total_changes*data_count] =
+	cost_model->piece_list.size();
       if(data_i == data_count-1){
 	// for the models up to the last data point, we also store the
 	// segment means and the change-points. we have already

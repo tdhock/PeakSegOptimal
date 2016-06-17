@@ -4,4 +4,5 @@ void PeakSegPDPA
  // the following matrices are for output, data_count x maxSegments.
  double *cost_mat,
  int *end_mat,
- double *mean_mat);
+ double *mean_mat,
+ int *intervals_mat);

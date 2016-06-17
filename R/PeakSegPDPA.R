@@ -20,6 +20,7 @@ PeakSegPDPA <- function
   cost.mat <- double(n.data*max.segments)
   ends.mat <- integer(max.segments*max.segments)
   mean.mat <- double(max.segments*max.segments)
+  intervals.mat <- integer(n.data*max.segments)
   result.list <- .C(
     "PeakSegPDPA_interface",
     count.vec=as.double(count.vec),
@@ -29,6 +30,7 @@ PeakSegPDPA <- function
     cost.mat=as.double(cost.mat),
     ends.mat=as.integer(ends.mat),
     mean.mat=as.double(mean.mat),
+    intervals.mat=as.integer(intervals.mat),
     PACKAGE="coseg")
   result.list$cost.mat <- matrix(
     result.list$cost.mat, max.segments, n.data, byrow=TRUE)
@@ -36,6 +38,8 @@ PeakSegPDPA <- function
     result.list$ends.mat+1L, max.segments, max.segments, byrow=TRUE)
   result.list$mean.mat <- matrix(
     result.list$mean.mat, max.segments, max.segments, byrow=TRUE)
+  result.list$intervals.mat <- matrix(
+    result.list$intervals.mat, max.segments, n.data, byrow=TRUE)
   result.list
 }
 
