@@ -45,6 +45,22 @@ double PoissonLossPiece::discriminant2mean_secondary(double discriminant){
   return Log/Linear*result.val;
 }
 
+double PoissonLossPiece::discriminant2mean_larger(double discriminant){
+  if(0 < Log/Linear){
+    return discriminant2mean_principal(discriminant);
+  }else{
+    return discriminant2mean_secondary(discriminant);
+  }
+}
+
+double PoissonLossPiece::discriminant2mean_smaller(double discriminant){
+  if(0 < Log/Linear){
+    return discriminant2mean_secondary(discriminant);
+  }else{
+    return discriminant2mean_principal(discriminant);
+  }
+}
+
 double PoissonLossPiece::getMinMean(){
   return - Log / Linear;
 }
@@ -60,8 +76,6 @@ double PoissonLossPiece::PoissonLoss(double mean){
 double PoissonLossPiece::PoissonDeriv(double mean){
   return Linear + Log/mean;
 }
-
-
 
 void PiecewisePoissonLoss::set_to_min_less_of(PiecewisePoissonLoss *input){
   double prev_min_cost = INFINITY, prev_min_mean;
@@ -440,7 +454,7 @@ void PiecewisePoissonLoss::push_min_pieces
     if(two_roots && maybe_cross){
       // there could be a crossing point to the left.
       double mean_at_equal_cost =
-	diff_piece.discriminant2mean_principal(discriminant);
+	diff_piece.discriminant2mean_smaller(discriminant);
       if(last_min_mean < mean_at_equal_cost &&
 	 mean_at_equal_cost && first_max_mean){
 	//the cross point is in the interval.
@@ -454,25 +468,70 @@ void PiecewisePoissonLoss::push_min_pieces
 	return;
       }
     }//if(two_roots && maybe cross
-    bool row1_min_before_right;
+    bool fun1_min_before_right;
     if((deriv1_right < 0 && deriv2_right < 0) ||
        (0 < deriv1_right && 0 < deriv2_right)){
       // the derivatives have the same sign on the right, so are
       // certainly not equal on the left, and we can just compare
       // their cost values on the left to determine which is larger.
-      row1_min_before_right = cost_diff_left < 0;
+      fun1_min_before_right = cost_diff_left < 0;
     }else{
       // the derivatives have the same sign, so we can compare them to
       // determine which function is larger.
-      row1_min_before_right = deriv2_right < deriv1_right;
+      fun1_min_before_right = deriv2_right < deriv1_right;
     }
-    if(row1_min_before_right){
+    if(fun1_min_before_right){
       push_piece(it1, last_min_mean, first_max_mean);
     }else{
       push_piece(it2, last_min_mean, first_max_mean);
     }
     return;
-  }    
+  }
+  bool fun1_min_on_left;
+  if(!same_at_left){
+    fun1_min_on_left = cost_diff_left < 0;
+  }else{
+    // equal on the left.
+    double deriv1_left = it1->PoissonDeriv(last_min_mean);
+    double deriv2_left = it2->PoissonDeriv(last_min_mean);
+    bool maybe_cross = (it2->Log < it1->Log && deriv2_left < 0) ||
+      (it1->Log < it2->Log && deriv1_left < 0);
+    if(two_roots && maybe_cross){
+      // There could be a crossing point to the right.
+      double mean_at_equal_cost =
+	diff_piece.discriminant2mean_larger(discriminant);
+      if(last_min_mean < mean_at_equal_cost &&
+	 mean_at_equal_cost < first_max_mean){
+	// the crossing point is in this interval.
+	if(cost_diff_right < 0){
+	  push_piece(it2, last_min_mean, mean_at_equal_cost);
+	  push_piece(it1, mean_at_equal_cost, first_max_mean);
+	}else{
+	  push_piece(it1, last_min_mean, mean_at_equal_cost);
+	  push_piece(it2, mean_at_equal_cost, first_max_mean);
+	}
+	return;
+      }
+    }//if(there may be crossing
+    bool fun1_min_after_left;
+    if((deriv1_left < 0 && deriv2_left < 0) ||
+       (0 < deriv1_left && 0 < deriv2_left)){
+      fun1_min_after_left = cost_diff_right < 0;
+    }else{
+      fun1_min_after_left = deriv1_left < deriv2_left;
+    }
+    if(fun1_min_after_left){
+      push_piece(it1, last_min_mean, first_max_mean);
+    }else{
+      push_piece(it2, last_min_mean, first_max_mean);
+    }
+    return;
+  }
+  // The only remaining case is that the curves are equal neither on
+  // the left nor on the right of the interval. However they may be
+  // equal inside the interval, so let's check for that.
+  //if(two_roots){
+    
 }
 
 void PiecewisePoissonLoss::push_piece

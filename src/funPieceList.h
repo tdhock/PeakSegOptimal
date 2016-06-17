@@ -22,6 +22,8 @@ class PoissonLossPiece {
   double getDiscriminant(double add_constant);
   double discriminant2mean_principal(double discriminant);
   double discriminant2mean_secondary(double discriminant);
+  double discriminant2mean_larger(double discriminant);
+  double discriminant2mean_smaller(double discriminant);
   double getMinMean();
   double PoissonLoss(double mean);
   double PoissonDeriv(double);
