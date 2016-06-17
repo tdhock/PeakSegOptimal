@@ -33,7 +33,7 @@ PeakSegPDPA <- function
   result.list$cost.mat <- matrix(
     result.list$cost.mat, max.segments, n.data, byrow=TRUE)
   result.list$ends.mat <- matrix(
-    result.list$ends.mat, max.segments, max.segments, byrow=TRUE)
+    result.list$ends.mat+1L, max.segments, max.segments, byrow=TRUE)
   result.list$mean.mat <- matrix(
     result.list$mean.mat, max.segments, max.segments, byrow=TRUE)
   result.list

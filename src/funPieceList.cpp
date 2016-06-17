@@ -9,7 +9,7 @@
 #include <gsl/gsl_sf_result.h>
 #include <gsl/gsl_errno.h>
 
-// sprintf("%.90f",-1/exp(1))
+// s//printf("%.90f",-1/exp(1))
 // "-0.367879441171442334024277442949824035167694091796875000"
 #define POISSON_THRESH -0.367879441171442334024277442949824035167694091796875
 
@@ -399,7 +399,7 @@ void PiecewisePoissonLoss::push_min_pieces
     // The functions are exactly equal over the entire interval so we
     // can push either of them.
     push_piece(it1, last_min_mean, first_max_mean);
-    printf("exactly equal over entire interval\n");
+    //printf("exactly equal over entire interval\n");
     return;
   }
   PoissonLossPiece diff_piece
@@ -416,7 +416,7 @@ void PiecewisePoissonLoss::push_min_pieces
       }else{
 	push_piece(it2, last_min_mean, first_max_mean);
       }
-      printf("offset by a constant\n");
+      //printf("offset by a constant\n");
       return;
     }
     if(diff_piece.Constant == 0){
@@ -426,7 +426,7 @@ void PiecewisePoissonLoss::push_min_pieces
       }else{
 	push_piece(it2, last_min_mean, first_max_mean);
       }
-      printf("only diff is linear coef\n");
+      //printf("only diff is linear coef\n");
       return;
     }
     double mean_at_equal_cost = -diff_piece.Constant/diff_piece.Linear;
@@ -440,7 +440,7 @@ void PiecewisePoissonLoss::push_min_pieces
 	push_piece(it2, last_min_mean, mean_at_equal_cost);
 	push_piece(it1, mean_at_equal_cost, first_max_mean);
       }
-      printf("Log zero with one root in interval\n");
+      //printf("Log zero with one root in interval\n");
       return;
     }
     // the root is outside the interval, so one is completely above
@@ -450,7 +450,7 @@ void PiecewisePoissonLoss::push_min_pieces
     }else{
       push_piece(it2, last_min_mean, first_max_mean);
     }
-    printf("Log zero with no roots in interval\n");
+    //printf("Log zero with no roots in interval\n");
     return;
   }//if(diff->Log == 0
   double cost_diff_left = diff_piece.PoissonLoss(last_min_mean);
@@ -485,7 +485,7 @@ void PiecewisePoissonLoss::push_min_pieces
 	  push_piece(it2, last_min_mean, mean_at_equal_cost);
 	  push_piece(it1, mean_at_equal_cost, first_max_mean);
 	}
-	printf("equal on the right with one crossing in interval\n");
+	//printf("equal on the right with one crossing in interval\n");
 	return;
       }
     }//if(two_roots && maybe cross
@@ -506,7 +506,7 @@ void PiecewisePoissonLoss::push_min_pieces
     }else{
       push_piece(it2, last_min_mean, first_max_mean);
     }
-    printf("equal on the right with no crossing in interval\n");
+    //printf("equal on the right with no crossing in interval\n");
     return;
   }
   bool fun1_min_on_left;
@@ -532,7 +532,7 @@ void PiecewisePoissonLoss::push_min_pieces
 	  push_piece(it1, last_min_mean, mean_at_equal_cost);
 	  push_piece(it2, mean_at_equal_cost, first_max_mean);
 	}
-	printf("equal on the left with crossing in interval\n");
+	//printf("equal on the left with crossing in interval\n");
 	return;
       }
     }//if(there may be crossing
@@ -548,7 +548,7 @@ void PiecewisePoissonLoss::push_min_pieces
     }else{
       push_piece(it2, last_min_mean, first_max_mean);
     }
-    printf("equal on the left with no crossing in interval\n");
+    //printf("equal on the left with no crossing in interval\n");
     return;
   }
   // The only remaining case is that the curves are equal neither on
@@ -567,24 +567,24 @@ void PiecewisePoissonLoss::push_min_pieces
 	// both are in the interval.
 	first_mean = smaller_mean;
 	second_mean = larger_mean;
-	printf("%f and %f in [%f,%f]\n",
-	       smaller_mean, larger_mean,
-	       last_min_mean, first_max_mean);
+	//printf("%f and %f in [%f,%f]\n",
+	//smaller_mean, larger_mean,
+	//last_min_mean, first_max_mean);
       }else{
 	// smaller mean is not in the interval, but the larger is.
 	first_mean = larger_mean;
-	printf("%f in [%f,%f]\n",
-	       first_mean,
-	       last_min_mean, first_max_mean);
+	//printf("%f in [%f,%f]\n",
+	//first_mean,
+	//last_min_mean, first_max_mean);
       }
     }else{
       // larger mean is not in the interval
       if(smaller_inside){
 	// smaller mean is in the interval, but not the larger.
 	first_mean = smaller_mean;
-	printf("%f in [%f,%f]\n",
-	       first_mean,
-	       last_min_mean, first_max_mean);
+	//printf("%f in [%f,%f]\n",
+	//first_mean,
+	//last_min_mean, first_max_mean);
       }
     }
   }
@@ -599,7 +599,7 @@ void PiecewisePoissonLoss::push_min_pieces
       push_piece(it1, first_mean, second_mean);
       push_piece(it2, second_mean, first_max_mean);
     }
-    printf("not equal on the sides, 2 crossing points\n");
+    //printf("not equal on the sides, 2 crossing points\n");
   }else if(first_mean != INFINITY){
     // one crossing point.
     if(fun1_min_on_left){
@@ -609,7 +609,7 @@ void PiecewisePoissonLoss::push_min_pieces
       push_piece(it2, last_min_mean, first_mean);
       push_piece(it1, first_mean, first_max_mean);
     }
-    printf("not equal on the sides, 1 crossing point\n");
+    //printf("not equal on the sides, 1 crossing point\n");
   }else{
     // zero crossing points.
     if(fun1_min_on_left){
@@ -617,7 +617,7 @@ void PiecewisePoissonLoss::push_min_pieces
     }else{
       push_piece(it2, last_min_mean, first_max_mean);
     }
-    printf("not equal on the sides, zero crossing points\n");
+    //printf("not equal on the sides, zero crossing points\n");
   }
 }
 
