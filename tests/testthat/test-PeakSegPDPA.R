@@ -36,6 +36,40 @@ test_that("third segment is OK", {
   expect_equal(fit$mean.mat[3,], c(1, mean3, mean3))
 })
 
+data(H3K4me3_XJ_immune_chunk1)
+H3K4me3_XJ_immune_chunk1$count <- H3K4me3_XJ_immune_chunk1$coverage
+by.sample <- split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
+one <- by.sample[["McGill0024"]]
+max.segments <- 19L
+library(PeakSegDP)
+count.vec <- one$coverage
+weight.vec <- with(one, chromEnd-chromStart)
+
+library(microbenchmark)
+microbenchmark(
+  PDPA=pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments),
+  cDPA=cdpa <- cDPA(count.vec, weight.vec, max.segments),
+  times=10)
+str(cdpa$loss)
+str(pdpa$cost.mat)
+
+peakseg <- PeakSegDP(one, 9L)
+rbind(pdpa=pdpa$cost.mat[seq(1,max.segments,by=2), length(count.vec)],
+      cdpa=peakseg$error$error)
+
+library(data.table)
+intervals.dt <- data.table(
+  segments=as.numeric(row(pdpa$intervals.mat)),
+  data=as.numeric(col(pdpa$intervals.mat)),
+  intervals=as.numeric(pdpa$intervals.mat))
+positive.intervals <- intervals.dt[segments<data,]
+library(ggplot2)
+ggplot()+
+  theme_bw()+
+  theme(panel.margin=grid::unit(0, "lines"))+
+  facet_grid(segments ~ .)+
+  geom_line(aes(data, intervals), data=positive.intervals)
+
 ploss <- function(dt, x){
   ## need to make a new data table, otherwise ifelse may only get one
   ## element, and return only one element.
@@ -527,7 +561,6 @@ MinEnvelope <- function(dt1, dt2){
   do.call(rbind, new.dt.list)
 }
 
-library(data.table)
 input.dt <- data.table(count=data.vec, weight=1)
 max.segments <- 3
 

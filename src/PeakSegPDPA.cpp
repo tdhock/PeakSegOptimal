@@ -81,12 +81,12 @@ void PeakSegPDPA
   
   // Decoding the cost_model_vec, and writing to the output matrices.
   for(int i=0; i<maxSegments*maxSegments; i++){
-    intervals_mat[i] = -1;
+    mean_mat[i] = INFINITY;
     end_mat[i] = -1;
   }
   for(int i=0; i<maxSegments*data_count; i++){
+    intervals_mat[i] = -1;
     cost_mat[i] = INFINITY;
-    mean_mat[i] = INFINITY;
   }
   for(int total_changes=0; total_changes<maxSegments;total_changes++){
     for(int data_i=total_changes; data_i<data_count; data_i++){
