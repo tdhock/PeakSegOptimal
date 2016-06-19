@@ -39,9 +39,10 @@ test_that("third segment is OK", {
 data(H3K4me3_XJ_immune_chunk1)
 H3K4me3_XJ_immune_chunk1$count <- H3K4me3_XJ_immune_chunk1$coverage
 by.sample <- split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
+sapply(by.sample, nrow)
+
 max.segments <- 19L
 library(PeakSegDP)
-
 one.name <- "McGill0101"
 for(one.name in names(by.sample)){
   one <- by.sample[[one.name]]
@@ -608,22 +609,22 @@ for(total.segments in 2:max.segments){
     compare.cost$data.i <- timestep-1
     cost.model <- cost.models.list[[paste(total.segments, timestep-1)]]
     one.env <- MinEnvelope(compare.cost, cost.model)
-    ## gg <- ggplot()+
-    ##   ggtitle(paste(total.segments, "segments,", timestep, "data points"))+
-    ##   geom_line(aes(mean, cost),
-    ##             data=getLines(one.env),
-    ##             color="grey",
-    ##             size=2,
-    ##             alpha=0.5)+
-    ##   geom_line(aes(mean, cost,
-    ##                 color="compare.cost",
-    ##                 group=piece.i),
-    ##             data=getLines(compare.cost))+
-    ##   geom_line(aes(mean, cost,
-    ##                 group=piece.i,
-    ##                 color="cost.model"),
-    ##             data=getLines(cost.model))
-    ## print(gg)
+    gg <- ggplot()+
+      ggtitle(paste(total.segments, "segments,", timestep, "data points"))+
+      geom_line(aes(mean, cost),
+                data=getLines(one.env),
+                color="grey",
+                size=2,
+                alpha=0.5)+
+      geom_line(aes(mean, cost,
+                    color="compare.cost",
+                    group=piece.i),
+                data=getLines(compare.cost))+
+      geom_line(aes(mean, cost,
+                    group=piece.i,
+                    color="cost.model"),
+                data=getLines(cost.model))
+    print(gg)
     ## browser()
     stopifnot(one.env[, min.mean < max.mean])
     ## Now that we are done with this step, we can perform the
@@ -686,3 +687,76 @@ for(total.segments in seq(1, max.segments, by=2)){
   }#while(...
   cost.list[[paste(total.segments)]] <- cost.row
 }#for(total.segments
+
+Rcost.mat <- matrix(NA, max.segments, length(count.vec))
+Rintervals.mat <- matrix(NA, max.segments, length(count.vec))
+for(total.segments in 1:max.segments){
+  for(data.i in total.segments:length(count.vec)){
+    cat(sprintf("segments=%d data=%d\n", total.segments, data.i))
+    fun.dt <- cost.models.list[[paste(total.segments, data.i)]]
+    min.dt <- Minimize(fun.dt)
+    Rcost.mat[total.segments, data.i] <- min.dt$min.cost
+    Rintervals.mat[total.segments, data.i] <- nrow(fun.dt)
+  }
+}
+
+rbind(
+  pdpa=pdpa$cost.mat[9, length(count.vec)],
+  cdpa=peakseg$error$error[5],
+  Rpdpa=Rcost.mat[9, length(count.vec)])
+##save.image("H3K4me3_XJ_immune_chunk1_McGill0101.RData")
+
+load("H3K4me3_XJ_immune_chunk1_McGill0101.RData")
+plot(pdpa$intervals.mat[9,], Rintervals.mat[9,])
+plot(seq_along(count.vec), pdpa$intervals.mat[9,]-Rintervals.mat[9,])
+plot(seq_along(count.vec), pdpa$cost.mat[9,]-Rcost.mat[9,])
+int.dt <- data.table(
+  data.i=seq_along(count.vec),
+  Cintervals=pdpa$intervals.mat[9,],
+  Rintervals=Rintervals.mat[9,])
+
+##DP changes=8 data_i=69
+
+## problem is in second and third lines below.
+
+## new cost model
+##     Linear        Log   Constant   min_mean   max_mean     data_i
+##   0.000000   0.000000 -6971.609445   0.000000  18.923285 68
+##   2.000000 -46.000000 -6874.197928  18.923285  27.393617 67
+##   0.000000   0.000000 -6971.609445  27.393617  27.578431 68
+## 102.000000 -2813.000000 -453.792816  27.578431  28.098989 68
+## 100.000000 -2776.000000 -521.016981  28.098989  41.986537 68
+##  23.000000 -700.000000 -5046.790190  41.986537  43.548783 68
+##  20.000000 -610.000000 -5255.793199  43.548783  45.229517 68
+##   8.000000 -238.000000 -6131.009960  45.229517  46.760848 68
+##   2.000000 -46.000000 -6588.693755  46.760848  47.000000 68
+##     Linear        Log   Constant   min_mean   max_mean     data_i
+##   1.000000 -19.000000 -6971.609445   0.000000  18.923285 68
+##   3.000000 -65.000000 -6874.197928  18.923285  27.393617 67
+##   1.000000 -19.000000 -6971.609445  27.393617  27.578431 68
+## 103.000000 -2832.000000 -453.792816  27.578431  28.098989 68
+## 101.000000 -2795.000000 -521.016981  28.098989  41.986537 68
+##  24.000000 -719.000000 -5046.790190  41.986537  43.548783 68
+##  21.000000 -629.000000 -5255.793199  43.548783  45.229517 68
+##   9.000000 -257.000000 -6131.009960  45.229517  46.760848 68
+##   3.000000 -65.000000 -6588.693755  46.760848  47.000000 68
+
+## It should be:
+
+## > one.env
+##    Linear   Log   Constant min.mean max.mean data.i
+## 1:      0     0 -6971.6094  0.00000 18.92329     69
+## 2:      2   -46 -6874.1979 18.92329 27.67000     68
+## 3:    102 -2813  -453.7928 27.67000 28.09899     69
+## 4:    100 -2776  -521.0170 28.09899 41.98654     69
+## 5:     23  -700 -5046.7902 41.98654 43.54878     69
+## 6:     20  -610 -5255.7932 43.54878 45.22952     69
+## 7:      8  -238 -6131.0100 45.22952 46.76085     69
+## 8:      2   -46 -6588.6938 46.76085 47.00000     69
+## > 
+
+##          2 -46        -6874.1979    18.92329   27.67000  68 #good
+##   2.000000 -46.000000 -6874.197928  18.923285  27.393617 67 #bad
+
+## There is some problem in the min_env computation. TODO: insert
+## debug statements and check what part of the computation is bugging.

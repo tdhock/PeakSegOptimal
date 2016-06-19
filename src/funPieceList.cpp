@@ -282,11 +282,12 @@ void PiecewisePoissonLoss::findMean(double mean, int *seg_end, bool *equality_co
 
 void PiecewisePoissonLoss::print(){
   PoissonLossPieceList::iterator it;
-  printf("%d pieces\n", piece_list.size());
+  printf("%10s %10s %10s %10s %10s %10s\n",
+	 "Linear", "Log", "Constant", "min_mean", "max_mean", "data_i");
   for(it=piece_list.begin(); it != piece_list.end(); it++){
-    printf("Piece: [%f,%f] data_i=%d Linear=%f Log=%f Constant=%f\n",
-	   it->min_mean, it->max_mean, it->data_i,
-	   it->Linear, it->Log, it->Constant);
+    printf("%10f %10f %10f %10f %10f %d\n",
+	   it->Linear, it->Log, it->Constant,
+	   it->min_mean, it->max_mean, it->data_i);
   }
 }
   
