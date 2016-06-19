@@ -1,0 +1,6 @@
+TODOs
+
+2016.06.18
+
+First working C++ solver for Segment Neighborhood problem with Poisson
+Loss and PeakSeg constraint (PeakSegPDPA function).

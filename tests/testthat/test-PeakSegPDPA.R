@@ -39,36 +39,36 @@ test_that("third segment is OK", {
 data(H3K4me3_XJ_immune_chunk1)
 H3K4me3_XJ_immune_chunk1$count <- H3K4me3_XJ_immune_chunk1$coverage
 by.sample <- split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
-one <- by.sample[["McGill0024"]]
 max.segments <- 19L
 library(PeakSegDP)
-count.vec <- one$coverage
-weight.vec <- with(one, chromEnd-chromStart)
 
-library(microbenchmark)
-microbenchmark(
-  PDPA=pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments),
-  cDPA=cdpa <- cDPA(count.vec, weight.vec, max.segments),
-  times=10)
-str(cdpa$loss)
-str(pdpa$cost.mat)
-
-peakseg <- PeakSegDP(one, 9L)
-rbind(pdpa=pdpa$cost.mat[seq(1,max.segments,by=2), length(count.vec)],
-      cdpa=peakseg$error$error)
-
-library(data.table)
-intervals.dt <- data.table(
-  segments=as.numeric(row(pdpa$intervals.mat)),
-  data=as.numeric(col(pdpa$intervals.mat)),
-  intervals=as.numeric(pdpa$intervals.mat))
-positive.intervals <- intervals.dt[segments<data,]
-library(ggplot2)
-ggplot()+
-  theme_bw()+
-  theme(panel.margin=grid::unit(0, "lines"))+
-  facet_grid(segments ~ .)+
-  geom_line(aes(data, intervals), data=positive.intervals)
+one.name <- "McGill0101"
+for(one.name in names(by.sample)){
+  one <- by.sample[[one.name]]
+  count.vec <- one$coverage
+  weight.vec <- with(one, chromEnd-chromStart)
+  pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
+  peakseg <- PeakSegDP(one, 9L)
+  cost.mat <- rbind(
+    pdpa=pdpa$cost.mat[peakseg$error$segments, length(count.vec)],
+    cdpa=peakseg$error$error)
+  cdpa <- cDPA(count.vec, weight.vec, max.segments)
+  prob.segs <- 9
+  cost.prob <- data.frame(
+    data.i=seq_along(count.vec),
+    pdpa=pdpa$cost.mat[prob.segs,],
+    cdpa=cdpa$loss[prob.segs,])
+  cost.prob$should.be.positive <- with(cost.prob, cdpa-pdpa)
+  prob.labels <- subset(cost.prob, cdpa-pdpa < -1e-10)
+  ggplot()+
+    geom_line(aes(data.i,cdpa-pdpa),data=cost.prob)+
+    geom_point(aes(data.i,cdpa-pdpa),data=prob.labels,shape=1,color="red")
+  diff.vec <- apply(cost.mat, 2, diff)
+  min.diff <- min(diff.vec)
+  print(one.name)
+  print(min.diff)
+  ##expect_gt(min.diff, -1e-10)
+}
 
 ploss <- function(dt, x){
   ## need to make a new data table, otherwise ifelse may only get one
@@ -561,9 +561,9 @@ MinEnvelope <- function(dt1, dt2){
   do.call(rbind, new.dt.list)
 }
 
-input.dt <- data.table(count=data.vec, weight=1)
-max.segments <- 3
-
+library(data.table)
+input.dt <- data.table(count=count.vec, weight=weight.vec)
+max.segments <- 9L
 stopifnot(is.data.table(input.dt))
 stopifnot(2 <= max.segments && max.segments <= nrow(input.dt))
 stopifnot(c("weight", "count") %in% names(input.dt))
@@ -686,4 +686,3 @@ for(total.segments in seq(1, max.segments, by=2)){
   }#while(...
   cost.list[[paste(total.segments)]] <- cost.row
 }#for(total.segments
-

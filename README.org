@@ -9,4 +9,9 @@ devtools::install_github("tdhock/coseg")
 
 ** Usage
 
+#+BEGIN_SRC R
+## Linear time exact C++ solver for the PeakSeg problem.
+example(PeakSegPDPA)
+#+END_SRC
+
 
