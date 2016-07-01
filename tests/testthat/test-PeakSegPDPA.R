@@ -46,9 +46,9 @@ sapply(by.sample, nrow)
 ## load("H3K4me3_XJ_immune_chunk1_McGill0101.RData")
 ## timestep <- 422
 ## total.segments <- 9
-## max.segments <- 19L
 ## one.name <- "McGill0101"
 
+max.segments <- 19L
 for(one.name in names(by.sample)){
   one <- by.sample[[one.name]]
   count.vec <- one$coverage
