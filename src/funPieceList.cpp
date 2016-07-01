@@ -9,12 +9,12 @@
 #include <gsl/gsl_sf_result.h>
 #include <gsl/gsl_errno.h>
 
-// s//printf("%.90f",-1/exp(1))
+// s//printf("%a",-1/exp(1))
 // "-0.367879441171442334024277442949824035167694091796875000"
 #define POISSON_THRESH -0.367879441171442334024277442949824035167694091796875
 
 PoissonLossPiece::PoissonLossPiece
-(double li, double lo, double co, double m, double M, int i, bool a){
+(int li, int lo, double co, double m, double M, int i, bool a){
   Linear = li;
   Log = lo;
   Constant = co;
@@ -25,7 +25,7 @@ PoissonLossPiece::PoissonLossPiece
 }
 
 double PoissonLossPiece::getDiscriminant(double add_constant){
-  return Linear/Log*exp((add_constant-Constant)/Log);
+  return (double)Linear/(double)Log*exp((add_constant-Constant)/(double)Log);
 }
 
 double PoissonLossPiece::discriminant2mean_principal(double discriminant){
@@ -34,7 +34,7 @@ double PoissonLossPiece::discriminant2mean_principal(double discriminant){
   if(status != GSL_SUCCESS){
     throw status;
   }
-  return Log/Linear*result.val;
+  return (double)Log/(double)Linear*result.val;
 }
 
 double PoissonLossPiece::discriminant2mean_secondary(double discriminant){
@@ -43,11 +43,11 @@ double PoissonLossPiece::discriminant2mean_secondary(double discriminant){
   if(status != GSL_SUCCESS){
     throw status;
   }
-  return Log/Linear*result.val;
+  return (double)Log/(double)Linear*result.val;
 }
 
 double PoissonLossPiece::discriminant2mean_larger(double discriminant){
-  if(0 < Log/Linear){
+  if(0 < (double)Log/(double)Linear){
     return discriminant2mean_principal(discriminant);
   }else{
     return discriminant2mean_secondary(discriminant);
@@ -55,7 +55,7 @@ double PoissonLossPiece::discriminant2mean_larger(double discriminant){
 }
 
 double PoissonLossPiece::discriminant2mean_smaller(double discriminant){
-  if(0 < Log/Linear){
+  if(0 < (double)Log/(double)Linear){
     return discriminant2mean_secondary(discriminant);
   }else{
     return discriminant2mean_principal(discriminant);
@@ -63,22 +63,34 @@ double PoissonLossPiece::discriminant2mean_smaller(double discriminant){
 }
 
 double PoissonLossPiece::getMinMean(){
-  return - Log / Linear;
+  return - (double)Log / (double)Linear;
 }
 
-double PoissonLossPiece::PoissonLoss(double mean){
-  double loss = Linear*mean + Constant;
-  if(Log!=0){
-    loss += Log * log(mean);
+double PoissonLossPiece::PoissonLoss(double mean, int verbose){
+  double loss_without_log_term = (double)Linear*mean + Constant;
+  //verbose=0;
+  //if(verbose)printf("loss before adding log term %a\n", loss_without_log_term);
+  if(Log==0){
+    return loss_without_log_term;
   }
-  return loss;
+  //printf(""); //does not work here.
+  double log_mean_only = log(mean);
+  //printf(""); //does work here.
+  //if(log_mean_only < 0)return INFINITY;
+  //printf("log_mean_only=%a\n", log_mean_only);
+  double log_coef_only = (double)Log;
+  //if(verbose)printf("log_coef_only=%a\n", log_coef_only);
+  double product = log_mean_only * log_coef_only;
+  //if(verbose)printf("product=%a\n", product);
+  return loss_without_log_term + product;
 }
 
 double PoissonLossPiece::PoissonDeriv(double mean){
-  return Linear + Log/mean;
+  return Linear + (double)Log/mean;
 }
 
-void PiecewisePoissonLoss::set_to_min_less_of(PiecewisePoissonLoss *input){
+void PiecewisePoissonLoss::set_to_min_less_of
+(PiecewisePoissonLoss *input, int verbose){
   int prev_data_i = -2;
   piece_list.clear();
   PoissonLossPieceList::iterator it = input->piece_list.begin();
@@ -87,13 +99,14 @@ void PiecewisePoissonLoss::set_to_min_less_of(PiecewisePoissonLoss *input){
     if(prev_min_cost == INFINITY){
       // Look for min achieved in this interval.
       double mu = it->getMinMean();
+      //printf("getMinMean=%a\n", mu);
       if(mu <= it->min_mean){
 	/* The minimum is achieved before this interval, so this
 	   function is always increasing in this interval. We don't
 	   need to store it, but we do need to keep track of the
 	   minimum cost, which occurs at the min mean value in this
 	   interval. */
-	prev_min_cost = it->PoissonLoss(it->min_mean);
+	prev_min_cost = it->PoissonLoss(it->min_mean, verbose);
 	prev_data_i = it->data_i;
       }else if(mu < it->max_mean){
 	// Minimum in this interval, so add a convex piece up to the
@@ -103,7 +116,8 @@ void PiecewisePoissonLoss::set_to_min_less_of(PiecewisePoissonLoss *input){
 	  (it->Linear, it->Log, it->Constant, prev_min_mean, mu,
 	   it->data_i, true); // equality constraint active on convex piece.
 	prev_min_mean = mu;
-	prev_min_cost = it->PoissonLoss(mu);
+	prev_min_cost = it->PoissonLoss(mu, verbose);
+	if(verbose)printf("prev_min_cost=%a\n", prev_min_cost);
 	prev_data_i = it->data_i;
       }else{
 	// Minimum after this interval, so this function is
@@ -146,7 +160,7 @@ void PiecewisePoissonLoss::set_to_min_less_of(PiecewisePoissonLoss *input){
 	    // interval, so the constant interval ends here, and we
 	    // can store it immediately.
 	    piece_list.emplace_back
-	      (0.0, 0.0, prev_min_cost, prev_min_mean, mu, prev_data_i,
+	      (0, 0, prev_min_cost, prev_min_mean, mu, prev_data_i,
 	       false);// equality constraint inactive on constant piece.
 	    prev_min_cost = INFINITY;
 	    prev_min_mean = mu;
@@ -162,12 +176,13 @@ void PiecewisePoissonLoss::set_to_min_less_of(PiecewisePoissonLoss *input){
     // the end, because the end is the maximum observed data.
     it--;
     piece_list.emplace_back
-      (0.0, 0.0, prev_min_cost, prev_min_mean, it->max_mean, prev_data_i,
+      (0, 0, prev_min_cost, prev_min_mean, it->max_mean, prev_data_i,
        false);//equality constraint inactive on constant piece.
   }
 }
 
 void PiecewisePoissonLoss::set_to_min_more_of(PiecewisePoissonLoss *input){
+  int verbose=false;
   int prev_data_i = -2;
   piece_list.clear();
   PoissonLossPieceList::iterator it = input->piece_list.end();
@@ -183,7 +198,7 @@ void PiecewisePoissonLoss::set_to_min_more_of(PiecewisePoissonLoss *input){
 	/* The minimum is achieved after this interval, so this
 	   function is always decreasing in this interval. We don't
 	   need to store it. */
-	prev_min_cost = it->PoissonLoss(it->max_mean);
+	prev_min_cost = it->PoissonLoss(it->max_mean, verbose);
 	prev_data_i = it->data_i;
       }else if(it->min_mean < mu){
 	// Minimum in this interval, so add a convex piece up to the
@@ -193,7 +208,7 @@ void PiecewisePoissonLoss::set_to_min_more_of(PiecewisePoissonLoss *input){
 	  (it->Linear, it->Log, it->Constant, mu, prev_max_mean, 
 	   it->data_i, true); // equality constraint active on convex piece.
 	prev_max_mean = mu;
-	prev_min_cost = it->PoissonLoss(mu);
+	prev_min_cost = it->PoissonLoss(mu, verbose);
 	prev_data_i = it->data_i;
       }else{
 	// Minimum before this interval, so this function is
@@ -233,7 +248,7 @@ void PiecewisePoissonLoss::set_to_min_more_of(PiecewisePoissonLoss *input){
 	// interval, so the constant interval ends here, and we
 	// can store it immediately.
 	piece_list.emplace_front
-	  (0.0, 0.0, prev_min_cost,
+	  (0, 0, prev_min_cost,
 	   mu, prev_max_mean,
 	   prev_data_i,
 	   false);// equality constraint inactive on constant piece.
@@ -247,14 +262,14 @@ void PiecewisePoissonLoss::set_to_min_more_of(PiecewisePoissonLoss *input){
     // ending on a constant piece -- we never have a convex piece at
     // the start, because the end is the min observed data.
     piece_list.emplace_front
-      (0.0, 0.0, prev_min_cost,
+      (0, 0, prev_min_cost,
        it->min_mean, prev_max_mean,
        prev_data_i,
        false);//equality constraint inactive on constant piece.
   }
 }
 
-void PiecewisePoissonLoss::add(double Linear, double Log, double Constant){
+void PiecewisePoissonLoss::add(int Linear, int Log, double Constant){
   PoissonLossPieceList::iterator it;
   for(it=piece_list.begin(); it != piece_list.end(); it++){
     it->Linear += Linear;
@@ -285,7 +300,7 @@ void PiecewisePoissonLoss::print(){
   printf("%10s %10s %10s %10s %10s %10s\n",
 	 "Linear", "Log", "Constant", "min_mean", "max_mean", "data_i");
   for(it=piece_list.begin(); it != piece_list.end(); it++){
-    printf("%10f %10f %10f %10f %10f %d\n",
+    printf("%10d %10d %10f %10f %10f %d\n",
 	   it->Linear, it->Log, it->Constant,
 	   it->min_mean, it->max_mean, it->data_i);
   }
@@ -297,12 +312,13 @@ void PiecewisePoissonLoss::Minimize(double *best_cost,
 	      int *data_i,
 	      bool *equality_constraint_active){
   double candidate_cost, candidate_mean;
+  int verbose=false;
   PoissonLossPieceList::iterator it;
   *best_cost = INFINITY;
   for(it=piece_list.begin(); it != piece_list.end(); it++){
     candidate_mean = it->getMinMean();
     if(it->min_mean <= candidate_mean && candidate_mean <= it->max_mean){
-      candidate_cost = it->PoissonLoss(candidate_mean);
+      candidate_cost = it->PoissonLoss(candidate_mean, verbose);
       if(candidate_cost < *best_cost){
 	*best_cost = candidate_cost;
 	*best_mean = candidate_mean;
@@ -314,14 +330,18 @@ void PiecewisePoissonLoss::Minimize(double *best_cost,
 }
 
 void PiecewisePoissonLoss::set_to_min_env_of
-(PiecewisePoissonLoss *fun1, PiecewisePoissonLoss *fun2){
+(PiecewisePoissonLoss *fun1, PiecewisePoissonLoss *fun2, int verbose){
   PoissonLossPieceList::iterator
     it1 = fun1->piece_list.begin(),
     it2 = fun2->piece_list.begin();
   piece_list.clear();
   while(it1 != fun1->piece_list.end() &&
 	it2 != fun2->piece_list.end()){
-    push_min_pieces(fun1, fun2, it1, it2);
+    push_min_pieces(fun1, fun2, it1, it2, verbose);
+    if(verbose){
+      print();
+      printf("------\n");
+    }
     double last_max_mean = piece_list.back().max_mean;
     if(it1->max_mean == last_max_mean){
       it1++;
@@ -339,13 +359,20 @@ bool sameFuns
     it1->Log == it2->Log &&
     it1->Constant == it2->Constant;
 }
-  
+
+bool sameSigns(double x, double y){
+  return
+    (x  < 0 && y < 0) ||
+    (0  < x && 0 < y) ||
+    (x == 0 && y == 0);
+}
 
 void PiecewisePoissonLoss::push_min_pieces
 (PiecewisePoissonLoss *fun1,
  PiecewisePoissonLoss *fun2,
  PoissonLossPieceList::iterator it1,
- PoissonLossPieceList::iterator it2){
+ PoissonLossPieceList::iterator it2,
+ int verbose){
   bool same_at_left;
   double last_min_mean;
   PoissonLossPieceList::iterator prev2 = it2;
@@ -400,7 +427,7 @@ void PiecewisePoissonLoss::push_min_pieces
     // The functions are exactly equal over the entire interval so we
     // can push either of them.
     push_piece(it1, last_min_mean, first_max_mean);
-    //printf("exactly equal over entire interval\n");
+    if(verbose)printf("exactly equal over entire interval\n");
     return;
   }
   PoissonLossPiece diff_piece
@@ -409,6 +436,8 @@ void PiecewisePoissonLoss::push_min_pieces
      it1->Constant - it2->Constant,
      last_min_mean, first_max_mean,
      -5, false);
+  // printf("it1->Constant=%a\nit2->Constant=%a\n",
+  // 	 it1->Constant, it2->Constant);
   if(diff_piece.Log == 0){
     if(diff_piece.Linear == 0){
       // They are offset by a Constant.
@@ -417,7 +446,7 @@ void PiecewisePoissonLoss::push_min_pieces
       }else{
 	push_piece(it2, last_min_mean, first_max_mean);
       }
-      //printf("offset by a constant\n");
+      if(verbose)printf("offset by a constant\n");
       return;
     }
     if(diff_piece.Constant == 0){
@@ -427,10 +456,10 @@ void PiecewisePoissonLoss::push_min_pieces
       }else{
 	push_piece(it2, last_min_mean, first_max_mean);
       }
-      //printf("only diff is linear coef\n");
+      if(verbose)printf("only diff is linear coef\n");
       return;
     }
-    double mean_at_equal_cost = -diff_piece.Constant/diff_piece.Linear;
+    double mean_at_equal_cost = -diff_piece.Constant/(double)diff_piece.Linear;
     if(last_min_mean < mean_at_equal_cost &&
        mean_at_equal_cost < first_max_mean){
       // the root is in the interval, so we need to add two intervals.
@@ -441,7 +470,7 @@ void PiecewisePoissonLoss::push_min_pieces
 	push_piece(it2, last_min_mean, mean_at_equal_cost);
 	push_piece(it1, mean_at_equal_cost, first_max_mean);
       }
-      //printf("Log zero with one root in interval\n");
+      if(verbose)printf("Log zero with one root in interval\n");
       return;
     }
     // the root is outside the interval, so one is completely above
@@ -451,33 +480,27 @@ void PiecewisePoissonLoss::push_min_pieces
     }else{
       push_piece(it2, last_min_mean, first_max_mean);
     }
-    //printf("Log zero with no roots in interval\n");
+    if(verbose)printf("Log zero with no roots in interval\n");
     return;
   }//if(diff->Log == 0
-  double cost_diff_left = diff_piece.PoissonLoss(last_min_mean);
-  double cost_diff_right = diff_piece.PoissonLoss(first_max_mean);
+  double cost_diff_left = diff_piece.PoissonLoss(last_min_mean, false);
+  double cost_diff_right = diff_piece.PoissonLoss(first_max_mean, false);
   double discriminant = diff_piece.getDiscriminant(0.0);
   bool two_roots = POISSON_THRESH < discriminant;
+  if(verbose)printf("discriminant=%a two_roots=%d Linear=%d Log=%d\nConstant=%a\n", discriminant, two_roots, diff_piece.Linear, diff_piece.Log, diff_piece.Constant);
   bool fun1_min_on_right;
   if(!same_at_right){
     fun1_min_on_right = cost_diff_right < 0;
   }else{
-    // They are equal on the right limit, so use the first and second
-    // derivatives to see which is minimal just before the right
-    // limit. Do we need to check if they intersect before the right
-    // limit? Only if the sign of the slope of the more curved
-    // function is positive. And in that case we just need to check
-    // the smaller root.
-    double deriv1_right = it1->PoissonDeriv(first_max_mean);
-    double deriv2_right = it2->PoissonDeriv(first_max_mean);
-    bool maybe_cross = (it2->Log < it1->Log && 0 < deriv2_right) ||
-				    (it1->Log < it2->Log && 0 < deriv1_right);
-    if(two_roots && maybe_cross){
+    // they are equal on the right, but we don't know if there is
+    // another crossing point somewhere to the left.
+    if(two_roots){
       // there could be a crossing point to the left.
       double mean_at_equal_cost =
-	diff_piece.discriminant2mean_smaller(discriminant);
+      	diff_piece.discriminant2mean_smaller(discriminant);
+      if(verbose)printf("smaller_mean=%a\n", mean_at_equal_cost);
       if(last_min_mean < mean_at_equal_cost &&
-	 mean_at_equal_cost && first_max_mean){
+      	 mean_at_equal_cost && first_max_mean){
 	//the cross point is in the interval.
 	if(cost_diff_left < 0){
 	  push_piece(it1, last_min_mean, mean_at_equal_cost);
@@ -486,28 +509,16 @@ void PiecewisePoissonLoss::push_min_pieces
 	  push_piece(it2, last_min_mean, mean_at_equal_cost);
 	  push_piece(it1, mean_at_equal_cost, first_max_mean);
 	}
-	//printf("equal on the right with one crossing in interval\n");
+	if(verbose)printf("equal on the right with one crossing in interval\n");
 	return;
       }
-    }//if(two_roots && maybe cross
-    bool fun1_min_before_right;
-    if((deriv1_right < 0 && deriv2_right < 0) ||
-       (0 < deriv1_right && 0 < deriv2_right)){
-      // the derivatives have the same sign on the right, so are
-      // certainly not equal on the left, and we can just compare
-      // their cost values on the left to determine which is larger.
-      fun1_min_before_right = cost_diff_left < 0;
-    }else{
-      // the derivatives have the same sign, so we can compare them to
-      // determine which function is larger.
-      fun1_min_before_right = deriv2_right < deriv1_right;
-    }
-    if(fun1_min_before_right){
+    }//if(two_roots
+    if(cost_diff_left < 0){
       push_piece(it1, last_min_mean, first_max_mean);
     }else{
       push_piece(it2, last_min_mean, first_max_mean);
     }
-    //printf("equal on the right with no crossing in interval\n");
+    if(verbose)printf("equal on the right with no crossing in interval\n");
     return;
   }
   bool fun1_min_on_left;
@@ -515,16 +526,13 @@ void PiecewisePoissonLoss::push_min_pieces
     fun1_min_on_left = cost_diff_left < 0;
   }else{
     // equal on the left.
-    double deriv1_left = it1->PoissonDeriv(last_min_mean);
-    double deriv2_left = it2->PoissonDeriv(last_min_mean);
-    bool maybe_cross = (it2->Log < it1->Log && deriv2_left < 0) ||
-      (it1->Log < it2->Log && deriv1_left < 0);
-    if(two_roots && maybe_cross){
+    if(two_roots){
       // There could be a crossing point to the right.
       double mean_at_equal_cost =
-	diff_piece.discriminant2mean_larger(discriminant);
+      	diff_piece.discriminant2mean_larger(discriminant);
+      if(verbose)printf("larger_mean=%a\n", mean_at_equal_cost);
       if(last_min_mean < mean_at_equal_cost &&
-	 mean_at_equal_cost < first_max_mean){
+      	 mean_at_equal_cost < first_max_mean){
 	// the crossing point is in this interval.
 	if(cost_diff_right < 0){
 	  push_piece(it2, last_min_mean, mean_at_equal_cost);
@@ -533,62 +541,65 @@ void PiecewisePoissonLoss::push_min_pieces
 	  push_piece(it1, last_min_mean, mean_at_equal_cost);
 	  push_piece(it2, mean_at_equal_cost, first_max_mean);
 	}
-	//printf("equal on the left with crossing in interval\n");
+	if(verbose)printf("equal on the left with crossing in interval\n");
 	return;
       }
     }//if(there may be crossing
-    bool fun1_min_after_left;
-    if((deriv1_left < 0 && deriv2_left < 0) ||
-       (0 < deriv1_left && 0 < deriv2_left)){
-      fun1_min_after_left = cost_diff_right < 0;
-    }else{
-      fun1_min_after_left = deriv1_left < deriv2_left;
-    }
-    if(fun1_min_after_left){
+    if(cost_diff_right < 0){
       push_piece(it1, last_min_mean, first_max_mean);
     }else{
       push_piece(it2, last_min_mean, first_max_mean);
     }
-    //printf("equal on the left with no crossing in interval\n");
+    if(verbose)printf("equal on the left with no crossing in interval\n");
     return;
   }
   // The only remaining case is that the curves are equal neither on
   // the left nor on the right of the interval. However they may be
   // equal inside the interval, so let's check for that.
   double first_mean = INFINITY, second_mean = INFINITY;
+  bool smaller_on_left = false;
   if(two_roots){
     double larger_mean = diff_piece.discriminant2mean_larger(discriminant);
     bool larger_inside =
       last_min_mean < larger_mean && larger_mean < first_max_mean;
     double smaller_mean = diff_piece.discriminant2mean_smaller(discriminant);
+    if(verbose)printf("smaller_mean=%a\nlarger_mean=%a\n",
+		      smaller_mean, larger_mean);
     bool smaller_inside =
       last_min_mean < smaller_mean && smaller_mean < first_max_mean;
+    smaller_on_left = last_min_mean == smaller_mean;
     if(larger_inside){
       if(smaller_inside){
 	// both are in the interval.
 	first_mean = smaller_mean;
 	second_mean = larger_mean;
-	//printf("%f and %f in [%f,%f]\n",
-	//smaller_mean, larger_mean,
-	//last_min_mean, first_max_mean);
+	if(verbose){
+	  printf("%f and %f in [%f,%f]\n",
+		 smaller_mean, larger_mean,
+		 last_min_mean, first_max_mean);
+	}
       }else{
 	// smaller mean is not in the interval, but the larger is.
 	first_mean = larger_mean;
-	//printf("%f in [%f,%f]\n",
-	//first_mean,
-	//last_min_mean, first_max_mean);
+	if(verbose){
+	  printf("%f in [%f,%f]\n",
+		 first_mean,
+		 last_min_mean, first_max_mean);
+	}
       }
     }else{
       // larger mean is not in the interval
       if(smaller_inside){
 	// smaller mean is in the interval, but not the larger.
 	first_mean = smaller_mean;
-	//printf("%f in [%f,%f]\n",
-	//first_mean,
-	//last_min_mean, first_max_mean);
+	if(verbose){
+	  printf("%f in [%f,%f]\n",
+		 first_mean,
+		 last_min_mean, first_max_mean);
+	}
       }
     }
-  }
+  }//if(two_roots
   if(second_mean != INFINITY){
     // two crossing points.
     if(fun1_min_on_left){
@@ -600,7 +611,7 @@ void PiecewisePoissonLoss::push_min_pieces
       push_piece(it1, first_mean, second_mean);
       push_piece(it2, second_mean, first_max_mean);
     }
-    //printf("not equal on the sides, 2 crossing points\n");
+    if(verbose)printf("not equal on the sides, 2 crossing points\n");
   }else if(first_mean != INFINITY){
     // one crossing point.
     if(fun1_min_on_left){
@@ -610,15 +621,22 @@ void PiecewisePoissonLoss::push_min_pieces
       push_piece(it2, last_min_mean, first_mean);
       push_piece(it1, first_mean, first_max_mean);
     }
-    //printf("not equal on the sides, 1 crossing point\n");
+    if(verbose)printf("not equal on the sides, 1 crossing point\n");
   }else{
-    // zero crossing points.
-    if(fun1_min_on_left){
+    // "zero" crossing points. actually there may be a crossing point
+    // in the interval that is numerically so close as to be identical
+    // with last_min_mean or first_max_mean.
+    bool fun1_min = fun1_min_on_left;
+    if(smaller_on_left){
+      if(verbose)printf("smaller on left activated!\n");
+      fun1_min = fun1_min_on_right;
+    }
+    if(fun1_min){
       push_piece(it1, last_min_mean, first_max_mean);
     }else{
       push_piece(it2, last_min_mean, first_max_mean);
     }
-    //printf("not equal on the sides, zero crossing points\n");
+    if(verbose)printf("not equal on the sides, zero crossing points\n");
   }
 }
 

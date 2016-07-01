@@ -10,22 +10,22 @@
 
 class PoissonLossPiece {
  public:
-  double Linear;
-  double Log;
+  int Linear;
+  int Log;
   double Constant;
   double min_mean;
   double max_mean;
   int data_i;
   bool equality_constraint_active;
   PoissonLossPiece
-    (double li, double lo, double co, double m, double M, int i, bool a);
+    (int li, int lo, double co, double m, double M, int i, bool a);
   double getDiscriminant(double add_constant);
   double discriminant2mean_principal(double discriminant);
   double discriminant2mean_secondary(double discriminant);
   double discriminant2mean_larger(double discriminant);
   double discriminant2mean_smaller(double discriminant);
   double getMinMean();
-  double PoissonLoss(double mean);
+  double PoissonLoss(double mean, int);
   double PoissonDeriv(double);
 };
 
@@ -34,14 +34,14 @@ typedef std::list<PoissonLossPiece> PoissonLossPieceList;
 class PiecewisePoissonLoss {
  public:
   PoissonLossPieceList piece_list;
-  void set_to_min_less_of(PiecewisePoissonLoss *);
+  void set_to_min_less_of(PiecewisePoissonLoss *, int);
   void set_to_min_more_of(PiecewisePoissonLoss *);
-  void set_to_min_env_of(PiecewisePoissonLoss *, PiecewisePoissonLoss *);
+  void set_to_min_env_of(PiecewisePoissonLoss *, PiecewisePoissonLoss *, int);
   void push_min_pieces
     (PiecewisePoissonLoss *, PiecewisePoissonLoss *,
-     PoissonLossPieceList::iterator, PoissonLossPieceList::iterator);
+     PoissonLossPieceList::iterator, PoissonLossPieceList::iterator, int);
   void push_piece(PoissonLossPieceList::iterator, double, double);
-  void add(double Linear, double Log, double Constant);
+  void add(int Linear, int Log, double Constant);
   void print();
   void set_prev_seg_end(int prev_seg_end);
   void findMean(double mean, int *seg_end, bool *equality_constraint_active);

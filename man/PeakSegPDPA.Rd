@@ -9,7 +9,7 @@ Programming Algorithm.}
 \arguments{
   \item{count.vec}{integer vector of count data.}
   \item{weight.vec}{numeric vector (same length as count.vec) of positive weights.}
-  \item{max.segments}{integer of length 1: maximum number of segments.}
+  \item{max.segments}{integer of length 1: maximum number of segments (must be >= 2).}
 }
 
 

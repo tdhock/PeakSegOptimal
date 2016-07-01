@@ -5,7 +5,7 @@
 extern "C" {
 
   void PeakSegPDPA_interface
-  (double *data_ptr, double *weight_ptr,
+  (int *data_ptr, int *weight_ptr,
    int *data_count, int *maxSegments,
    double *cost_mat, int *end_mat,
    double *mean_mat, int *intervals_mat

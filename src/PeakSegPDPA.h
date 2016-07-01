@@ -1,5 +1,5 @@
 void PeakSegPDPA
-(double *data_vec, double *weight_vec, int data_count,
+(int *data_vec, int *weight_vec, int data_count,
  int maxSegments,
  // the following matrices are for output, data_count x maxSegments.
  double *cost_mat,
