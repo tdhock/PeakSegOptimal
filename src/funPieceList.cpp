@@ -98,36 +98,59 @@ void PiecewisePoissonLoss::set_to_min_less_of
   while(it != input->piece_list.end()){
     if(prev_min_cost == INFINITY){
       // Look for min achieved in this interval.
-      double mu = it->getMinMean();
-      //printf("getMinMean=%a\n", mu);
-      if(mu <= it->min_mean){
-	/* The minimum is achieved before this interval, so this
-	   function is always increasing in this interval. We don't
-	   need to store it, but we do need to keep track of the
-	   minimum cost, which occurs at the min mean value in this
-	   interval. */
-	prev_min_cost = it->PoissonLoss(it->min_mean, verbose);
-	prev_data_i = it->data_i;
-      }else if(mu < it->max_mean){
-	// Minimum in this interval, so add a convex piece up to the
-	// min, and keep track of the min cost to create a constant
-	// piece later.
-	piece_list.emplace_back
-	  (it->Linear, it->Log, it->Constant, prev_min_mean, mu,
-	   it->data_i, true); // equality constraint active on convex piece.
-	prev_min_mean = mu;
-	prev_min_cost = it->PoissonLoss(mu, verbose);
-	if(verbose)printf("prev_min_cost=%a\n", prev_min_cost);
-	prev_data_i = it->data_i;
+      if(it->Log==0){
+	// degenerate linear function. since the Linear coef is never
+	// negative, we know that this function must be increasing or
+	// numerically constant on this interval.
+	double cost_left = it->PoissonLoss(it->min_mean, verbose);
+	double cost_right = it->PoissonLoss(it->max_mean, verbose);
+	//printf("DEGENERATE LINEAR FUNCTION IN MIN LESS\n");
+	if(cost_left==cost_right){
+	  //printf("NUMERICALLY EQUAL\n");
+	  // store this numerically constant interval.
+	  piece_list.emplace_back
+	    (it->Linear, it->Log, it->Constant, prev_min_mean, it->max_mean,
+	     it->data_i, true); // equality constraint active on convex piece.
+	  prev_min_mean = it->max_mean;
+	}else{
+	  //printf("NUMERICALLY INCREASING\n");
+	  // don't store this interval, but store its min cost as a
+	  // constant.
+	  prev_min_cost = cost_left;
+	  prev_data_i = it->data_i;
+	}
       }else{
-	// Minimum after this interval, so this function is
-	// decreasing on this entire interval, and so we can just
-	// store it as is.
-	piece_list.emplace_back
-	  (it->Linear, it->Log, it->Constant, prev_min_mean, it->max_mean,
-	   it->data_i, true); // equality constraint active on convex piece.
-	prev_min_mean = it->max_mean;
-      }
+	double mu = it->getMinMean();
+	//printf("getMinMean=%a\n", mu);
+	if(mu <= it->min_mean){
+	  /* The minimum is achieved on the left or before this
+	     interval, so this function is always increasing in this
+	     interval. We don't need to store it, but we do need to keep
+	     track of the minimum cost, which occurs at the min mean
+	     value in this interval. */
+	  prev_min_cost = it->PoissonLoss(it->min_mean, verbose);
+	  prev_data_i = it->data_i;
+	}else if(mu < it->max_mean){
+	  // Minimum in this interval, so add a convex piece up to the
+	  // min, and keep track of the min cost to create a constant
+	  // piece later.
+	  piece_list.emplace_back
+	    (it->Linear, it->Log, it->Constant, prev_min_mean, mu,
+	     it->data_i, true); // equality constraint active on convex piece.
+	  prev_min_mean = mu;
+	  prev_min_cost = it->PoissonLoss(mu, verbose);
+	  if(verbose)printf("prev_min_cost=%a\n", prev_min_cost);
+	  prev_data_i = it->data_i;
+	}else{
+	  // Minimum after this interval, so this function is
+	  // decreasing on this entire interval, and so we can just
+	  // store it as is.
+	  piece_list.emplace_back
+	    (it->Linear, it->Log, it->Constant, prev_min_mean, it->max_mean,
+	     it->data_i, true); // equality constraint active on convex piece.
+	  prev_min_mean = it->max_mean;
+	}//if(non-degenerate mu in interval
+      }//if(degenerate linear cost.
     }else{//prev_min_cost is finite
       // Look for a function with prev_min_cost in its interval.
       if(it->Log==0){
@@ -193,32 +216,43 @@ void PiecewisePoissonLoss::set_to_min_more_of(PiecewisePoissonLoss *input){
     it--;
     if(prev_min_cost == INFINITY){
       // Look for min achieved in this interval.
-      double mu = it->getMinMean();
-      if(it->max_mean <= mu){
-	/* The minimum is achieved after this interval, so this
-	   function is always decreasing in this interval. We don't
-	   need to store it. */
-	prev_min_cost = it->PoissonLoss(it->max_mean, verbose);
-	prev_data_i = it->data_i;
-      }else if(it->min_mean < mu){
-	// Minimum in this interval, so add a convex piece up to the
-	// min, and keep track of the min cost to create a constant
-	// piece later.
-	piece_list.emplace_front
-	  (it->Linear, it->Log, it->Constant, mu, prev_max_mean, 
-	   it->data_i, true); // equality constraint active on convex piece.
-	prev_max_mean = mu;
-	prev_min_cost = it->PoissonLoss(mu, verbose);
-	prev_data_i = it->data_i;
-      }else{
-	// Minimum before this interval, so this function is
-	// increasing on this entire interval, and so we can just
-	// store it as is.
+      if(it->Log==0){
+	//degenerate Linear function. since the Linear coef is never
+	//negative, we know that this function must be increasing or
+	//numerically constant on this interval. In both cases we
+	//should just store this interval.
 	piece_list.emplace_front
 	  (it->Linear, it->Log, it->Constant, it->min_mean, prev_max_mean,
 	   it->data_i, true); // equality constraint active on convex piece.
 	prev_max_mean = it->min_mean;
-      }
+      }else{
+	double mu = it->getMinMean();
+	if(it->max_mean <= mu){
+	  /* The minimum is achieved after this interval, so this
+	     function is always decreasing in this interval. We don't
+	     need to store it. */
+	  prev_min_cost = it->PoissonLoss(it->max_mean, verbose);
+	  prev_data_i = it->data_i;
+	}else if(it->min_mean < mu){
+	  // Minimum in this interval, so add a convex piece up to the
+	  // min, and keep track of the min cost to create a constant
+	  // piece later.
+	  piece_list.emplace_front
+	    (it->Linear, it->Log, it->Constant, mu, prev_max_mean, 
+	     it->data_i, true); // equality constraint active on convex piece.
+	  prev_max_mean = mu;
+	  prev_min_cost = it->PoissonLoss(mu, verbose);
+	  prev_data_i = it->data_i;
+	}else{
+	  // Minimum before this interval, so this function is
+	  // increasing on this entire interval, and so we can just
+	  // store it as is.
+	  piece_list.emplace_front
+	    (it->Linear, it->Log, it->Constant, it->min_mean, prev_max_mean,
+	     it->data_i, true); // equality constraint active on convex piece.
+	  prev_max_mean = it->min_mean;
+	}
+      }//if(degenerate linear)else
     }else{//prev_min_cost is finite
       // Look for a function with prev_min_cost in its interval.
       double mu = INFINITY;
@@ -311,7 +345,7 @@ void PiecewisePoissonLoss::print(){
   printf("%10s %10s %10s %10s %10s %10s\n",
 	 "Linear", "Log", "Constant", "min_mean", "max_mean", "data_i");
   for(it=piece_list.begin(); it != piece_list.end(); it++){
-    printf("%10d %10d %10f %10f %10f %d\n",
+    printf("%10d %10d %20f %30.25f %30.25f %d\n",
 	   it->Linear, it->Log, it->Constant,
 	   it->min_mean, it->max_mean, it->data_i);
   }
@@ -346,6 +380,10 @@ int PiecewisePoissonLoss::check_min_of
   PoissonLossPieceList::iterator it;
   int verbose = 0;
   for(it = piece_list.begin(); it != piece_list.end(); it++){
+    if(it->min_mean == it->max_mean){
+      printf("min_mean=max_mean=%15.10f min\n", it->min_mean);
+      return 2;
+    }
     double mid_mean = (it->min_mean + it->max_mean)/2;
     double cost_min = it->PoissonLoss(mid_mean, verbose);
     double cost_prev = prev->findCost(mid_mean);
@@ -366,6 +404,10 @@ int PiecewisePoissonLoss::check_min_of
     }
   }
   for(it = prev->piece_list.begin(); it != prev->piece_list.end(); it++){
+    if(it->min_mean == it->max_mean){
+      printf("min_mean=max_mean=%15.10f prev\n", it->min_mean);
+      return 2;
+    }
     double mid_mean = (it->min_mean + it->max_mean)/2;
     double cost_prev = it->PoissonLoss(mid_mean, verbose);
     double cost_min = findCost(mid_mean);
@@ -378,6 +420,10 @@ int PiecewisePoissonLoss::check_min_of
     }
   }
   for(it = model->piece_list.begin(); it != model->piece_list.end(); it++){
+    if(it->min_mean == it->max_mean){
+      printf("min_mean=max_mean=%15.10f model\n", it->min_mean);
+      return 2;
+    }
     double mid_mean = (it->min_mean + it->max_mean)/2;
     double cost_model = it->PoissonLoss(mid_mean, verbose);
     double cost_min = findCost(mid_mean);
@@ -487,12 +533,15 @@ void PiecewisePoissonLoss::push_min_pieces
     }
   }
   if(last_min_mean == first_max_mean){
-    // we should probably never get here...
-    printf("prev\n");
-    fun1->print();
-    printf("model\n");
-    fun2->print();
-    printf("interval size 0!-----------------\n");
+    // we should probably never get here, but if we do, no need to
+    // store this interval.
+    if(verbose){
+      printf("prev\n");
+      fun1->print();
+      printf("model\n");
+      fun2->print();
+      printf("interval size 0!-----------------\n");
+    }
     return;
   }
   if(sameFuns(it1, it2)){

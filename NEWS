@@ -1,5 +1,9 @@
 TODOs
 
+2016.07.03
+
+Some bugs fixed in the min env and min less computations.
+
 2016.06.18
 
 First working C++ solver for Segment Neighborhood problem with Poisson

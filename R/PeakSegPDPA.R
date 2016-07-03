@@ -1,7 +1,7 @@
 PeakSegPDPA <- structure(function
 ### Compute the PeakSeg constrained, Poisson loss, Segment Neighborhood
 ### model using a constrained version of the Pruned Dynamic
-### Programming Algorithm.
+### Programming Algorithm. 
 (count.vec,
 ### integer vector of count data.
  weight.vec=rep(1, length(count.vec)),
