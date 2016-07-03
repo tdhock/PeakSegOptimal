@@ -1,4 +1,3 @@
-library(data.table)
 library(PeakSegDP)
 library(coseg)
 data.vec <- as.integer(c(1, 10, 14, 13))
@@ -48,6 +47,16 @@ sapply(by.sample, nrow)
 ## total.segments <- 9
 ## one.name <- "McGill0101"
 
+ggplot()+
+  theme_bw()+
+  theme(panel.margin=grid::unit(0, "lines"))+
+  facet_grid(sample.id ~ ., scales="free", labeller=function(df){
+    df$sample.id <- sub("McGill0", "", df$sample.id)
+    df
+  })+
+  geom_step(aes(chromStart/1e3, coverage),
+            data=H3K4me3_XJ_immune_chunk1, color="grey")
+
 max.segments <- 19L
 for(one.name in names(by.sample)){
   one <- by.sample[[one.name]]
@@ -55,6 +64,18 @@ for(one.name in names(by.sample)){
   weight.vec <- with(one, chromEnd-chromStart)
   pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
   peakseg <- PeakSegDP(one, 9L)
+  seg.vec <- seq(1,19,by=2)
+  all.loss <- data.frame(
+    pdpa=pdpa$cost.mat[seg.vec,length(count.vec)],
+    dp=NA,
+    row.names=seg.vec)
+  is.feasible <- function(loss.vec){
+    !any(diff(loss.vec) == 0, na.rm=TRUE)
+  }
+  all.loss$pdpa.feasible <- apply(pdpa$mean.mat[seg.vec,], 1, is.feasible)
+  all.loss[paste(peakseg$error$segments), "dp"] <- peakseg$error$error
+  all.loss$pdpa.better <- with(all.loss, dp - pdpa)
+  ##print(subset(all.loss, pdpa.feasible & is.na(dp)))
   cost.mat <- rbind(
     pdpa=pdpa$cost.mat[peakseg$error$segments, length(count.vec)],
     cdpa=peakseg$error$error)
@@ -70,13 +91,15 @@ for(one.name in names(by.sample)){
   ##   geom_line(aes(data.i,cdpa-pdpa),data=cost.prob)+
   ##   geom_point(aes(data.i,cdpa-pdpa),data=prob.labels,shape=1,color="red")
   ## print(gg)
-  ## print(one.name)
+  ##print(one.name)
   ## print(min.diff)
   diff.vec <- apply(cost.mat, 2, diff)
+  ##print(diff.vec)
   min.diff <- min(diff.vec)
   expect_gt(min.diff, -1e-10)
 }
 
+##library(data.table)
 ## plot(pdpa$intervals.mat[9,], Rintervals.mat[9,])
 ## plot(seq_along(count.vec), pdpa$cost.mat[9,]-Rcost.mat[9,])
 ## plot(seq_along(count.vec), pdpa$intervals.mat[9,]-Rintervals.mat[9,])

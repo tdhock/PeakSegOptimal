@@ -3,12 +3,12 @@
 \title{PeakSegPDPA}
 \description{Compute the PeakSeg constrained, Poisson loss, Segment Neighborhood
 model using a constrained version of the Pruned Dynamic
-Programming Algorithm.}
+Programming Algorithm. }
 \usage{PeakSegPDPA(count.vec, weight.vec = rep(1, length(count.vec)), 
     max.segments = NULL)}
 \arguments{
   \item{count.vec}{integer vector of count data.}
-  \item{weight.vec}{numeric vector (same length as count.vec) of positive weights.}
+  \item{weight.vec}{integer vector (same length as count.vec) of positive weights.}
   \item{max.segments}{integer of length 1: maximum number of segments (must be >= 2).}
 }
 
