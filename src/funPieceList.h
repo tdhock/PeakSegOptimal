@@ -37,6 +37,7 @@ class PiecewisePoissonLoss {
   void set_to_min_less_of(PiecewisePoissonLoss *, int);
   void set_to_min_more_of(PiecewisePoissonLoss *);
   void set_to_min_env_of(PiecewisePoissonLoss *, PiecewisePoissonLoss *, int);
+  int check_min_of(PiecewisePoissonLoss *, PiecewisePoissonLoss *);
   void push_min_pieces
     (PiecewisePoissonLoss *, PiecewisePoissonLoss *,
      PoissonLossPieceList::iterator, PoissonLossPieceList::iterator, int);
@@ -45,6 +46,7 @@ class PiecewisePoissonLoss {
   void print();
   void set_prev_seg_end(int prev_seg_end);
   void findMean(double mean, int *seg_end, bool *equality_constraint_active);
+  double findCost(double mean);
   void Minimize(double *best_cost,
 		double *best_mean,
 		int *data_i,
