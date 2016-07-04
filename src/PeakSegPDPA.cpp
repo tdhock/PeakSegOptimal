@@ -5,7 +5,7 @@
 #include "funPieceList.h"
 #include <math.h>
 
-#define IFPRINT(arg) if(data_i==15788 && total_changes==7) arg
+#define IFPRINT(arg) if(data_i==1560 && total_changes==3) arg
 
 void PeakSegPDPA
 (int *data_vec, int *weight_vec, int data_count,
@@ -66,11 +66,11 @@ void PeakSegPDPA
 	//IFPRINT(cost_model.print());
 	new_cost_model->set_to_min_env_of
 	  (&min_prev_cost, &cost_model, verbose);
-	// int status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
-	// if(status){
-	//   printf("DP changes=%d data_i=%d\n", total_changes, data_i);
-	//   throw status;
-	// }
+	int status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
+	if(status){
+	  printf("DP changes=%d data_i=%d BAD CHECK status=%d\n", total_changes, data_i, status);
+	  throw status;
+	}
       }
       //IFPRINT(printf("new cost model\n"));
       //IFPRINT(new_cost_model->print());
@@ -100,7 +100,7 @@ void PeakSegPDPA
   }
   for(int total_changes=0; total_changes<maxSegments;total_changes++){
     for(int data_i=total_changes; data_i<data_count; data_i++){
-      //IFPRINT(printf("decoding changes=%d data_i=%d\n", total_changes, data_i));
+      //printf("decoding changes=%d data_i=%d\n", total_changes, data_i);
       PiecewisePoissonLoss *cost_model =
 	&cost_model_vec[data_i + total_changes*data_count];
       //IFPRINT(cost_model->print());
