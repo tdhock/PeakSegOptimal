@@ -5,7 +5,7 @@
 #include "funPieceList.h"
 #include <math.h>
 
-#define IFPRINT(arg) if(data_i==1560 && total_changes==3) arg
+#define IFPRINT(arg) if(data_i==61 && total_changes==14) arg
 
 void PeakSegPDPA
 (int *data_vec, int *weight_vec, int data_count,
@@ -43,11 +43,11 @@ void PeakSegPDPA
     for(int data_i=total_changes; data_i<data_count; data_i++){
       int prev_i = data_i-1;
       prev_cost_model = &cost_model_vec[prev_i + (total_changes-1)*data_count];
-      //IFPRINT(printf("DP changes=%d data_i=%d\n", total_changes, data_i));
-      //IFPRINT(printf("prev cost model\n"));
-      //IFPRINT(prev_cost_model->print());
+      IFPRINT(printf("DP changes=%d data_i=%d\n", total_changes, data_i));
+      IFPRINT(printf("prev cost model\n"));
+      IFPRINT(prev_cost_model->print());
       int verbose = 0;
-      //IFPRINT(verbose=1);
+      IFPRINT(verbose=1);
       if(total_changes % 2){
 	min_prev_cost.set_to_min_less_of(prev_cost_model, verbose);
       }else{
@@ -56,14 +56,14 @@ void PeakSegPDPA
       min_prev_cost.set_prev_seg_end(prev_i);
       new_cost_model = &cost_model_vec[data_i + total_changes*data_count];
       if(data_i==total_changes){//first cost model, only one candidate.
-	//IFPRINT(printf("new cost model = min prev cost\n"));
-	//IFPRINT(min_prev_cost.print());
+	IFPRINT(printf("new cost model = min prev cost\n"));
+	IFPRINT(min_prev_cost.print());
 	*new_cost_model = min_prev_cost;
       }else{
-	//IFPRINT(printf("min prev cost\n"));
-        //IFPRINT(min_prev_cost.print());
-	//IFPRINT(printf("cost model\n"));
-	//IFPRINT(cost_model.print());
+	IFPRINT(printf("min prev cost\n"));
+        IFPRINT(min_prev_cost.print());
+	IFPRINT(printf("cost model\n"));
+	IFPRINT(cost_model.print());
 	new_cost_model->set_to_min_env_of
 	  (&min_prev_cost, &cost_model, verbose);
 	int status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
@@ -72,13 +72,13 @@ void PeakSegPDPA
 	  throw status;
 	}
       }
-      //IFPRINT(printf("new cost model\n"));
-      //IFPRINT(new_cost_model->print());
+      IFPRINT(printf("new cost model\n"));
+      IFPRINT(new_cost_model->print());
       new_cost_model->add
 	(weight_vec[data_i],
 	 -data_vec[data_i]*weight_vec[data_i],
 	 0.0);
-      //IFPRINT(new_cost_model->print());
+      IFPRINT(new_cost_model->print());
       cost_model = *new_cost_model;
     }
   }
@@ -103,7 +103,7 @@ void PeakSegPDPA
       //printf("decoding changes=%d data_i=%d\n", total_changes, data_i);
       PiecewisePoissonLoss *cost_model =
 	&cost_model_vec[data_i + total_changes*data_count];
-      //IFPRINT(cost_model->print());
+      IFPRINT(cost_model->print());
       cost_model->Minimize
 	(&best_cost, &best_mean,
 	 &prev_seg_end, &equality_constraint_active);

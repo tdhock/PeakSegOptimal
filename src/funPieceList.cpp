@@ -25,7 +25,13 @@ PoissonLossPiece::PoissonLossPiece
 }
 
 double PoissonLossPiece::getDiscriminant(double add_constant){
-  return (double)Linear/(double)Log*exp((add_constant-Constant)/(double)Log);
+  double exp_arg = (add_constant-Constant)/(double)Log;
+  double exp_term = exp(exp_arg);
+  if(exp_term==0){
+    printf("exp(%f)==0 in discriminant computation\n", exp_arg);
+    throw 199;
+  }
+  return (double)Linear/(double)Log*exp_term;
 }
 
 double PoissonLossPiece::discriminant2mean_principal(double discriminant){
@@ -133,10 +139,13 @@ void PiecewisePoissonLoss::set_to_min_less_of
 	}else if(mu < it->max_mean){
 	  // Minimum in this interval, so add a convex piece up to the
 	  // min, and keep track of the min cost to create a constant
-	  // piece later.
-	  piece_list.emplace_back
-	    (it->Linear, it->Log, it->Constant, prev_min_mean, mu,
-	     it->data_i, true); // equality constraint active on convex piece.
+	  // piece later. NB it is possible that prev_min_mean==mu in
+	  // which case we do not need to store the convex piece.
+	  if(prev_min_mean < mu){
+	    piece_list.emplace_back
+	      (it->Linear, it->Log, it->Constant, prev_min_mean, mu,
+	       it->data_i, true); // equality constraint active on convex piece.
+	  }
 	  prev_min_mean = mu;
 	  prev_min_cost = it->PoissonLoss(mu, verbose);
 	  if(verbose)printf("prev_min_cost=%a\n", prev_min_cost);
@@ -236,10 +245,13 @@ void PiecewisePoissonLoss::set_to_min_more_of(PiecewisePoissonLoss *input){
 	}else if(it->min_mean < mu){
 	  // Minimum in this interval, so add a convex piece up to the
 	  // min, and keep track of the min cost to create a constant
-	  // piece later.
-	  piece_list.emplace_front
-	    (it->Linear, it->Log, it->Constant, mu, prev_max_mean, 
-	     it->data_i, true); // equality constraint active on convex piece.
+	  // piece later. NB it is possible that mu==prev_max_mean, in
+	  // which case we do not need to save the convex piece.
+	  if(mu < prev_max_mean){ 
+	    piece_list.emplace_front
+	      (it->Linear, it->Log, it->Constant, mu, prev_max_mean, 
+	       it->data_i, true); // equality constraint active on convex piece.
+	  }
 	  prev_max_mean = mu;
 	  prev_min_cost = it->PoissonLoss(mu, verbose);
 	  prev_data_i = it->data_i;
@@ -638,11 +650,13 @@ void PiecewisePoissonLoss::push_min_pieces
   if(POISSON_THRESH < discriminant){
     larger_mean = diff_piece.discriminant2mean_larger(discriminant);
     smaller_mean = diff_piece.discriminant2mean_smaller(discriminant);
-    if(smaller_mean < larger_mean){
-      two_roots = true;
+    if(verbose)printf("smaller_mean=%f larger_mean=%f\n", smaller_mean, larger_mean);
+    two_roots = true;
+    if(smaller_mean==larger_mean){
+      if(verbose)printf("means equal!\n");
     }
   }
-  if(verbose)printf("discriminant=%a two_roots=%d Linear=%d Log=%d\nConstant=%a\n", discriminant, two_roots, diff_piece.Linear, diff_piece.Log, diff_piece.Constant);
+  if(verbose)printf("discriminant=%f (%a) two_roots=%d Linear=%d Log=%d\nConstant=%f (%a)\n", discriminant, discriminant, two_roots, diff_piece.Linear, diff_piece.Log, diff_piece.Constant, diff_piece.Constant);
   if(same_at_right){
     // they are equal on the right, but we don't know if there is
     // another crossing point somewhere to the left.
@@ -715,7 +729,7 @@ void PiecewisePoissonLoss::push_min_pieces
     bool smaller_inside =
       last_min_mean < smaller_mean && smaller_mean < first_max_mean;
     if(larger_inside){
-      if(smaller_inside){
+      if(smaller_inside && smaller_mean < larger_mean){
 	// both are in the interval.
 	first_mean = smaller_mean;
 	second_mean = larger_mean;
