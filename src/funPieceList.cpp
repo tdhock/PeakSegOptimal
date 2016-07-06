@@ -5,13 +5,9 @@
 #include <math.h>
 #include <stdio.h>
 
-#include <gsl/gsl_sf_lambert.h>
-#include <gsl/gsl_sf_result.h>
-#include <gsl/gsl_errno.h>
+#define NEWTON_EPSILON 1e-10
 
-// s//printf("%a",-1/exp(1))
-// "-0.367879441171442334024277442949824035167694091796875000"
-#define POISSON_THRESH -0.367879441171442334024277442949824035167694091796875
+#define ABS(x) ((x)<0 ? -(x) : (x))
 
 PoissonLossPiece::PoissonLossPiece
 (int li, int lo, double co, double m, double M, int i, bool a){
@@ -24,70 +20,89 @@ PoissonLossPiece::PoissonLossPiece
   equality_constraint_active = a;
 }
 
-double PoissonLossPiece::getDiscriminant(double add_constant){
-  double exp_arg = (add_constant-Constant)/(double)Log;
-  double exp_term = exp(exp_arg);
-  if(exp_term==0){
-    printf("exp(%f)==0 in discriminant computation\n", exp_arg);
-    throw 199;
+bool PoissonLossPiece::has_two_roots(double equals){
+  // are there two solutions to the equation Linear*x + Log*log(x) +
+  // Constant = equals ?
+  if(Log == 0){//degenerate linear function.
+    // f(x) = Linear*x + Constant - equals
+    throw "problem";
+    return false;
   }
-  return (double)Linear/(double)Log*exp_term;
+  double optimal_mean = getMinMean(); //min or max!
+  double optimal_cost = PoissonLoss(optimal_mean);
+  if(Log < 0){//convex.
+    return optimal_cost < equals;
+  }
+  //concave.
+  return equals < optimal_cost;
 }
 
-double PoissonLossPiece::discriminant2mean_principal(double discriminant){
-  gsl_sf_result result;
-  int status = gsl_sf_lambert_W0_e(discriminant, &result);
-  if(status != GSL_SUCCESS){
-    throw status;
-  }
-  return (double)Log/(double)Linear*result.val;
+double PoissonLossPiece::get_larger_root(double equals){
+  double optimal_mean = getMinMean(); //min or max!
+  double candidate_root = (optimal_mean + max_mean)/2;
+  // find the larger root of f(x) = Linear*x + Log*log(x) + Constant -
+  // equals = 0.
+  double candidate_cost, possibly_outside, deriv;
+  int step=0;
+  printf("larger root finding with equals=%e\n", equals);
+  print();
+  do{
+     candidate_cost = PoissonLoss(candidate_root) - equals;
+     printf("step=%d mean=%e cost=%e\n", step++, candidate_root, candidate_cost);
+     deriv = PoissonDeriv(candidate_root);
+     possibly_outside = candidate_root - candidate_cost/deriv;
+     if(possibly_outside < optimal_mean){
+       //it overshot to the left of the optimum, so move it back over
+       //to the right.
+       candidate_root = (candidate_root+optimal_mean)/2;
+       // Problem!
+     }else{
+       // it is to the left so that is fine.
+       candidate_root = possibly_outside;
+     }
+  }while(NEWTON_EPSILON < ABS(candidate_cost));
+  printf("found root %e in %d steps!\n", candidate_root, step);
+  return candidate_root;
 }
 
-double PoissonLossPiece::discriminant2mean_secondary(double discriminant){
-  gsl_sf_result result;
-  int status = gsl_sf_lambert_Wm1_e(discriminant, &result);
-  if(status != GSL_SUCCESS){
-    throw status;
-  }
-  return (double)Log/(double)Linear*result.val;
-}
-
-double PoissonLossPiece::discriminant2mean_larger(double discriminant){
-  if(0 < (double)Log/(double)Linear){
-    return discriminant2mean_principal(discriminant);
-  }else{
-    return discriminant2mean_secondary(discriminant);
-  }
-}
-
-double PoissonLossPiece::discriminant2mean_smaller(double discriminant){
-  if(0 < (double)Log/(double)Linear){
-    return discriminant2mean_secondary(discriminant);
-  }else{
-    return discriminant2mean_principal(discriminant);
-  }
+double PoissonLossPiece::get_smaller_root(double equals){
+  double optimal_mean = getMinMean(); //min or max!
+  double candidate_root = (optimal_mean + min_mean)/2;
+  // find the smaller root of f(x) = Linear*x + Log*log(x) + Constant -
+  // equals = 0.
+  double candidate_cost, possibly_outside, deriv;
+  do{
+     candidate_cost = PoissonLoss(candidate_root) - equals;
+     deriv = PoissonDeriv(candidate_root);
+     possibly_outside = candidate_root - candidate_cost/deriv;
+     if(possibly_outside <= 0){
+       // outside of the domain of the Poisson loss function, so just
+       // take a smaller positive number.
+       candidate_root /= 2;
+     }else if(possibly_outside < optimal_mean){
+       // it's to the left of the optimum, no problem.
+       candidate_root = possibly_outside;
+     }else{
+       // it's on the right of the optimum, so consider another
+       // candidate on the left.
+       candidate_root = (candidate_root+optimal_mean)/2;
+     }
+  }while(NEWTON_EPSILON < ABS(candidate_cost));
+  return candidate_root;
 }
 
 double PoissonLossPiece::getMinMean(){
   return - (double)Log / (double)Linear;
 }
 
-double PoissonLossPiece::PoissonLoss(double mean, int verbose){
+double PoissonLossPiece::PoissonLoss(double mean){
   double loss_without_log_term = (double)Linear*mean + Constant;
-  //verbose=0;
-  //if(verbose)printf("loss before adding log term %a\n", loss_without_log_term);
   if(Log==0){
     return loss_without_log_term;
   }
-  //printf(""); //does not work here.
   double log_mean_only = log(mean);
-  //printf(""); //does work here.
-  //if(log_mean_only < 0)return INFINITY;
-  //printf("log_mean_only=%a\n", log_mean_only);
   double log_coef_only = (double)Log;
-  //if(verbose)printf("log_coef_only=%a\n", log_coef_only);
   double product = log_mean_only * log_coef_only;
-  //if(verbose)printf("product=%a\n", product);
   return loss_without_log_term + product;
 }
 
@@ -108,8 +123,8 @@ void PiecewisePoissonLoss::set_to_min_less_of
 	// degenerate linear function. since the Linear coef is never
 	// negative, we know that this function must be increasing or
 	// numerically constant on this interval.
-	double cost_left = it->PoissonLoss(it->min_mean, verbose);
-	double cost_right = it->PoissonLoss(it->max_mean, verbose);
+	double cost_left = it->PoissonLoss(it->min_mean);
+	double cost_right = it->PoissonLoss(it->max_mean);
 	//printf("DEGENERATE LINEAR FUNCTION IN MIN LESS\n");
 	if(cost_left==cost_right){
 	  //printf("NUMERICALLY EQUAL\n");
@@ -134,7 +149,7 @@ void PiecewisePoissonLoss::set_to_min_less_of
 	     interval. We don't need to store it, but we do need to keep
 	     track of the minimum cost, which occurs at the min mean
 	     value in this interval. */
-	  prev_min_cost = it->PoissonLoss(it->min_mean, verbose);
+	  prev_min_cost = it->PoissonLoss(it->min_mean);
 	  prev_data_i = it->data_i;
 	}else if(mu < it->max_mean){
 	  // Minimum in this interval, so add a convex piece up to the
@@ -147,7 +162,7 @@ void PiecewisePoissonLoss::set_to_min_less_of
 	       it->data_i, true); // equality constraint active on convex piece.
 	  }
 	  prev_min_mean = mu;
-	  prev_min_cost = it->PoissonLoss(mu, verbose);
+	  prev_min_cost = it->PoissonLoss(mu);
 	  if(verbose)printf("prev_min_cost=%a\n", prev_min_cost);
 	  prev_data_i = it->data_i;
 	}else{
@@ -174,19 +189,13 @@ void PiecewisePoissonLoss::set_to_min_less_of
       }else{// Log is not zero.
 	// Theoretically there can be zero, one, or two intersection
 	// points between the constant function prev_min_mean and a
-	// non-degenerate Poisson loss function piece. To check what
-	// case we are in, we compare the discriminant to
-	// POISSON_THRESH=-1/e (the point x at which LambertW(x)=-1
-	// for both branches).
-	double discriminant = it->getDiscriminant(prev_min_cost);
-	if(POISSON_THRESH < discriminant){
+	// non-degenerate Poisson loss function piece. 
+	if(it->has_two_roots(prev_min_cost)){
 	  // There are two mean values where the Poisson loss piece
 	  // intersects the constant function prev_min_mean, but we
 	  // are only concerned with the first mean value (the
-	  // lesser of the two). Since the Log coef of all Poisson
-	  // loss pieces is negative, the principal branch results
-	  // in the smaller of the two mean values.
-	  double mu = it->discriminant2mean_principal(discriminant);
+	  // lesser of the two).
+	  double mu = it->get_smaller_root(prev_min_cost);
 	  if(it->min_mean < mu && mu < it->max_mean){
 	    // The smaller intersection point occurs within the
 	    // interval, so the constant interval ends here, and we
@@ -240,7 +249,7 @@ void PiecewisePoissonLoss::set_to_min_more_of(PiecewisePoissonLoss *input){
 	  /* The minimum is achieved after this interval, so this
 	     function is always decreasing in this interval. We don't
 	     need to store it. */
-	  prev_min_cost = it->PoissonLoss(it->max_mean, verbose);
+	  prev_min_cost = it->PoissonLoss(it->max_mean);
 	  prev_data_i = it->data_i;
 	}else if(it->min_mean < mu){
 	  // Minimum in this interval, so add a convex piece up to the
@@ -253,7 +262,7 @@ void PiecewisePoissonLoss::set_to_min_more_of(PiecewisePoissonLoss *input){
 	       it->data_i, true); // equality constraint active on convex piece.
 	  }
 	  prev_max_mean = mu;
-	  prev_min_cost = it->PoissonLoss(mu, verbose);
+	  prev_min_cost = it->PoissonLoss(mu);
 	  prev_data_i = it->data_i;
 	}else{
 	  // Minimum before this interval, so this function is
@@ -274,19 +283,13 @@ void PiecewisePoissonLoss::set_to_min_more_of(PiecewisePoissonLoss *input){
       }else{// Log is not zero.
 	// Theoretically there can be zero, one, or two intersection
 	// points between the constant function prev_min_mean and a
-	// non-degenerate Poisson loss function piece. To check what
-	// case we are in, we compare the discriminant to
-	// POISSON_THRESH=-1/e (the point x at which LambertW(x)=-1
-	// for both branches).
-	double discriminant = it->getDiscriminant(prev_min_cost);
-	if(POISSON_THRESH < discriminant){
+	// non-degenerate Poisson loss function piece. 
+	if(it->has_two_roots(prev_min_cost)){
 	  // There are two mean values where the Poisson loss piece
 	  // intersects the constant function prev_min_mean, but we
 	  // are only concerned with the second mean value (the
-	  // greater of the two). Since the Log coef of all Poisson
-	  // loss pieces is negative, the non-principal branch results in
-	  // the larger of the two mean values.
-	  mu = it->discriminant2mean_secondary(discriminant);
+	  // greater of the two). 
+	  mu = it->get_larger_root(prev_min_cost);
 	}//if(there are two roots
       }//if(Log is zero
       if(it->min_mean < mu && mu < it->max_mean){
@@ -347,7 +350,7 @@ double PiecewisePoissonLoss::findCost(double mean){
   for(it=piece_list.begin(); it != piece_list.end(); it++){
     if(it->min_mean <= mean && mean <= it->max_mean){
       int verbose = 0;
-      return it->PoissonLoss(mean, verbose);
+      return it->PoissonLoss(mean);
     }
   }
 }
@@ -357,12 +360,15 @@ void PiecewisePoissonLoss::print(){
   printf("%10s %10s %10s %10s %10s %10s\n",
 	 "Linear", "Log", "Constant", "min_mean", "max_mean", "data_i");
   for(it=piece_list.begin(); it != piece_list.end(); it++){
-    printf("%10d %10d %20f %60.55f %60.55f %d\n",
-	   it->Linear, it->Log, it->Constant,
-	   it->min_mean, it->max_mean, it->data_i);
+    it->print();
   }
 }
-  
+
+void PoissonLossPiece::print(){
+  printf("%10d %10d %20f %60.55f %60.55f %d\n",
+	 Linear, Log, Constant,
+	 min_mean, max_mean, data_i);
+}
 
 void PiecewisePoissonLoss::Minimize(double *best_cost,
 	      double *best_mean,
@@ -375,7 +381,7 @@ void PiecewisePoissonLoss::Minimize(double *best_cost,
   for(it=piece_list.begin(); it != piece_list.end(); it++){
     candidate_mean = it->getMinMean();
     if(it->min_mean <= candidate_mean && candidate_mean <= it->max_mean){
-      candidate_cost = it->PoissonLoss(candidate_mean, verbose);
+      candidate_cost = it->PoissonLoss(candidate_mean);
       if(candidate_cost < *best_cost){
 	*best_cost = candidate_cost;
 	*best_mean = candidate_mean;
@@ -405,7 +411,7 @@ int PiecewisePoissonLoss::check_min_of
       return 2;
     }
     double mid_mean = (it->min_mean + it->max_mean)/2;
-    double cost_min = it->PoissonLoss(mid_mean, verbose);
+    double cost_min = it->PoissonLoss(mid_mean);
     double cost_prev = prev->findCost(mid_mean);
     if(cost_prev+1e-6 < cost_min){
       printf("prev(%.55f)=%f %a\n", mid_mean, cost_prev, cost_prev);
@@ -437,7 +443,7 @@ int PiecewisePoissonLoss::check_min_of
       return 2;
     }
     double mid_mean = (it->min_mean + it->max_mean)/2;
-    double cost_prev = it->PoissonLoss(mid_mean, verbose);
+    double cost_prev = it->PoissonLoss(mid_mean);
     double cost_min = findCost(mid_mean);
     if(cost_prev+1e-6 < cost_min){
       printf("prev(%.55f)=%f %a\n", mid_mean, cost_prev, cost_prev);
@@ -461,7 +467,7 @@ int PiecewisePoissonLoss::check_min_of
       return 2;
     }
     double mid_mean = (it->min_mean + it->max_mean)/2;
-    double cost_model = it->PoissonLoss(mid_mean, verbose);
+    double cost_model = it->PoissonLoss(mid_mean);
     double cost_min = findCost(mid_mean);
     if(cost_model+1e-6 < cost_min){
       printf("model(%.55f)=%f %a\n", mid_mean, cost_model, cost_model);
@@ -596,7 +602,7 @@ void PiecewisePoissonLoss::push_min_pieces
   // printf("it1->Constant=%a\nit2->Constant=%a\n",
   // 	 it1->Constant, it2->Constant);
   double mid_mean = (first_max_mean + last_min_mean)/2;
-  double cost_diff_mid = diff_piece.PoissonLoss(mid_mean, false);
+  double cost_diff_mid = diff_piece.PoissonLoss(mid_mean);
   if(diff_piece.Log == 0){
     if(diff_piece.Linear == 0){
       // They are offset by a Constant.
@@ -642,21 +648,14 @@ void PiecewisePoissonLoss::push_min_pieces
     if(verbose)printf("Log zero with no roots in interval\n");
     return;
   }//if(diff->Log == 0
-  double cost_diff_left = diff_piece.PoissonLoss(last_min_mean, false);
-  double cost_diff_right = diff_piece.PoissonLoss(first_max_mean, false);
-  double discriminant = diff_piece.getDiscriminant(0.0);
-  bool two_roots = false;
-  double larger_mean, smaller_mean;
-  if(POISSON_THRESH < discriminant){
-    larger_mean = diff_piece.discriminant2mean_larger(discriminant);
-    smaller_mean = diff_piece.discriminant2mean_smaller(discriminant);
-    if(verbose)printf("smaller_mean=%f larger_mean=%f\n", smaller_mean, larger_mean);
-    two_roots = true;
-    if(smaller_mean==larger_mean){
-      if(verbose)printf("means equal!\n");
-    }
+  double cost_diff_left = diff_piece.PoissonLoss(last_min_mean);
+  double cost_diff_right = diff_piece.PoissonLoss(first_max_mean);
+  bool two_roots = diff_piece.has_two_roots(0.0);
+  double smaller_mean, larger_mean;
+  if(two_roots){
+    smaller_mean = diff_piece.get_smaller_root(0.0);
+    larger_mean = diff_piece.get_larger_root(0.0);
   }
-  if(verbose)printf("discriminant=%f (%a) two_roots=%d Linear=%d Log=%d\nConstant=%f (%a)\n", discriminant, discriminant, two_roots, diff_piece.Linear, diff_piece.Log, diff_piece.Constant, diff_piece.Constant);
   if(same_at_right){
     // they are equal on the right, but we don't know if there is
     // another crossing point somewhere to the left.
@@ -734,6 +733,7 @@ void PiecewisePoissonLoss::push_min_pieces
 	first_mean = smaller_mean;
 	second_mean = larger_mean;
 	if(verbose){
+	  diff_piece.print();
 	  printf("%f and %f in [%f,%f]\n",
 		 smaller_mean, larger_mean,
 		 last_min_mean, first_max_mean);
@@ -763,7 +763,7 @@ void PiecewisePoissonLoss::push_min_pieces
   if(second_mean != INFINITY){
     // two crossing points.
     double before_mean = (last_min_mean + first_mean)/2;
-    double cost_diff_before = diff_piece.PoissonLoss(before_mean, false);
+    double cost_diff_before = diff_piece.PoissonLoss(before_mean);
     if(cost_diff_before < 0){
       push_piece(it1, last_min_mean, first_mean);
       push_piece(it2, first_mean, second_mean);
@@ -780,10 +780,10 @@ void PiecewisePoissonLoss::push_min_pieces
     // cost_diff_after have the same sign! In that case we need to
     // just push one piece.
     double before_mean = (last_min_mean + first_mean)/2;
-    double cost_diff_before = diff_piece.PoissonLoss(before_mean, false);
+    double cost_diff_before = diff_piece.PoissonLoss(before_mean);
     if(verbose)printf("cost_diff_before(%.55f)=%f\n", before_mean, cost_diff_before);
     double after_mean = (first_max_mean + first_mean)/2;
-    double cost_diff_after = diff_piece.PoissonLoss(after_mean, false);
+    double cost_diff_after = diff_piece.PoissonLoss(after_mean);
     if(verbose)printf("cost_diff_after(%.55f)=%f\n", after_mean, cost_diff_after);
     if(cost_diff_before < 0){
       if(cost_diff_after < 0){

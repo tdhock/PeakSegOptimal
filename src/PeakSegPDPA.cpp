@@ -5,7 +5,7 @@
 #include "funPieceList.h"
 #include <math.h>
 
-#define IFPRINT(arg) if(data_i==61 && total_changes==14) arg
+#define IFPRINT(arg) if(data_i==6 && total_changes==1) arg
 
 void PeakSegPDPA
 (int *data_vec, int *weight_vec, int data_count,

@@ -19,13 +19,12 @@ class PoissonLossPiece {
   bool equality_constraint_active;
   PoissonLossPiece
     (int li, int lo, double co, double m, double M, int i, bool a);
-  double getDiscriminant(double add_constant);
-  double discriminant2mean_principal(double discriminant);
-  double discriminant2mean_secondary(double discriminant);
-  double discriminant2mean_larger(double discriminant);
-  double discriminant2mean_smaller(double discriminant);
   double getMinMean();
-  double PoissonLoss(double mean, int);
+  void print();
+  double get_smaller_root(double);
+  double get_larger_root(double);
+  bool has_two_roots(double);
+  double PoissonLoss(double mean);
   double PoissonDeriv(double);
 };
 
