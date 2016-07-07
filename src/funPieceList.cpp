@@ -119,9 +119,11 @@ double PoissonLossPiece::get_smaller_root(double equals){
        //printf("wrong side!!!!!!!!!!!!!\n");
        candidate_root = (candidate_root+optimal_mean)/2;
      }
-     if(candidate_root < NEWTON_EPSILON){
+     if(candidate_root < NEWTON_EPSILON*2){
        // This happens when the root is so close to zero that there is
-       // no double x for which cost(x)=0.
+       // no double x for which cost(x)=0. We multiply by two since
+       // later during the checks of the min cost at the midpoints, we
+       // will divide by two.
        return 0;
      }
   }while(NEWTON_EPSILON < ABS(candidate_cost));
