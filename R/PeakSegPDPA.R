@@ -133,13 +133,14 @@ PeakSegPDPAchrom <- structure(function
   one.sample <- by.sample[[sample.id]]
   pdpa.fit <- PeakSegPDPAchrom(one.sample, 9L)
   pdpa.segs <- subset(pdpa.fit$segments, n.peaks == peaks)
-  dp.fit <- PeakSegDP(one.sample, 9L)
-  dp.segs <- subset(dp.fit$segments, n.peaks == peaks)
-  both.segs <- rbind(
-    data.frame(dp.segs, algorithm="cDPA"),
-    data.frame(pdpa.segs, algorithm="PDPA"))
+  both.segs.list <- list(pdpa=data.frame(pdpa.segs, algorithm="PDPA"))
+  if(require(PeakSegDP)){
+    dp.fit <- PeakSegDP(one.sample, 9L)
+    dp.segs <- subset(dp.fit$segments, n.peaks == peaks)
+    both.segs.list$dp <- data.frame(dp.segs, algorithm="cDPA")
+  }
+  both.segs <- do.call(rbind, both.segs.list)
   both.breaks <- subset(both.segs, 1 < first)
-
   ggplot()+
     theme_bw()+
     theme(panel.margin=grid::unit(0, "lines"))+
@@ -163,15 +164,21 @@ PeakSegPDPAchrom <- structure(function
   sample.id <- sample.id.vec[1]
   one.sample <- by.sample[[sample.id]]
   pdpa.fit <- PeakSegPDPAchrom(one.sample, 9L)
-  dp.fit <- PeakSegDP(one.sample, 9L)
-
-  ggplot()+
-    scale_size_manual(values=c(cDPA=3, PDPA=1))+
-    geom_point(aes(peaks, error,
-                   size=algorithm, color=algorithm),
-               data=data.frame(dp.fit$error, algorithm="cDPA"))+
+  gg.loss <- ggplot()+
+    scale_size_manual(values=c(cDPA=2, PDPA=3))+
+    scale_fill_manual(values=c(cDPA="white", PDPA="black"))+
     geom_point(aes(peaks, PoissonLoss,
-                   size=algorithm, color=algorithm),
+                   size=algorithm, fill=algorithm),
+               shape=21,
                data=data.frame(pdpa.fit$loss, algorithm="PDPA"))
+  if(require(PeakSegDP)){
+    dp.fit <- PeakSegDP(one.sample, 9L)
+    gg.loss <- gg.loss+
+      geom_point(aes(peaks, error,
+                     size=algorithm, fill=algorithm),
+                 shape=21,
+                 data=data.frame(dp.fit$error, algorithm="cDPA"))
+  }
+  gg.loss
   
 })
