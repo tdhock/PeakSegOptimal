@@ -1,5 +1,13 @@
 TODOs
 
+2016.07.06
+
+The Lambert W root finding method was numerically unstable, for
+example the roots of the cost function -628*x+log(x)-776.140660 could
+not be computed correctly since exp(-776) is exactly zero using
+doubles. Instead I implemented a bound-constrained Newton root finding
+method which seems to be more stable.
+
 2016.07.03
 
 Some bugs fixed in the min env and min less computations.
