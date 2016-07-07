@@ -5,7 +5,7 @@
 #include "funPieceList.h"
 #include <math.h>
 
-#define IFPRINT(arg) if(data_i==6 && total_changes==1) arg
+#define IFPRINT(arg) if(data_i==26 && total_changes==-2) arg
 
 void PeakSegPDPA
 (int *data_vec, int *weight_vec, int data_count,
@@ -69,6 +69,14 @@ void PeakSegPDPA
 	int status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
 	if(status){
 	  printf("DP changes=%d data_i=%d BAD CHECK status=%d\n", total_changes, data_i, status);
+	  printf("prev cost model\n");
+	  prev_cost_model->print();
+	  printf("min prev cost\n");
+	  min_prev_cost.print();
+	  printf("cost model\n");
+	  cost_model.print();
+	  printf("new cost model\n");
+	  new_cost_model->print();
 	  throw status;
 	}
       }
