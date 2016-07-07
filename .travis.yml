@@ -1,0 +1,21 @@
+language: c
+
+sudo: required
+
+before_install:
+  - travis-tool.sh bootstrap
+
+install:
+  - travis-tool.sh install_deps
+  - Rscript -e "devtools::install()"
+
+script:
+  - Rscript -e "source('tests/testthat.R', chdir = TRUE)"
+
+after_failure:
+  - travis-tool.sh dump_logs
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
