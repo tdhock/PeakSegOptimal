@@ -58,11 +58,26 @@ ggplot()+
             data=H3K4me3_XJ_immune_chunk1, color="grey")
 
 max.segments <- 19L
+one.name <- "McGill0004"
 for(one.name in names(by.sample)){
   one <- by.sample[[one.name]]
   count.vec <- one$coverage
   weight.vec <- with(one, chromEnd-chromStart)
-  pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
+  pdpa <- PeakSegPDPALog(count.vec, weight.vec, max.segments)
+  ## Code to compare Log space computation with positive space.
+  ## pdpa.orig <- PeakSegPDPA(count.vec, weight.vec, max.segments)
+  ## s <- 5
+  ## plot(pdpa$cost.mat[s,], pdpa.orig$cost.mat[s,])
+  ## plot(pdpa$intervals.mat[s,], pdpa.orig$intervals.mat[s,])
+  ## rbind(pdpa$intervals.mat[s,], pdpa.orig$intervals.mat[s,])
+  ## library(data.table)
+  ## intervals.dt <- data.table(
+  ##   col=as.integer(col(pdpa$cost.mat)),
+  ##   row=as.integer(row(pdpa$cost.mat)),
+  ##   pdpa.cost=as.numeric(pdpa$cost.mat),
+  ##   pdpa.orig.cost=as.numeric(pdpa.orig$cost.mat),
+  ##   pdpa=as.integer(pdpa$intervals.mat),
+  ##   pdpa.orig=as.integer(pdpa.orig$intervals.mat))
   peakseg <- PeakSegDP(one, 9L)
   seg.vec <- seq(1,19,by=2)
   all.loss <- data.frame(

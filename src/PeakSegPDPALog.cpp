@@ -2,12 +2,12 @@
 
 #include <vector>
 #include <stdio.h>
-#include "funPieceList.h"
+#include "funPieceListLog.h"
 #include <math.h>
 
-#define IFPRINT(arg) if(data_i==5 && total_changes==-3) (arg)
+#define IFPRINT(arg) if(data_i==3 && total_changes==-3) (arg)
 
-void PeakSegPDPA
+void PeakSegPDPALog
 (int *data_vec, int *weight_vec, int data_count,
  int maxSegments,
  // the following matrices are for output:
@@ -15,30 +15,31 @@ void PeakSegPDPA
  int *end_mat,//maxSegments x maxSegments(model up to last data point).
  double *mean_mat,
  int *intervals_mat){//maxSegments x maxSegments(model up to last data point).
-  double min_mean=data_vec[0], max_mean=data_vec[0];
+  double min_log_mean=log(data_vec[0]), max_log_mean=log(data_vec[0]);
   for(int data_i=1; data_i<data_count; data_i++){
-    if(data_vec[data_i] < min_mean){
-      min_mean = data_vec[data_i];
+    double log_data = log(data_vec[data_i]);
+    if(log_data < min_log_mean){
+      min_log_mean = log_data;
     }
-    if(max_mean < data_vec[data_i]){
-      max_mean = data_vec[data_i];
+    if(max_log_mean < log_data){
+      max_log_mean = log_data;
     }
   }
-  std::vector<PiecewisePoissonLoss> cost_model_vec(data_count * maxSegments);
+  std::vector<PiecewisePoissonLossLog> cost_model_vec(data_count * maxSegments);
   int Log_cumsum = 0;
   int Linear_cumsum = 0;
   for(int data_i=0; data_i<data_count; data_i++){
     Linear_cumsum += weight_vec[data_i];
     Log_cumsum += -data_vec[data_i]*weight_vec[data_i];
-    PiecewisePoissonLoss *cost_model = &cost_model_vec[data_i];
+    PiecewisePoissonLossLog *cost_model = &cost_model_vec[data_i];
     cost_model->piece_list.emplace_back
-      (Linear_cumsum, Log_cumsum, 0.0, min_mean, max_mean, -1, false);
+      (Linear_cumsum, Log_cumsum, 0.0, min_log_mean, max_log_mean, -1, false);
   }
 
   // DP: compute functional model of best cost in S segments up to
   // data point N.
-  PiecewisePoissonLoss *prev_cost_model, *new_cost_model;
-  PiecewisePoissonLoss min_prev_cost, cost_model;
+  PiecewisePoissonLossLog *prev_cost_model, *new_cost_model;
+  PiecewisePoissonLossLog min_prev_cost, cost_model;
   for(int total_changes=1; total_changes<maxSegments; total_changes++){
     for(int data_i=total_changes; data_i<data_count; data_i++){
       int prev_i = data_i-1;
@@ -91,7 +92,7 @@ void PeakSegPDPA
     }
   }
 
-  double best_cost, best_mean;
+  double best_cost, best_log_mean;
   double *best_mean_vec;
   int *prev_seg_vec;
   bool equality_constraint_active;
@@ -108,13 +109,14 @@ void PeakSegPDPA
   }
   for(int total_changes=0; total_changes<maxSegments;total_changes++){
     for(int data_i=total_changes; data_i<data_count; data_i++){
-      //printf("decoding changes=%d data_i=%d\n", total_changes, data_i);
-      PiecewisePoissonLoss *cost_model =
+      IFPRINT(printf("decoding changes=%d data_i=%d\n", total_changes, data_i));
+      PiecewisePoissonLossLog *cost_model =
 	&cost_model_vec[data_i + total_changes*data_count];
       IFPRINT(cost_model->print());
       cost_model->Minimize
-	(&best_cost, &best_mean,
+	(&best_cost, &best_log_mean,
 	 &prev_seg_end, &equality_constraint_active);
+      IFPRINT(printf("cost=%f log_mean=%f prev_end=%d constraint=%d\n", best_cost, best_log_mean, prev_seg_end, equality_constraint_active));
       // for the models up to any data point, we store the best cost
       // and the total number of intervals.
       cost_mat[data_i + total_changes*data_count] = best_cost;
@@ -126,19 +128,19 @@ void PeakSegPDPA
 	// computed the values for the last segment so store them.
 	best_mean_vec = mean_mat + total_changes*maxSegments;
 	prev_seg_vec = end_mat + total_changes*maxSegments;
-	best_mean_vec[total_changes] = best_mean;
+	best_mean_vec[total_changes] = exp(best_log_mean);
 	prev_seg_vec[total_changes] = prev_seg_end;
 	for(int seg_i=total_changes-1; 0 <= seg_i; seg_i--){
 	  //printf("seg_i=%d prev_seg_end=%d\n", seg_i, prev_seg_end);
 	  cost_model = &cost_model_vec[prev_seg_end + seg_i*data_count];
 	  if(equality_constraint_active){
 	    cost_model->findMean
-	      (best_mean, &prev_seg_end, &equality_constraint_active);
+	      (best_log_mean, &prev_seg_end, &equality_constraint_active);
 	  }else{
-	    cost_model->Minimize(&best_cost, &best_mean,
-				&prev_seg_end, &equality_constraint_active);
+	    cost_model->Minimize(&best_cost, &best_log_mean,
+				 &prev_seg_end, &equality_constraint_active);
 	  }
-	  best_mean_vec[seg_i] = best_mean;
+	  best_mean_vec[seg_i] = exp(best_log_mean);
 	  prev_seg_vec[seg_i] = prev_seg_end;
 	}//for(seg_i
       }//if(data_i
