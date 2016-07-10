@@ -60,7 +60,7 @@ double PoissonLossPiece::get_larger_root(double equals){
      if(NEWTON_STEPS <= ++step){
        //printf("larger root finding with equals=%e\n", equals);
        //print();
-       printf("step=%d mean=%e cost=%e\n", step, candidate_root, candidate_cost);
+       //printf("step=%d mean=%e cost=%e\n", step, candidate_root, candidate_cost);
        return candidate_root;
      }
      deriv = PoissonDeriv(candidate_root);
@@ -68,7 +68,7 @@ double PoissonLossPiece::get_larger_root(double equals){
      if(possibly_outside < optimal_mean){
        //it overshot to the left of the optimum, so move it back over
        //to the right.
-       printf("wrong side!!!!!!!!!!!!!\n");
+       //printf("wrong side!!!!!!!!!!!!!\n");
        candidate_root = (candidate_root+optimal_mean)/2;
        // Problem!
      }else{
@@ -101,7 +101,7 @@ double PoissonLossPiece::get_smaller_root(double equals){
      if(NEWTON_STEPS <= ++step){
        //printf("smaller root finding with equals=%e\n", equals);
        //print();
-       printf("step=%d mean=%e cost=%e\n", step, candidate_root, candidate_cost);
+       //printf("step=%d mean=%e cost=%e\n", step, candidate_root, candidate_cost);
        return candidate_root;
      }
      deriv = PoissonDeriv(candidate_root);
@@ -116,12 +116,12 @@ double PoissonLossPiece::get_smaller_root(double equals){
      }else{
        // it's on the right of the optimum, so consider another
        // candidate on the left.
-       printf("wrong side!!!!!!!!!!!!!\n");
+       //printf("wrong side!!!!!!!!!!!!!\n");
        candidate_root = (candidate_root+optimal_mean)/2;
      }
-     if(candidate_root < NEWTON_EPSILON){
+     if(candidate_root < (NEWTON_EPSILON)*10){
        // This happens when the root is so close to zero that there is
-       // no double x for which cost(x)=0.
+       // no double x for which cost(x)=0. 
        return 0;
      }
   }while(NEWTON_EPSILON < ABS(candidate_cost));
