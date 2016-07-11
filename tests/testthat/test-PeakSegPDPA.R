@@ -47,15 +47,16 @@ sapply(by.sample, nrow)
 ## total.segments <- 9
 ## one.name <- "McGill0101"
 
-ggplot()+
-  theme_bw()+
-  theme(panel.margin=grid::unit(0, "lines"))+
-  facet_grid(sample.id ~ ., scales="free", labeller=function(df){
-    df$sample.id <- sub("McGill0", "", df$sample.id)
-    df
-  })+
-  geom_step(aes(chromStart/1e3, coverage),
-            data=H3K4me3_XJ_immune_chunk1, color="grey")
+## library(ggplot2)
+## ggplot()+
+##   theme_bw()+
+##   theme(panel.margin=grid::unit(0, "lines"))+
+##   facet_grid(sample.id ~ ., scales="free", labeller=function(df){
+##     df$sample.id <- sub("McGill0", "", df$sample.id)
+##     df
+##   })+
+##   geom_step(aes(chromStart/1e3, coverage),
+##             data=H3K4me3_XJ_immune_chunk1, color="grey")
 
 max.segments <- 19L
 one.name <- "McGill0004"
