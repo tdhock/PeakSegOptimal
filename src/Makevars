@@ -1,2 +1,1 @@
-PKG_LIBS=-lgsl -lgslcblas
 CXX_STD = CXX11 
