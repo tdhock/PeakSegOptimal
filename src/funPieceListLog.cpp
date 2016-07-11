@@ -115,7 +115,8 @@ double PoissonLossPieceLog::get_larger_root(double equals){
        }
        return log((closest_positive_mean + closest_negative_mean)/2);
      }else{
-       // it is to the left so that is fine.
+       // the candidate_root is bigger than the optimal_mean, so that
+       // is fine.
        candidate_root = possibly_outside;
      }
   }while(NEWTON_EPSILON < ABS(candidate_cost));
