@@ -5,7 +5,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#define NEWTON_EPSILON 1e-9
+#define NEWTON_EPSILON 1e-8
 #define NEWTON_STEPS 100
 
 #define ABS(x) ((x)<0 ? -(x) : (x))
@@ -31,15 +31,17 @@ bool PoissonLossPieceLog::has_two_roots(double equals){
   }
   double optimal_log_mean = argmin(); //min or max!
   double optimal_cost = getCost(optimal_log_mean);
+  double optimal_mean = - (double)Log / (double)Linear; //min or max!
+  double optimal_cost2 = PoissonLoss(optimal_mean);
   // does g(x) = Linear*e^x + Log*x + Constant = equals? compare the
   // cost at optimum to equals.
   // g'(x)= Linear*e^x + Log,
   // g''(x)= Linear*e^x.
   if(0 < Linear){//convex.
-    return optimal_cost < equals;
+    return optimal_cost < equals && optimal_cost2 < equals;
   }
   //concave.
-  return equals < optimal_cost;
+  return equals < optimal_cost && equals < optimal_cost2;
 }
 
 double PoissonLossPieceLog::PoissonLoss(double mean){
@@ -57,28 +59,61 @@ double PoissonLossPieceLog::PoissonDeriv(double mean){
   return Linear + (double)Log/mean;
 }
 
+// This function performs the root finding in the positive (mean)
+// space, but needs to return a value in the log(mean) space.
 double PoissonLossPieceLog::get_larger_root(double equals){
   double optimal_mean = - (double)Log / (double)Linear; //min or max!
+  double optimal_cost = PoissonLoss(optimal_mean);
+  // Approximate the solution by the line through
+  // (optimal_mean,optimal_cost) with the asymptotic slope. As m tends
+  // to Inf, f'(m)=Linear+Log/m tends to Linear.
+  //double candidate_root = optimal_mean + (equals-optimal_cost)/(double)Linear;
   double candidate_root = optimal_mean + 1;
   // find the larger root of f(m) = Linear*m + Log*log(m) + Constant -
   // equals = 0.
   double candidate_cost, possibly_outside, deriv;
+  double closest_positive_cost = INFINITY, closest_positive_mean;
+  double closest_negative_cost = -INFINITY, closest_negative_mean;
+  if(optimal_cost < 0){
+    closest_negative_cost = optimal_cost;
+    closest_negative_mean = optimal_mean;
+  }else{
+    closest_positive_cost = optimal_cost;
+    closest_positive_mean = optimal_mean;
+  }
   int step=0;
   do{
      candidate_cost = PoissonLoss(candidate_root) - equals;
+     if(0 < candidate_cost && candidate_cost < closest_positive_cost){
+       closest_positive_cost = candidate_cost;
+       closest_positive_mean = candidate_root;
+     }
+     if(closest_negative_cost < candidate_cost && candidate_cost < 0){
+       closest_negative_cost = candidate_cost;
+       closest_negative_mean = candidate_root;
+     }
      if(NEWTON_STEPS <= ++step){
-       //printf("larger root finding with equals=%e\n", equals);
-       //print();
+       printf("larger root MAXSTEPS with equals=%e\n", equals);
+       print();
        printf("step=%d mean=%e cost=%e\n", step, candidate_root, candidate_cost);
-       return candidate_root;
+       return log((closest_positive_mean + closest_negative_mean)/2);
      }
      deriv = PoissonDeriv(candidate_root);
      possibly_outside = candidate_root - candidate_cost/deriv;
      if(possibly_outside < optimal_mean){
-       //it overshot to the left of the optimum, so move it back over
-       //to the right.
-       printf("wrong side!!!!!!!!!!!!!\n");
-       candidate_root = (candidate_root+optimal_mean)/2;
+       //it overshot to the left of the optimum, so the root is
+       //probably very close to the optimum, and we have probably
+       //already explored very close to the zero.
+       printf("larger root WRONG SIDE equals=%e\n", equals);
+       print();
+       printf("neg_cost=%e neg_mean=%e pos_cost=%e pos_mean=%e\n", closest_negative_cost, closest_negative_mean, closest_positive_cost, closest_positive_mean);
+       if(closest_negative_cost==-INFINITY){
+	 double optimal_log_mean = argmin(); //min or max!
+	 double optimal_cost2 = getCost(optimal_log_mean);
+	 printf("optimal_mean=%e=%e=exp(%e) optimal_cost=%e=%e=\n", optimal_mean, exp(optimal_log_mean), optimal_log_mean, optimal_cost, optimal_cost2);
+	 throw 1;
+       }
+       return log((closest_positive_mean + closest_negative_mean)/2);
      }else{
        // it is to the left so that is fine.
        candidate_root = possibly_outside;
@@ -88,70 +123,44 @@ double PoissonLossPieceLog::get_larger_root(double equals){
   return log(candidate_root);
 }
 
-// double PoissonLossPieceLog::get_larger_root(double equals){
-//   double optimal_log_mean = argmin(); //min or max!
-//   double right_cost = getCost(max_log_mean);
-//   // first check if we need to find the root at all. if this interval
-//   // ends before reaching the value of equals, then we know that the
-//   // root is somewhere to the right of this interval.
-//   if(Log < 0 && right_cost < equals){//convex and it does not increase past equals.
-//     return max_log_mean;
-//   }
-//   if(0 < Log && equals < right_cost){//concave and it does not decrease past equals.
-//     return max_log_mean;
-//   }
-//   double candidate_root = optimal_log_mean + 1;
-//   // find the larger root of g(x) = Linear*e^x + Log*x + Constant -
-//   // equals = 0.
-//   double candidate_cost, possibly_outside, deriv;
-//   int step=0;
-//   do{
-//      candidate_cost = getCost(candidate_root) - equals;
-//      if(NEWTON_STEPS <= ++step){
-//        //printf("larger root finding with equals=%e\n", equals);
-//        //print();
-//        printf("step=%d mean=%e cost=%e\n", step, candidate_root, candidate_cost);
-//        return candidate_root;
-//      }
-//      deriv = getDeriv(candidate_root);
-//      possibly_outside = candidate_root - candidate_cost/deriv;
-//      if(possibly_outside < optimal_log_mean){
-//        //it overshot to the left of the optimum, so move it back over
-//        //to the right.
-//        printf("wrong side!!!!!!!!!!!!!\n");
-//        candidate_root = (candidate_root+optimal_log_mean)/2;
-//        // Problem!
-//      }else{
-//        // it is to the left so that is fine.
-//        candidate_root = possibly_outside;
-//      }
-//   }while(NEWTON_EPSILON < ABS(candidate_cost));
-//   //printf("found root %e in %d steps!\n", candidate_root, step);
-//   return candidate_root;
-// }
-
 double PoissonLossPieceLog::get_smaller_root(double equals){
-  double left_cost = getCost(min_log_mean);
-  // first check if we need to find the root at all. 
-  if(Log < 0 && left_cost < equals){//convex and it does not increase past equals.
-    return min_log_mean;
-  }
-  if(0 < Log && equals < left_cost){//concave and it does not decrease past equals.
-    return min_log_mean;
-  }
   double optimal_log_mean = argmin(); //min or max!
-  double candidate_root = optimal_log_mean-1;
+  double optimal_cost = getCost(optimal_log_mean);
+  // Approximate the solution by the line through
+  // (optimal_mean,optimal_cost) with the asymptotic slope. As x tends
+  // to -Inf, g'(x)=Linear*e^x+Log tends to Log.
+  //double candidate_root = optimal_log_mean + (equals-optimal_cost)/(double)Log;
+  double candidate_root = optimal_log_mean - 1;
   // find the smaller root of g(x) = Linear*e^x + Log*x + Constant -
   // equals = 0.
   double candidate_cost, possibly_outside, deriv;
+  // as we search we will store bounds on the left and the right of
+  // the zero point.
+  double closest_positive_cost = INFINITY, closest_positive_log_mean;
+  double closest_negative_cost = -INFINITY, closest_negative_log_mean;
+  if(optimal_cost < 0){
+    closest_negative_cost = optimal_cost;
+    closest_negative_log_mean = optimal_log_mean;
+  }else{
+    closest_positive_cost = optimal_cost;
+    closest_positive_log_mean = optimal_log_mean;
+  }
   int step=0;
   do{
      candidate_cost = getCost(candidate_root) - equals;
+     if(0 < candidate_cost && candidate_cost < closest_positive_cost){
+       closest_positive_cost = candidate_cost;
+       closest_positive_log_mean = candidate_root;
+     }
+     if(closest_negative_cost < candidate_cost && candidate_cost < 0){
+       closest_negative_cost = candidate_cost;
+       closest_negative_log_mean = candidate_root;
+     }
      if(NEWTON_STEPS <= ++step){
-       //printf("smaller root finding with equals=%e\n", equals);
-       //print();
+       printf("smaller root MAXSTEPS equals=%e\n", equals);
+       print();
        printf("step=%d log_mean=%e cost=%e\n", step, candidate_root, candidate_cost);
-       return candidate_root;
+       return (closest_positive_log_mean + closest_negative_log_mean)/2;
      }
      deriv = getDeriv(candidate_root);
      possibly_outside = candidate_root - candidate_cost/deriv;
@@ -159,10 +168,13 @@ double PoissonLossPieceLog::get_smaller_root(double equals){
        // it's to the left of the optimum, no problem.
        candidate_root = possibly_outside;
      }else{
-       // it's on the right of the optimum, so consider another
-       // candidate on the left.
-       printf("wrong side!!!!!!!!!!!!!\n");
-       candidate_root = (candidate_root+optimal_log_mean)/2;
+       // it's on the right of the optimum, so the root is probably
+       //very close to the optimum, and we have probably already
+       //explored very close to the zero.
+       printf("smaller root WRONG SIDE equals=%e\n", equals);
+       print();
+       printf("neg_cost=%e neg_log_mean=%e pos_cost=%e pos_log_mean=%e\n", closest_negative_cost, closest_negative_log_mean, closest_positive_cost, closest_positive_log_mean);
+       return (closest_positive_log_mean + closest_negative_log_mean)/2;
      }
   }while(NEWTON_EPSILON < ABS(candidate_cost));
   return candidate_root;
