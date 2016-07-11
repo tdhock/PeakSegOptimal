@@ -232,7 +232,14 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	// numerically constant on this interval.
 	// g(x) = Linear*e^x + Constant,
 	if(verbose)printf("DEGENERATE LINEAR FUNCTION IN MIN LESS\n");
-	if(it->Linear==0){
+	double left_cost = it->getCost(it->min_log_mean);
+	double right_cost = it->getCost(it->max_log_mean);
+	// We used to check if(it->Linear==0) but there are some cases
+	// when the function has a non-zero Linear coefficient, but is
+	// numerically constant (e.g. Linear=156 between -inf and
+	// -44). So now we check to see if the cost on the left and
+	// right of the interval are equal.
+	if(left_cost==right_cost){
 	  if(verbose){
 	    printf("Constant interval\n");
 	    it->print();
@@ -243,13 +250,13 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	     it->data_i, true); // equality constraint active on convex piece.
 	  prev_min_log_mean = it->max_log_mean;
 	}else{
-	  if(verbose){
-	    printf("Increasing interval\n");
-	    it->print();
-	  }
 	  // don't store this interval, but store its min cost as a
 	  // constant.
-	  prev_min_cost = it->getCost(it->min_log_mean);
+	  prev_min_cost = left_cost;
+	  if(verbose){
+	    printf("Increasing interval left_cost=%e(stored) right_cost=%e\n", left_cost, right_cost);
+	    it->print();
+	  }
 	  prev_data_i = it->data_i;
 	}
       }else{
