@@ -1,7 +1,7 @@
 An R package for computing constrained optimal segmentation models
 
-| [[file:tests/testthat][tests]]    | [[https://travis-ci.org/tdhock/coseg][https://travis-ci.org/tdhock/coseg.png?branch=master]]                           |
-| [[https://github.com/jimhester/covr][coverage]] | [[https://coveralls.io/github/tdhock/coseg?branch=master][https://coveralls.io/repos/tdhock/coseg/badge.svg?branch=master&service=github]] |
+| [[file:tests/testthat][tests]]    | [[https://travis-ci.org/tdhock/coseg][https://travis-ci.org/tdhock/coseg.png?branch=master]]                           |                                                                  |
+| [[https://github.com/jimhester/covr][coverage]] | [[https://coveralls.io/github/tdhock/coseg?branch=master][https://coveralls.io/repos/tdhock/coseg/badge.svg?branch=master&service=github]] | [[https://codecov.io/gh/tdhock/coseg][https://codecov.io/gh/tdhock/coseg/branch/master/graph/badge.svg]] |
 
 ** Installation
 
