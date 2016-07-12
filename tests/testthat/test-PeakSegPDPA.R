@@ -37,6 +37,35 @@ test_that("third segment is OK", {
   expect_equal(fit$mean.mat[3,], c(1, mean3, mean3))
 })
 
+test_that("segment mean 0 before is OK", {
+  fit <- PeakSegPDPA(as.integer(c(0, 10, 14, 13)), rep(1L, 4), 3L)
+  expect_identical(fit$mean.mat[3,], c(0, 37/3, 37/3))
+})
+
+test_that("segment mean 0 after is OK", {
+  fit <- PeakSegPDPA(as.integer(c(1, 10, 14, 0)), rep(1L, 4), 3L)
+  expect_identical(fit$mean.mat[3,], c(1, 12, 0))
+})
+
+test_that("weighted loss same as duplicated loss", {
+  fit.id <- PeakSegPDPA(
+    as.integer(c(1, 10, 14, 0)), as.integer(c(1, 1, 1, 1)), 3L)
+  fit.weighted <- PeakSegPDPA(
+    as.integer(c(1, 10, 14, 0)), as.integer(c(2, 1, 1, 1)), 3L)
+  fit.duplicated <- PeakSegPDPA(
+    as.integer(c(1, 1, 10, 14, 0)), as.integer(c(1, 1, 1, 1, 1)), 3L)
+  expect_equal(fit.weighted$cost.mat[, 4], fit.duplicated$cost.mat[, 5])
+})
+
+data.vec <- as.integer(c(0, 10, 14, 13))
+fit <- PeakSegPDPA(data.vec, rep(1L, 4), 3L)
+test_that("segment mean 0 is OK", {
+  expect_identical(fit$mean.mat, rbind(
+    c(9.25, Inf, Inf),
+    c(0, 37/3, Inf),
+    c(0, 37/3, 37/3)))
+})
+
 data(H3K4me3_XJ_immune_chunk1)
 H3K4me3_XJ_immune_chunk1$count <- H3K4me3_XJ_immune_chunk1$coverage
 by.sample <- split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
