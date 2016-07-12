@@ -11,7 +11,7 @@
 #define ABS(x) ((x)<0 ? -(x) : (x))
 
 PoissonLossPieceLog::PoissonLossPieceLog
-(int li, int lo, double co, double m, double M, int i, bool a){
+(double li, double lo, double co, double m, double M, int i, bool a){
   Linear = li;
   Log = lo;
   Constant = co;
@@ -29,9 +29,9 @@ bool PoissonLossPieceLog::has_two_roots(double equals){
     throw "problem";
     return false;
   }
-  double optimal_log_mean = argmin(); //min or max!
+  double optimal_mean = argmin_mean(); //min or max!
+  double optimal_log_mean = log(optimal_mean); //min or max!
   double optimal_cost = getCost(optimal_log_mean);
-  double optimal_mean = - (double)Log / (double)Linear; //min or max!
   double optimal_cost2 = PoissonLoss(optimal_mean);
   // does g(x) = Linear*e^x + Log*x + Constant = equals? compare the
   // cost at optimum to equals.
@@ -45,29 +45,29 @@ bool PoissonLossPieceLog::has_two_roots(double equals){
 }
 
 double PoissonLossPieceLog::PoissonLoss(double mean){
-  double loss_without_log_term = (double)Linear*mean + Constant;
+  double loss_without_log_term = Linear*mean + Constant;
   if(Log==0){
     return loss_without_log_term;
   }
   double log_mean_only = log(mean);
-  double log_coef_only = (double)Log;
+  double log_coef_only = Log;
   double product = log_mean_only * log_coef_only;
   return loss_without_log_term + product;
 }
 
 double PoissonLossPieceLog::PoissonDeriv(double mean){
-  return Linear + (double)Log/mean;
+  return Linear + Log/mean;
 }
 
 // This function performs the root finding in the positive (mean)
 // space, but needs to return a value in the log(mean) space.
 double PoissonLossPieceLog::get_larger_root(double equals){
-  double optimal_mean = - (double)Log / (double)Linear; //min or max!
+  double optimal_mean = argmin_mean(); //min or max!
   double optimal_cost = PoissonLoss(optimal_mean);
   // Approximate the solution by the line through
   // (optimal_mean,optimal_cost) with the asymptotic slope. As m tends
   // to Inf, f'(m)=Linear+Log/m tends to Linear.
-  //double candidate_root = optimal_mean + (equals-optimal_cost)/(double)Linear;
+  //double candidate_root = optimal_mean + (equals-optimal_cost)/Linear;
   double candidate_root = optimal_mean + 1;
   // find the larger root of f(m) = Linear*m + Log*log(m) + Constant -
   // equals = 0.
@@ -130,7 +130,7 @@ double PoissonLossPieceLog::get_smaller_root(double equals){
   // Approximate the solution by the line through
   // (optimal_mean,optimal_cost) with the asymptotic slope. As x tends
   // to -Inf, g'(x)=Linear*e^x+Log tends to Log.
-  //double candidate_root = optimal_log_mean + (equals-optimal_cost)/(double)Log;
+  //double candidate_root = optimal_log_mean + (equals-optimal_cost)/Log;
   double candidate_root = optimal_log_mean - 1;
   // find the smaller root of g(x) = Linear*e^x + Log*x + Constant -
   // equals = 0.
@@ -181,11 +181,18 @@ double PoissonLossPieceLog::get_smaller_root(double equals){
   return candidate_root;
 }
 
+double PoissonLossPieceLog::argmin_mean(){
+  // f(m) = Linear*m + Log*log(m) + Constant,
+  // f'(m)= Linear + Log/m = 0 means
+  // m = -Log/Linear.
+  return - Log / Linear;
+}
+
 double PoissonLossPieceLog::argmin(){
   // g(x) = Linear*e^x + Log*x + Constant,
   // g'(x)= Linear*e^x + Log = 0 means
   // x = log(-Log/Linear).
-  return log(- (double)Log / (double)Linear);
+  return log(argmin_mean());
 }
 
 double PoissonLossPieceLog::getCost(double log_mean){
@@ -196,12 +203,12 @@ double PoissonLossPieceLog::getCost(double log_mean){
   if(log_mean == -INFINITY){
     linear_term = 0.0;
   }else{
-    linear_term = (double)Linear*exp(log_mean);
+    linear_term = Linear*exp(log_mean);
   }
   if(Log==0){
     log_term = 0.0;
   }else{
-    log_term = (double)Log*log_mean;
+    log_term = Log*log_mean;
   }
   return linear_term + log_term + Constant;
 }
@@ -213,9 +220,9 @@ double PoissonLossPieceLog::getDeriv(double log_mean){
   if(log_mean == -INFINITY){
     linear_term = 0.0;
   }else{
-    linear_term = (double)Linear*exp(log_mean);
+    linear_term = Linear*exp(log_mean);
   }
-  return linear_term + (double)Log;
+  return linear_term + Log;
 }
 
 void PiecewisePoissonLossLog::set_to_min_less_of
@@ -438,7 +445,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of(PiecewisePoissonLossLog *input)
   }
 }
 
-void PiecewisePoissonLossLog::add(int Linear, int Log, double Constant){
+void PiecewisePoissonLossLog::add(double Linear, double Log, double Constant){
   PoissonLossPieceListLog::iterator it;
   for(it=piece_list.begin(); it != piece_list.end(); it++){
     it->Linear += Linear;
@@ -486,7 +493,7 @@ void PiecewisePoissonLossLog::print(){
 }
 
 void PoissonLossPieceLog::print(){
-  printf("%10d %10d %20f %60.55f %60.55f %d\n",
+  printf("%10.0f %10.0f %20f %60.55f %60.55f %d\n",
 	 Linear, Log, Constant,
 	 min_log_mean, max_log_mean, data_i);
 }
@@ -741,7 +748,7 @@ void PiecewisePoissonLossLog::push_min_pieces
       if(verbose)printf("only diff is linear coef\n");
       return;
     }
-    double log_mean_at_equal_cost = log(-diff_piece.Constant/(double)diff_piece.Linear);
+    double log_mean_at_equal_cost = log(-diff_piece.Constant/diff_piece.Linear);
     if(last_min_log_mean < log_mean_at_equal_cost &&
        log_mean_at_equal_cost < first_max_log_mean){
       // the root is in the interval, so we need to add two intervals.

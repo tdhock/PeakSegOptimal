@@ -5,13 +5,13 @@ PeakSegPDPA <- structure(function
 (count.vec,
 ### integer vector of count data.
  weight.vec=rep(1, length(count.vec)),
-### integer vector (same length as count.vec) of positive weights.
+### numeric vector (same length as count.vec) of positive weights.
  max.segments=NULL
 ### integer of length 1: maximum number of segments (must be >= 2).
 ){
   n.data <- length(count.vec)
   stopifnot(is.integer(count.vec))
-  stopifnot(is.integer(weight.vec))
+  stopifnot(is.numeric(weight.vec))
   stopifnot(n.data==length(weight.vec))
   stopifnot(0 < weight.vec)
   stopifnot(is.integer(max.segments))
@@ -24,7 +24,7 @@ PeakSegPDPA <- structure(function
   result.list <- .C(
     "PeakSegPDPALog_interface",
     count.vec=as.integer(count.vec),
-    weight.vec=as.integer(weight.vec),
+    weight.vec=as.numeric(weight.vec),
     n.data=as.integer(n.data),
     max.segments=as.integer(max.segments),
     cost.mat=as.double(cost.mat),

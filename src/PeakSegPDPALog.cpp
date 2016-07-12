@@ -5,10 +5,10 @@
 #include "funPieceListLog.h"
 #include <math.h>
 
-#define IFPRINT(arg) if(data_i==490 && total_changes==-3) (arg)
+#define IFPRINT(arg) if(data_i==-490 && total_changes==-3) (arg)
 
 void PeakSegPDPALog
-(int *data_vec, int *weight_vec, int data_count,
+(int *data_vec, double *weight_vec, int data_count,
  int maxSegments,
  // the following matrices are for output:
  double *cost_mat, //data_count x maxSegments.
@@ -26,8 +26,8 @@ void PeakSegPDPALog
     }
   }
   std::vector<PiecewisePoissonLossLog> cost_model_vec(data_count * maxSegments);
-  int Log_cumsum = 0;
-  int Linear_cumsum = 0;
+  double Log_cumsum = 0.0;
+  double Linear_cumsum = 0.0;
   for(int data_i=0; data_i<data_count; data_i++){
     Linear_cumsum += weight_vec[data_i];
     Log_cumsum += -data_vec[data_i]*weight_vec[data_i];
