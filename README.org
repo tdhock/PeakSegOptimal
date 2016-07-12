@@ -9,9 +9,14 @@ devtools::install_github("tdhock/coseg")
 
 ** Usage
 
-#+BEGIN_SRC R
-## Linear time exact C++ solver for the PeakSeg problem.
-example(PeakSegPDPA)
-#+END_SRC
+Linear time exact C++ solver for the optimal change points using the
+Poisson loss and the PeakSeg constraint. There are two R functions:
+- PeakSegPDPA is a direct interface to the C++ code. Returns matrices
+  for the optimal cost and number of intervals stored by the algorithm
+  at each step.
+- PeakSegPDPAchrom is a more user-friendly interface, which takes a
+  data.frame with columns chrom, chromStart, chromEnd as input, and
+  returns data.frames as output.
+
 
 

@@ -1,7 +1,16 @@
 PeakSegPDPA <- structure(function
-### Compute the PeakSeg constrained, Poisson loss, Segment Neighborhood
-### model using a constrained version of the Pruned Dynamic
-### Programming Algorithm. 
+### Find the optimal change-points using the Poisson loss and the
+### PeakSeg constraint. For N data points and S segments, the
+### functional pruning algorithm is O(S*N) space and O(S*NlogN)
+### time. It recovers the exact solution to the following optimization
+### problem. Let Z be an N-vector of count data (non-negative
+### integers). Find the N-vector M of real numbers (segment means)
+### which minimize the Poisson Loss, sum_i m_i - z_i * log(m_i),
+### subject to constraints: (1) there are at most S changes in M, and
+### (2) up changes are followed by down changes, and vice versa (mu1
+### <= mu2 >= mu3 <= mu4 >= mu5, etc). Note that the segment means can
+### be equal, in which case the recovered model is not feasible for
+### the PeakSeg problem.
 (count.vec,
 ### integer vector of count data.
  weight.vec=rep(1, length(count.vec)),
@@ -41,6 +50,11 @@ PeakSegPDPA <- structure(function
   result.list$intervals.mat <- matrix(
     result.list$intervals.mat, max.segments, n.data, byrow=TRUE)
   result.list
+### List of model parameters. count.vec, weight.vec, n.data,
+### max.segments (input parameters), cost.mat (optimal Poisson loss),
+### ends.mat (optimal position of segment ends, 1-indexed), mean.mat
+### (optimal segment means), intervals.mat (number of intervals stored
+### by the functional pruning algorithm).
 }, ex=function(){
   data("H3K4me3_XJ_immune_chunk1")
   by.sample <-
@@ -68,9 +82,9 @@ PeakSegPDPA <- structure(function
 })
 
 PeakSegPDPAchrom <- structure(function
-### Compute the PeakSeg constrained, Poisson loss, Segment Neighborhood
-### model using a constrained version of the Pruned Dynamic
-### Programming Algorithm.
+### Find the optimal change-points using the Poisson loss and the
+### PeakSeg constraint. This function is a user-friendly interface to
+### the PeakSegPDPA function.
 (count.df,
 ### data.frame with columns count, chromStart, chromEnd.
  max.peaks=NULL
@@ -116,7 +130,8 @@ PeakSegPDPAchrom <- structure(function
       peaks=(seg.vec-1)/2,
       PoissonLoss=fit$cost.mat[seg.vec, length(data.vec)],
       feasible=apply(fit$mean.mat[seg.vec,], 1, is.feasible)))
-### List of data.frames. 
+### List of data.frames: segments can be used for plotting the
+### segmentation model, and loss can be used for model selection.
 }, ex=function(){
 
   ## samples for which pdpa recovers a more likely model, but it is
@@ -141,6 +156,7 @@ PeakSegPDPAchrom <- structure(function
   }
   both.segs <- do.call(rbind, both.segs.list)
   both.breaks <- subset(both.segs, 1 < first)
+  library(ggplot2)
   ggplot()+
     theme_bw()+
     theme(panel.margin=grid::unit(0, "lines"))+

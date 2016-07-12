@@ -57,6 +57,51 @@ test_that("weighted loss same as duplicated loss", {
   expect_equal(fit.weighted$cost.mat[, 4], fit.duplicated$cost.mat[, 5])
 })
 
+test_that("non-integer weights are fine", {
+  fit <- PeakSegPDPA(
+    as.integer(c(1, 10, 14, 0)), c(1, 0.5, 1, 1), 3L)
+})
+
+test_that("one argument is an error", {
+  expect_error({
+    fit <- PeakSegPDPA(as.integer(c(1, 10, 14, 0)))
+  })
+})
+
+test_that("non-integer data is an error", {
+  expect_error({
+    fit <- PeakSegPDPA(c(1, 10, 14, 0))
+  })
+})
+
+test_that("no second argument is fine", {
+  fit <- PeakSegPDPA(as.integer(c(1, 10, 14, 0)), max.segments=3L)
+})
+
+test_that("non-integer max.segments is an error", {
+  expect_error({
+    fit <- PeakSegPDPA(as.integer(c(1, 10, 14, 0)), max.segments=3)
+  })
+})
+
+test_that("small max.segments is an error", {
+  expect_error({
+    fit <- PeakSegPDPA(as.integer(c(1, 10, 14, 0)), max.segments=1L)
+  })
+  expect_error({
+    fit <- PeakSegPDPA(as.integer(c(1, 10, 14, 0)), max.segments=0L)
+  })
+  expect_error({
+    fit <- PeakSegPDPA(as.integer(c(1, 10, 14, 0)), max.segments=-1L)
+  })
+})
+
+test_that("large max.segments is an error", {
+  expect_error({
+    fit <- PeakSegPDPA(as.integer(c(1, 10, 14, 0)), max.segments=5L)
+  })
+})
+
 data.vec <- as.integer(c(0, 10, 14, 13))
 fit <- PeakSegPDPA(data.vec, rep(1L, 4), 3L)
 test_that("segment mean 0 is OK", {
@@ -69,13 +114,9 @@ test_that("segment mean 0 is OK", {
 
 data(H3K4me3_XJ_immune_chunk1)
 H3K4me3_XJ_immune_chunk1$count <- H3K4me3_XJ_immune_chunk1$coverage
-by.sample <- split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
+by.sample <- split(
+  H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
 sapply(by.sample, nrow)
-
-## load("H3K4me3_XJ_immune_chunk1_McGill0101.RData")
-## timestep <- 422
-## total.segments <- 9
-## one.name <- "McGill0101"
 
 ## library(ggplot2)
 ## ggplot()+
@@ -95,52 +136,11 @@ for(one.name in names(by.sample)){
   count.vec <- one$coverage
   weight.vec <- with(one, chromEnd-chromStart)
   pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
-  ## Code to compare Log space computation with positive space.
-  ## pdpa.orig <- PeakSegPDPA(count.vec, weight.vec, max.segments)
-  ## s <- 5
-  ## plot(pdpa$cost.mat[s,], pdpa.orig$cost.mat[s,])
-  ## plot(pdpa$intervals.mat[s,], pdpa.orig$intervals.mat[s,])
-  ## rbind(pdpa$intervals.mat[s,], pdpa.orig$intervals.mat[s,])
-  ## library(data.table)
-  ## intervals.dt <- data.table(
-  ##   col=as.integer(col(pdpa$cost.mat)),
-  ##   row=as.integer(row(pdpa$cost.mat)),
-  ##   pdpa.cost=as.numeric(pdpa$cost.mat),
-  ##   pdpa.orig.cost=as.numeric(pdpa.orig$cost.mat),
-  ##   pdpa=as.integer(pdpa$intervals.mat),
-  ##   pdpa.orig=as.integer(pdpa.orig$intervals.mat))
   peakseg <- PeakSegDP(one, 9L)
-  seg.vec <- seq(1,19,by=2)
-  all.loss <- data.frame(
-    pdpa=pdpa$cost.mat[seg.vec,length(count.vec)],
-    dp=NA,
-    row.names=seg.vec)
-  is.feasible <- function(loss.vec){
-    !any(diff(loss.vec) == 0, na.rm=TRUE)
-  }
-  all.loss$pdpa.feasible <- apply(pdpa$mean.mat[seg.vec,], 1, is.feasible)
-  all.loss[paste(peakseg$error$segments), "dp"] <- peakseg$error$error
-  all.loss$pdpa.better <- with(all.loss, dp - pdpa)
-  ##print(subset(all.loss, pdpa.feasible & is.na(dp)))
   cost.mat <- rbind(
     pdpa=pdpa$cost.mat[peakseg$error$segments, length(count.vec)],
     cdpa=peakseg$error$error)
-  ## cdpa <- cDPA(count.vec, weight.vec, max.segments)
-  ## prob.segs <- 9
-  ## cost.prob <- data.frame(
-  ##   data.i=seq_along(count.vec),
-  ##   pdpa=pdpa$cost.mat[prob.segs,],
-  ##   cdpa=cdpa$loss[prob.segs,])
-  ## cost.prob$should.be.positive <- with(cost.prob, cdpa-pdpa)
-  ## prob.labels <- subset(cost.prob, cdpa-pdpa < -1e-10)
-  ## gg <- ggplot()+
-  ##   geom_line(aes(data.i,cdpa-pdpa),data=cost.prob)+
-  ##   geom_point(aes(data.i,cdpa-pdpa),data=prob.labels,shape=1,color="red")
-  ## print(gg)
-  ##print(one.name)
-  ## print(min.diff)
   diff.vec <- apply(cost.mat, 2, diff)
-  ##print(diff.vec)
   min.diff <- min(diff.vec)
   expect_gt(min.diff, -1e-10)
 }

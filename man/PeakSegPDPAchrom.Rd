@@ -1,16 +1,17 @@
 \name{PeakSegPDPAchrom}
 \alias{PeakSegPDPAchrom}
 \title{PeakSegPDPAchrom}
-\description{Compute the PeakSeg constrained, Poisson loss, Segment Neighborhood
-model using a constrained version of the Pruned Dynamic
-Programming Algorithm.}
+\description{Find the optimal change-points using the Poisson loss and the
+PeakSeg constraint. This function is a user-friendly interface to
+the PeakSegPDPA function.}
 \usage{PeakSegPDPAchrom(count.df, max.peaks = NULL)}
 \arguments{
   \item{count.df}{data.frame with columns count, chromStart, chromEnd.}
   \item{max.peaks}{integer > 0: maximum number of peaks.}
 }
 
-\value{List of data.frames. }
+\value{List of data.frames: segments can be used for plotting the
+segmentation model, and loss can be used for model selection.}
 
 \author{Toby Dylan Hocking}
 
@@ -41,6 +42,7 @@ if(require(PeakSegDP)){
 }
 both.segs <- do.call(rbind, both.segs.list)
 both.breaks <- subset(both.segs, 1 < first)
+library(ggplot2)
 ggplot()+
   theme_bw()+
   theme(panel.margin=grid::unit(0, "lines"))+
