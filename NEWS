@@ -1,5 +1,27 @@
 TODOs
 
+FPOP version of PeakSeg constrained, Poisson loss problem.
+
+Limited memory FPOP version. What serialization/file format to use for
+reading data (bigwig/bedGraph?) and storing the optimal cost
+functions?
+
+2016.07.12
+
+For numerical stability, the PeakSegPDPA intervals are in now the log
+space. That means if the data min is 0, then there will be an interval
+with -Inf for its lower limit. Smaller root finding is in the
+f(m)=Linear*e^m+Log*m+Constant space, and larger root finding is in
+the g(x)=Linear*x+Log*log(x)+Constant space.
+
+2016.07.06
+
+The Lambert W root finding method was numerically unstable, for
+example the roots of the cost function -628*x+log(x)-776.140660 could
+not be computed correctly since exp(-776) is exactly zero using
+doubles. Instead I implemented a bound-constrained Newton root finding
+method which seems to be more stable.
+
 2016.07.03
 
 Some bugs fixed in the min env and min less computations.

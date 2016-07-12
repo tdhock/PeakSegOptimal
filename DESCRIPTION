@@ -1,8 +1,10 @@
 Package: coseg
 Maintainer: Toby Dylan Hocking <tdhock5@gmail.com>
 Author: Toby Dylan Hocking
-Version: 2016.07.03
+Version: 2016.07.12
 License: GPL-3
 Title: Constrained Optimal Segmentation
 Description: Computes optimal segmentations subject to constraints
  on the directions of changes.
+Suggests: testthat, PeakSegDP, ggplot2
+Remotes: tdhock/PeakSegDP

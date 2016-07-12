@@ -1,16 +1,17 @@
 \name{PeakSegPDPAchrom}
 \alias{PeakSegPDPAchrom}
 \title{PeakSegPDPAchrom}
-\description{Compute the PeakSeg constrained, Poisson loss, Segment Neighborhood
-model using a constrained version of the Pruned Dynamic
-Programming Algorithm.}
+\description{Find the optimal change-points using the Poisson loss and the
+PeakSeg constraint. This function is a user-friendly interface to
+the PeakSegPDPA function.}
 \usage{PeakSegPDPAchrom(count.df, max.peaks = NULL)}
 \arguments{
   \item{count.df}{data.frame with columns count, chromStart, chromEnd.}
   \item{max.peaks}{integer > 0: maximum number of peaks.}
 }
 
-\value{List of data.frames. }
+\value{List of data.frames: segments can be used for plotting the
+segmentation model, and loss can be used for model selection.}
 
 \author{Toby Dylan Hocking}
 
@@ -33,13 +34,15 @@ by.sample <-
 one.sample <- by.sample[[sample.id]]
 pdpa.fit <- PeakSegPDPAchrom(one.sample, 9L)
 pdpa.segs <- subset(pdpa.fit$segments, n.peaks == peaks)
-dp.fit <- PeakSegDP(one.sample, 9L)
-dp.segs <- subset(dp.fit$segments, n.peaks == peaks)
-both.segs <- rbind(
-  data.frame(dp.segs, algorithm="cDPA"),
-  data.frame(pdpa.segs, algorithm="PDPA"))
+both.segs.list <- list(pdpa=data.frame(pdpa.segs, algorithm="PDPA"))
+if(require(PeakSegDP)){
+  dp.fit <- PeakSegDP(one.sample, 9L)
+  dp.segs <- subset(dp.fit$segments, n.peaks == peaks)
+  both.segs.list$dp <- data.frame(dp.segs, algorithm="cDPA")
+}
+both.segs <- do.call(rbind, both.segs.list)
 both.breaks <- subset(both.segs, 1 < first)
-
+library(ggplot2)
 ggplot()+
   theme_bw()+
   theme(panel.margin=grid::unit(0, "lines"))+
@@ -63,15 +66,21 @@ sample.id.vec <- c(
 sample.id <- sample.id.vec[1]
 one.sample <- by.sample[[sample.id]]
 pdpa.fit <- PeakSegPDPAchrom(one.sample, 9L)
-dp.fit <- PeakSegDP(one.sample, 9L)
-
-ggplot()+
-  scale_size_manual(values=c(cDPA=3, PDPA=1))+
-  geom_point(aes(peaks, error,
-                 size=algorithm, color=algorithm),
-             data=data.frame(dp.fit$error, algorithm="cDPA"))+
+gg.loss <- ggplot()+
+  scale_size_manual(values=c(cDPA=2, PDPA=3))+
+  scale_fill_manual(values=c(cDPA="white", PDPA="black"))+
   geom_point(aes(peaks, PoissonLoss,
-                 size=algorithm, color=algorithm),
+                 size=algorithm, fill=algorithm),
+             shape=21,
              data=data.frame(pdpa.fit$loss, algorithm="PDPA"))
+if(require(PeakSegDP)){
+  dp.fit <- PeakSegDP(one.sample, 9L)
+  gg.loss <- gg.loss+
+    geom_point(aes(peaks, error,
+                   size=algorithm, fill=algorithm),
+               shape=21,
+               data=data.frame(dp.fit$error, algorithm="cDPA"))
+}
+gg.loss
 
 }
