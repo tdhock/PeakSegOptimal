@@ -107,31 +107,44 @@ PeakSegPDPAchrom <- structure(function
   segments.list <- list()
   seg.vec <- seq(1, max.segments, by=2)
   for(n.segments in seg.vec){
-    break.vec <- fit$ends.mat[n.segments, 2:n.segments]
+    break.vec <- if(n.segments==1){
+      c()
+    }else{
+      fit$ends.mat[n.segments, 2:n.segments]
+    }
     first <- c(1, break.vec+1)
     last <- c(break.vec, nrow(count.df))
+    status.str <- rep(c("background", "peak"), l=n.segments)
     segments.list[[paste(n.segments)]] <- data.frame(
       mean=fit$mean.mat[n.segments, 1:n.segments],
       first,
       last,
       chromStart=count.df$chromStart[first],
       chromEnd=count.df$chromEnd[last],
-      status=rep(c("background", "peak"), l=n.segments),
+      status=factor(status.str, c("background", "peak")),
       peaks=(n.segments-1)/2,
       segments=n.segments)
   }
   is.feasible <- function(loss.vec){
     !any(diff(loss.vec) == 0, na.rm=TRUE)
   }
+  loss.df <- data.frame(
+    segments=seg.vec,
+    peaks=(seg.vec-1)/2,
+    PoissonLoss=fit$cost.mat[seg.vec, length(data.vec)],
+    feasible=apply(fit$mean.mat[seg.vec,], 1, is.feasible))
+  seg.df <- do.call(rbind, segments.list)
+  rownames(seg.df) <- NULL
   list(
-    segments=do.call(rbind, segments.list),
-    loss=data.frame(
-      segments=seg.vec,
-      peaks=(seg.vec-1)/2,
-      PoissonLoss=fit$cost.mat[seg.vec, length(data.vec)],
-      feasible=apply(fit$mean.mat[seg.vec,], 1, is.feasible)))
+    segments=seg.df,
+    loss=loss.df,
+    modelSelection=with(subset(loss.df, feasible), {
+      exactModelSelection(PoissonLoss, segments-1, peaks)
+    }))
 ### List of data.frames: segments can be used for plotting the
-### segmentation model, and loss can be used for model selection.
+### segmentation model, loss describes model loss and feasibility,
+### modelSelection describes the set of all linear penalty (lambda)
+### values which can be used to select the feasible models.
 }, ex=function(){
 
   ## samples for which pdpa recovers a more likely model, but it is

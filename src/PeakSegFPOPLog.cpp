@@ -16,7 +16,8 @@ void PeakSegFPOPLog
  double *cost_mat, //data_count x 2.
  int *end_vec, //data_count
  double *mean_vec,//data_count
- int *intervals_mat){//data_count x 2
+ int *intervals_mat,//data_count x 2
+ int *label_vec){//data_count
   double min_log_mean=log(data_vec[0]), max_log_mean=log(data_vec[0]);
   for(int data_i=1; data_i<data_count; data_i++){
     double log_data = log(data_vec[data_i]);
@@ -72,7 +73,8 @@ void PeakSegFPOPLog
   int prev_seg_end=data_count, candidate_end;
   for(int i=0; i<data_count; i++){
     mean_vec[i] = INFINITY;
-    end_vec[i] = -1;
+    end_vec[i] = -2;
+    label_vec[i] = -1;
   }
   for(int i=0; i<2*data_count; i++){
     up_cost = &cost_model_mat[i];
@@ -84,25 +86,27 @@ void PeakSegFPOPLog
   int prev_seg_offset;
   up_cost = &cost_model_mat[data_count-1];
   up_cost->Minimize
-    (&best_cost, &best_log_mean,
-     &prev_seg_end, &equality_constraint_active);
-  //printf("final up cost=%f at log_mean=%f\n", best_cost, best_log_mean);
+    (&candidate_cost, &candidate_log_mean,
+     &candidate_end, &candidate_constraint);
+  //printf("final up cost=%f at log_mean=%f\n", candidate_cost, candidate_log_mean);
   //up_cost->print();
   down_cost = &cost_model_mat[data_count*2-1];
   down_cost->Minimize
-    (&candidate_cost, &candidate_log_mean,
-     &candidate_end, &candidate_constraint);
-  //printf("final down cost=%f at log_mean=%f\n", candidate_cost, candidate_log_mean);
+    (&best_cost, &best_log_mean,
+     &prev_seg_end, &equality_constraint_active);
+  //printf("final down cost=%f at log_mean=%f\n", best_cost, best_log_mean);
   //down_cost->print();
   if(candidate_cost < best_cost){
-    //more likely to end down, so previous segment was up.
-    prev_seg_offset = 0;
+    //more likely to end up, so previous segment was down.
     best_cost = candidate_cost;
     best_log_mean = candidate_log_mean;
     prev_seg_end = candidate_end;
     equality_constraint_active = candidate_constraint;
-  }else{
     prev_seg_offset = data_count;
+    label_vec[0] = 1;
+  }else{
+    prev_seg_offset = 0;
+    label_vec[0] = 0;
   }
   mean_vec[0] = exp(best_log_mean);
   end_vec[0] = prev_seg_end;
@@ -121,8 +125,10 @@ void PeakSegFPOPLog
     }
     if(prev_seg_offset==0){
       prev_seg_offset = data_count;
+      label_vec[out_i] = 1;
     }else{
       prev_seg_offset = 0;
+      label_vec[out_i] = 0;
     }
     mean_vec[out_i] = exp(best_log_mean);
     end_vec[out_i] = prev_seg_end;

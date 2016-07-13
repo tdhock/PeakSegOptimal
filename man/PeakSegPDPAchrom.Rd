@@ -11,7 +11,9 @@ the PeakSegPDPA function.}
 }
 
 \value{List of data.frames: segments can be used for plotting the
-segmentation model, and loss can be used for model selection.}
+segmentation model, loss describes model loss and feasibility,
+modelSelection describes the set of all linear penalty (lambda)
+values which can be used to select the feasible models.}
 
 \author{Toby Dylan Hocking}
 
