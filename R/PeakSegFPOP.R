@@ -10,8 +10,8 @@ PeakSegFPOP <- structure(function
 ### followed by down changes, and vice versa. Note that the segment
 ### means can be equal, in which case the recovered model is not
 ### feasible for the PeakSeg problem. Unlike PeakSegPDPA which forces
-### the first segment mean to be down (mu1 <= mu2), PeakSegFPOP also
-### may recover a model with the firs segment mean up (mu1 >= mu2).
+### the first segment mean to be down (mu1 <= mu2), PeakSegFPOP may
+### recover a model with the first segment mean up (mu1 >= mu2).
 (count.vec,
 ### integer vector of count data.
  weight.vec=rep(1, length(count.vec)),
