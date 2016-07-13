@@ -1,16 +1,17 @@
 PeakSegFPOP <- structure(function
 ### Find the optimal change-points using the Poisson loss and the
-### PeakSeg constraint. For N data points and S segments, the
-### functional pruning algorithm is O(S*N) space and O(S*NlogN)
-### time. It recovers the exact solution to the following optimization
-### problem. Let Z be an N-vector of count data (non-negative
-### integers). Find the N-vector M of real numbers (segment means)
-### which minimize the Poisson Loss, sum_i m_i - z_i * log(m_i),
-### subject to constraints: (1) there are at most S changes in M, and
-### (2) up changes are followed by down changes, and vice versa (mu1
-### <= mu2 >= mu3 <= mu4 >= mu5, etc). Note that the segment means can
-### be equal, in which case the recovered model is not feasible for
-### the PeakSeg problem.
+### PeakSeg constraint. For N data points, the functional pruning
+### algorithm is O(N) space and O(NlogN) time. It recovers the exact
+### solution to the following optimization problem. Let Z be an
+### N-vector of count data (non-negative integers). Find the N-vector
+### M of real numbers (segment means) which minimize the penalized
+### Poisson Loss, sum_{i=2}^N I(m_i != m_{i-1})*penalty + sum_{i=1}^N
+### m_i - z_i * log(m_i), subject to constraint: up changes are
+### followed by down changes, and vice versa. Note that the segment
+### means can be equal, in which case the recovered model is not
+### feasible for the PeakSeg problem. Unlike PeakSegPDPA which forces
+### the first segment mean to be down (mu1 <= mu2), PeakSegFPOP also
+### may recover a model with the firs segment mean up (mu1 >= mu2).
 (count.vec,
 ### integer vector of count data.
  weight.vec=rep(1, length(count.vec)),
@@ -129,7 +130,8 @@ PeakSegFPOPchrom <- structure(function
       )
     )
 ### List of data.frames: segments can be used for plotting the
-### segmentation model.
+### segmentation model, loss summarizes the penalized PoissonLoss and
+### feasibilty of the computed model.
 }, ex=function(){
 
   library(coseg)

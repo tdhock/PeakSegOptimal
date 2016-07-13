@@ -47,32 +47,29 @@ exactModelSelection <- structure(function # Exact model selection function
              min.lambda = vL,
              max.lambda = c(vL[-1], Inf))
 },ex=function(){
-  data(chr11ChIPseq)
-  one <- subset(chr11ChIPseq$coverage, sample.id=="McGill0002")
-  fit <- PeakSegDP(one, 5L)
-  library(ggplot2)
-  ggplot()+
-    geom_step(aes(chromStart/1e3, count), data=one)+
-    geom_segment(aes(chromStart/1e3, mean,
-                     xend=chromEnd/1e3, yend=mean),
-                 data=fit$segments, color="green")+
-    geom_segment(aes(chromStart/1e3, 0,
-                     xend=chromEnd/1e3, yend=0),
-                 data=subset(fit$segments, status=="peak"),
-                 size=3, color="deepskyblue")+
-    theme_bw()+
-    theme(panel.margin=grid::unit(0, "cm"))+
-    facet_grid(peaks ~ ., scales="free", labeller=function(var, val){
-      s <- ifelse(val==1, "", "s")
-      paste0(val, " peak", s)
-    })
+
+  data("H3K4me3_XJ_immune_chunk1")
+  sample.id <- "McGill0106"
+  by.sample <-
+    split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
+  one.sample <- by.sample[[sample.id]]
+  count.vec <- one.sample$coverage
+  weight.vec <- with(one.sample, chromEnd-chromStart)
+  max.segments <- 5L
+  fit <- PeakSegPDPA(count.vec, weight.vec, max.segments)
+  segs.vec <- seq(1, max.segments, by=2)
+  cost.vec <- with(fit, cost.mat[segs.vec, n.data])
+  peaks.vec <- seq(0, by=1, l=length(cost.vec))
+  ## Typically we take model.complexity to be the number of changes,
+  ## so that the penalized cost is the same as in FPOP.
+  model.complexity <- segs.vec-1
   ## Calculate the exact path of breakpoints in the optimal number of
   ## peaks function.
-  rownames(fit$error) <- fit$error$peaks
-  exact.df <- with(fit$error, exactModelSelection(error, segments, peaks))
-  intercept <- fit$error[as.character(exact.df$peaks), "error"]
-  exact.df$cost <- intercept + exact.df$min.lambda * exact.df$model.complexity
+  exact.df <- exactModelSelection(cost.vec, model.complexity, peaks.vec)
+  exact.df$cost <- rev(cost.vec) + exact.df$min.lambda * exact.df$model.complexity
   exact.df$next.cost <- c(exact.df$cost[-1], NA)
+  exact.df$PoissonLoss <- rev(cost.vec)
+  library(ggplot2)
   ggplot()+
     geom_point(aes(min.lambda, cost),
                data=exact.df, pch=1, color="red")+
@@ -83,10 +80,12 @@ exactModelSelection <- structure(function # Exact model selection function
                   label=sprintf("%d peak%s optimal", peaks,
                     ifelse(peaks==1, "", "s"))),
               data=exact.df, color="red", hjust=0, vjust=1.5)+
-    geom_abline(aes(slope=segments, intercept=error), data=fit$error)+
-    geom_text(aes(0, error, label=peaks),
-              data=fit$error, hjust=1.5, color="red")+
-    ggtitle("model selection: cost = loss_k + lambda*segments_k")
+    geom_abline(aes(slope=model.complexity, intercept=PoissonLoss),
+                data=exact.df)+
+    geom_text(aes(0, PoissonLoss, label=peaks),
+              data=exact.df, hjust=1.5, color="red")+
+    ggtitle("model selection: cost = PoissonLoss_k + lambda*changes_k")
+  
   ## Solve the optimization using grid search.
   L.grid <- with(exact.df,{
     seq(min(max.log.lambda)-1,
@@ -94,14 +93,15 @@ exactModelSelection <- structure(function # Exact model selection function
         l=100)
   })
   lambda.grid <- exp(L.grid)
-  kstar.grid <- sapply(lambda.grid,function(lambda){
-    crit <- fit$error$segments * lambda + fit$error$error
+  kstar.grid <- sapply(lambda.grid, function(lambda){
+    crit <- with(exact.df, model.complexity * lambda + PoissonLoss)
     picked <- which.min(crit)
-    fit$error$peaks[picked]
+    exact.df$peaks[picked]
   })
   grid.df <- data.frame(log.lambda=L.grid, peaks=kstar.grid)
   ## Compare the results.
   ggplot()+
+    ggtitle("grid search (red) agrees with exact path computation (black)")+
     geom_segment(aes(min.log.lambda, peaks,
                      xend=max.log.lambda, yend=peaks),
                  data=exact.df)+
@@ -109,6 +109,7 @@ exactModelSelection <- structure(function # Exact model selection function
                data=grid.df, color="red", pch=1)+
     ylab("optimal model complexity (peaks)")+
     xlab("log(lambda)")
+  
 })
 
 largestContinuousMinimum <- structure(function
@@ -131,68 +132,49 @@ largestContinuousMinimum <- structure(function
   largest <- which.max(runs$size)
   list(start=starts[largest],end=ends[largest])
 }, ex=function(){
-  data(chr11ChIPseq)
-  one <- subset(chr11ChIPseq$coverage, sample.id=="McGill0322")
-  fit <- PeakSegDP(one, 5L)
-  ## First compute the optimal number of peaks function.
-  exact.df <- with(fit$error, exactModelSelection(error, segments, peaks))
-  ## Then compute the PeakError of these models with respect to the
-  ## annotated regions.
-  regions <- subset(chr11ChIPseq$regions, sample.id=="McGill0322")
-  peak.list <- split(fit$segments, fit$segments$peaks)
-  require(PeakError)
-  all.error <- NULL
-  error.regions <- NULL
-  for(peaks.chr in names(peak.list)){
-    peaks <- subset(peak.list[[peaks.chr]], status=="peak")
-    error <- PeakErrorChrom(peaks, regions)
-    error.regions <- rbind(error.regions, data.frame(peaks=peaks.chr, error))
-    all.error <- rbind(all.error, {
-      data.frame(peaks=as.integer(peaks.chr),
-                 errors=with(error, sum(fp+fn)))
-    })
-  }
-  ## plot the annotation error of the 6 models.
-  ann.colors <- c(noPeaks = "#f6f4bf", peakStart = "#ffafaf", 
-                  peakEnd = "#ff4c4c", peaks = "#a445ee")
-  library(ggplot2)
-  ggplot()+
-    geom_tallrect(aes(xmin=chromStart/1e3, xmax=chromEnd/1e3,
-                      fill=annotation),
-                  data=error.regions, alpha=1/2)+
-    geom_step(aes(chromStart/1e3, count), data=one, color="grey40")+
-    geom_tallrect(aes(xmin=chromStart/1e3, xmax=chromEnd/1e3,
-                      linetype=status),
-                  data=error.regions, fill=NA, color="black", size=2)+
-    scale_fill_manual(values=ann.colors)+
-    scale_linetype_manual(values=c("false negative"=3,
-                          "false positive"=1,
-                          "correct"=0))+
-    geom_segment(aes(chromStart/1e3, mean,
-                     xend=chromEnd/1e3, yend=mean),
-                 data=fit$segments, color="green")+
-    geom_segment(aes(chromStart/1e3, 0,
-                     xend=chromEnd/1e3, yend=0),
-                 data=subset(fit$segments, status=="peak"),
-                 size=3, color="deepskyblue")+
-    theme_bw()+
-    theme(panel.margin=grid::unit(0, "cm"))+
-    facet_grid(peaks ~ ., scales="free", labeller=function(var, val){
-      s <- ifelse(val==1, "", "s")
-      paste0(val, " peak", s)
-    })  
-  rownames(all.error) <- all.error$peaks
-  exact.df$errors <-
-    all.error[as.character(exact.df$model.complexity), "errors"]
+
+  data("H3K4me3_XJ_immune_chunk1")
+  sample.id <- "McGill0106"
+  by.sample <-
+    split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
+  one.sample <- by.sample[[sample.id]]
+  count.vec <- one.sample$coverage
+  weight.vec <- with(one.sample, chromEnd-chromStart)
+  max.segments <- 19L
+  fit <- PeakSegPDPA(count.vec, weight.vec, max.segments)
+  segs.vec <- seq(1, max.segments, by=2)
+  cost.vec <- with(fit, cost.mat[segs.vec, n.data])
+  peaks.vec <- seq(0, by=1, l=length(cost.vec))
+  ## Typically we take model.complexity to be the number of changes,
+  ## so that the penalized cost is the same as in FPOP.
+  model.complexity <- segs.vec-1
+  ## Calculate the exact path of breakpoints in the optimal number of
+  ## peaks function.
+  exact.df <- exactModelSelection(cost.vec, model.complexity, peaks.vec)
+  ## Say that we have computed an error function which takes a minimum
+  ## for the models with 1 or 3 peaks.
+  exact.df$errors <- c(3, 2, 2, 1, 1, 1, 0, 0, 1)
   indices <- with(exact.df, {
     largestContinuousMinimum(errors, max.log.lambda-min.log.lambda)
   })
-  ## The target interval (min.log.lambda, max.log.lambda) is the
-  ## largest continuous interval such that the error is minimal.
-  target.interval <- with(indices, {
-    data.frame(min.log.lambda=exact.df$min.log.lambda[start],
-               max.log.lambda=exact.df$max.log.lambda[end])
-  })
-  print(target.interval)
+  target.interval <- data.frame(
+    min.log.lambda=exact.df$min.log.lambda[indices$start],
+    max.log.lambda=exact.df$max.log.lambda[indices$end],
+    errors=exact.df$errors[indices$start])
+  library(ggplot2)
+  ggplot()+
+    ggtitle(
+      "target interval (red) is the set of penalties with min error (black)")+
+    geom_segment(aes(min.log.lambda, errors,
+                     xend=max.log.lambda, yend=errors),
+                 data=target.interval,
+                 color="red",
+                 size=2)+
+    geom_segment(aes(min.log.lambda, errors,
+                     xend=max.log.lambda, yend=errors),
+                 data=exact.df)+
+    ylab("errors of selected model")+
+    xlab("penalty constant log(lambda)")
+
 })
 

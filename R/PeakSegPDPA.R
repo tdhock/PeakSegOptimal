@@ -134,11 +134,12 @@ PeakSegPDPAchrom <- structure(function
     PoissonLoss=fit$cost.mat[seg.vec, length(data.vec)],
     feasible=apply(fit$mean.mat[seg.vec,], 1, is.feasible))
   seg.df <- do.call(rbind, segments.list)
+  only.feasible <- loss.df[loss.df$feasible,]
   rownames(seg.df) <- NULL
   list(
     segments=seg.df,
     loss=loss.df,
-    modelSelection=with(subset(loss.df, feasible), {
+    modelSelection=with(only.feasible, {
       exactModelSelection(PoissonLoss, segments-1, peaks)
     }))
 ### List of data.frames: segments can be used for plotting the

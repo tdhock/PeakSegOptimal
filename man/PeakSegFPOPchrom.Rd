@@ -11,7 +11,8 @@ the PeakSegFPOP function.}
 }
 
 \value{List of data.frames: segments can be used for plotting the
-segmentation model.}
+segmentation model, loss summarizes the penalized PoissonLoss and
+feasibilty of the computed model.}
 
 \author{Toby Dylan Hocking}
 

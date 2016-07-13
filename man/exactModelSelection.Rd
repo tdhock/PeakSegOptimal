@@ -22,32 +22,29 @@ max.lambda) with i being the solution for every lambda in
 
 
 \examples{
-data(chr11ChIPseq)
-one <- subset(chr11ChIPseq$coverage, sample.id=="McGill0002")
-fit <- PeakSegDP(one, 5L)
-library(ggplot2)
-ggplot()+
-  geom_step(aes(chromStart/1e3, count), data=one)+
-  geom_segment(aes(chromStart/1e3, mean,
-                   xend=chromEnd/1e3, yend=mean),
-               data=fit$segments, color="green")+
-  geom_segment(aes(chromStart/1e3, 0,
-                   xend=chromEnd/1e3, yend=0),
-               data=subset(fit$segments, status=="peak"),
-               size=3, color="deepskyblue")+
-  theme_bw()+
-  theme(panel.margin=grid::unit(0, "cm"))+
-  facet_grid(peaks ~ ., scales="free", labeller=function(var, val){
-    s <- ifelse(val==1, "", "s")
-    paste0(val, " peak", s)
-  })
+
+data("H3K4me3_XJ_immune_chunk1")
+sample.id <- "McGill0106"
+by.sample <-
+  split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
+one.sample <- by.sample[[sample.id]]
+count.vec <- one.sample$coverage
+weight.vec <- with(one.sample, chromEnd-chromStart)
+max.segments <- 5L
+fit <- PeakSegPDPA(count.vec, weight.vec, max.segments)
+segs.vec <- seq(1, max.segments, by=2)
+cost.vec <- with(fit, cost.mat[segs.vec, n.data])
+peaks.vec <- seq(0, by=1, l=length(cost.vec))
+## Typically we take model.complexity to be the number of changes,
+## so that the penalized cost is the same as in FPOP.
+model.complexity <- segs.vec-1
 ## Calculate the exact path of breakpoints in the optimal number of
 ## peaks function.
-rownames(fit$error) <- fit$error$peaks
-exact.df <- with(fit$error, exactModelSelection(error, segments, peaks))
-intercept <- fit$error[as.character(exact.df$peaks), "error"]
-exact.df$cost <- intercept + exact.df$min.lambda * exact.df$model.complexity
+exact.df <- exactModelSelection(cost.vec, model.complexity, peaks.vec)
+exact.df$cost <- rev(cost.vec) + exact.df$min.lambda * exact.df$model.complexity
 exact.df$next.cost <- c(exact.df$cost[-1], NA)
+exact.df$PoissonLoss <- rev(cost.vec)
+library(ggplot2)
 ggplot()+
   geom_point(aes(min.lambda, cost),
              data=exact.df, pch=1, color="red")+
@@ -58,10 +55,12 @@ ggplot()+
                 label=sprintf("\%d peak\%s optimal", peaks,
                   ifelse(peaks==1, "", "s"))),
             data=exact.df, color="red", hjust=0, vjust=1.5)+
-  geom_abline(aes(slope=segments, intercept=error), data=fit$error)+
-  geom_text(aes(0, error, label=peaks),
-            data=fit$error, hjust=1.5, color="red")+
-  ggtitle("model selection: cost = loss_k + lambda*segments_k")
+  geom_abline(aes(slope=model.complexity, intercept=PoissonLoss),
+              data=exact.df)+
+  geom_text(aes(0, PoissonLoss, label=peaks),
+            data=exact.df, hjust=1.5, color="red")+
+  ggtitle("model selection: cost = PoissonLoss_k + lambda*changes_k")
+
 ## Solve the optimization using grid search.
 L.grid <- with(exact.df,{
   seq(min(max.log.lambda)-1,
@@ -69,14 +68,15 @@ L.grid <- with(exact.df,{
       l=100)
 })
 lambda.grid <- exp(L.grid)
-kstar.grid <- sapply(lambda.grid,function(lambda){
-  crit <- fit$error$segments * lambda + fit$error$error
+kstar.grid <- sapply(lambda.grid, function(lambda){
+  crit <- with(exact.df, model.complexity * lambda + PoissonLoss)
   picked <- which.min(crit)
-  fit$error$peaks[picked]
+  exact.df$peaks[picked]
 })
 grid.df <- data.frame(log.lambda=L.grid, peaks=kstar.grid)
 ## Compare the results.
 ggplot()+
+  ggtitle("grid search (red) agrees with exact path computation (black)")+
   geom_segment(aes(min.log.lambda, peaks,
                    xend=max.log.lambda, yend=peaks),
                data=exact.df)+
@@ -84,4 +84,5 @@ ggplot()+
              data=grid.df, color="red", pch=1)+
   ylab("optimal model complexity (peaks)")+
   xlab("log(lambda)")
+
 }
