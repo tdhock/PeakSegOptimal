@@ -4,6 +4,8 @@ Limited memory FPOP version. What serialization/file format to use for
 reading data (bigwig/bedGraph?) and storing the optimal cost
 functions?
 
+Regularized isotonic regression solver.
+
 2016.07.13
 
 FPOP version of PeakSeg constrained, Poisson loss problem.
