@@ -493,7 +493,7 @@ void PiecewisePoissonLossLog::print(){
 }
 
 void PoissonLossPieceLog::print(){
-  printf("%10.0f %10.0f %20f %60.55f %60.55f %d\n",
+  printf("%10.0f %10.0f %10f %10f %10f %d\n",
 	 Linear, Log, Constant,
 	 min_log_mean, max_log_mean, data_i);
 }
