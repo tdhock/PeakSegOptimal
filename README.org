@@ -10,16 +10,36 @@ install.packages("devtools")
 devtools::install_github("tdhock/coseg")
 #+END_SRC
 
-** Usage
+** PeakSeg solvers
 
 Linear time exact C++ solver for the optimal change points using the
-Poisson loss and the PeakSeg constraint. There are two R functions:
+Poisson loss and the PeakSeg constraint. 
+
+*** PeakSeg Segment Neighborhood problem
+
+There are two R functions that solve the Segment Neighborhood
+problem. The constraints are first segment mean <= second segment mean
+>= third segment mean, etc. For S segments and N data points,
+complexity is O(S*N) memory and O(S*N log N) time.
 - PeakSegPDPA is a direct interface to the C++ code. Returns matrices
   for the optimal cost and number of intervals stored by the algorithm
-  at each step.
+  at each step. Input parameter is the maximum number of segments S,
+  and outputs are the optimal models from 1 to S segments.
 - PeakSegPDPAchrom is a more user-friendly interface, which takes a
   data.frame with columns chrom, chromStart, chromEnd as input, and
+  returns data.frames as output. Input parameter is the maximum number
+  of peaks P, and outputs are the optimal models from 0 to P peaks.
+
+*** PeakSeg Optimal Partitioning problem
+
+There are two R functions that solve the Optimal Partitioning
+problem. Input parameter is a non-negative penalty constant (bigger
+for fewer peaks, smaller for more peaks), and output is the model that
+minimizes the penalized cost using the specified penalty constant. For
+N data points, complexity is O(N) memory and O(N log N) time.
+- PeakSegFPOP is a direct interface to the C++ code. Returns matrices
+  for the optimal cost and number of intervals stored by the algorithm
+  at each step.
+- PeakSegFPOPchrom is a more user-friendly interface, which takes a
+  data.frame with columns chrom, chromStart, chromEnd as input, and
   returns data.frames as output.
-
-
-
