@@ -5,7 +5,7 @@
 #include "funPieceListLog.h"
 #include <math.h>
 
-#define IFPRINT(arg) if(data_i==-490 && total_changes==-3) (arg)
+#define IFPRINT(arg) if(data_i==294 && total_changes==23) (arg)
 
 void PeakSegPDPALog
 (int *data_vec, double *weight_vec, int data_count,
@@ -45,7 +45,7 @@ void PeakSegPDPALog
       int prev_i = data_i-1;
       prev_cost_model = &cost_model_vec[prev_i + (total_changes-1)*data_count];
       IFPRINT(printf("DP changes=%d data_i=%d\n", total_changes, data_i));
-      IFPRINT(printf("prev cost model\n"));
+      IFPRINT(printf("=prev cost model\n"));
       IFPRINT(prev_cost_model->print());
       int verbose = 0;
       IFPRINT(verbose=1);
@@ -57,31 +57,31 @@ void PeakSegPDPALog
       min_prev_cost.set_prev_seg_end(prev_i);
       new_cost_model = &cost_model_vec[data_i + total_changes*data_count];
       if(data_i==total_changes){//first cost model, only one candidate.
-	IFPRINT(printf("new cost model = min prev cost\n"));
+	IFPRINT(printf("=new cost model = min prev cost\n"));
 	IFPRINT(min_prev_cost.print());
 	*new_cost_model = min_prev_cost;
       }else{
-	IFPRINT(printf("min prev cost\n"));
+	IFPRINT(printf("=min prev cost\n"));
         IFPRINT(min_prev_cost.print());
-	IFPRINT(printf("cost model\n"));
+	IFPRINT(printf("=cost model\n"));
 	IFPRINT(cost_model.print());
 	new_cost_model->set_to_min_env_of
 	  (&min_prev_cost, &cost_model, verbose);
 	int status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
 	if(status){
 	  printf("DP changes=%d data_i=%d BAD CHECK status=%d\n", total_changes, data_i, status);
-	  printf("prev cost model\n");
+	  printf("=prev cost model\n");
 	  prev_cost_model->print();
-	  printf("min prev cost\n");
+	  printf("=min prev cost\n");
 	  min_prev_cost.print();
-	  printf("cost model\n");
+	  printf("=cost model\n");
 	  cost_model.print();
-	  printf("new cost model\n");
+	  printf("=new cost model\n");
 	  new_cost_model->print();
 	  throw status;
 	}
       }
-      IFPRINT(printf("new cost model\n"));
+      IFPRINT(printf("=new cost model\n"));
       IFPRINT(new_cost_model->print());
       new_cost_model->add
 	(weight_vec[data_i],

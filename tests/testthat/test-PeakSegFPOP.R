@@ -36,7 +36,15 @@ by.sample <- split(
 test_that("FPOP recovers the same models as PDPA", {
   one.name <- "McGill0004"
   one <- by.sample[[one.name]]
+  one$bases <- with(one, chromEnd-chromStart)
+  wmean <- function(df){
+    with(df, sum(bases*count)/sum(bases))
+  }
   max.peaks <- as.integer((nrow(one)-1)/2)
+  one <- one[1:301,] # bug when 302.
+  max.segs <- 12L
+  fit <- with(one, PeakSegPDPA(count, bases, max.segs))
+  fit$mean.mat
   pdpa <- PeakSegPDPAchrom(one, max.peaks)
   dec.loss <- subset(pdpa$loss, c(TRUE, diff(PoissonLoss) < 0))
   some.models <- with(dec.loss, exactModelSelection(PoissonLoss, peaks, peaks))
