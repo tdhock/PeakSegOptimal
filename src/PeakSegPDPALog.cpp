@@ -52,7 +52,7 @@ void PeakSegPDPALog
       if(total_changes % 2){
 	min_prev_cost.set_to_min_less_of(prev_cost_model, verbose);
       }else{
-	min_prev_cost.set_to_min_more_of(prev_cost_model);
+	min_prev_cost.set_to_min_more_of(prev_cost_model, verbose);
       }
       min_prev_cost.set_prev_seg_end(prev_i);
       new_cost_model = &cost_model_vec[data_i + total_changes*data_count];

@@ -19,13 +19,10 @@ extern "C" {
   (int *data_ptr, double *weight_ptr,
    int *data_count, double *penalty,
    double *cost_mat, int *end_vec,
-   double *mean_vec, int *intervals_mat,
-   int *label_vec
-   ){
+   double *mean_vec, int *intervals_mat){
     PeakSegFPOPLog(data_ptr, weight_ptr,
 		   *data_count, *penalty,
-		   cost_mat, end_vec, mean_vec, intervals_mat,
-		   label_vec);
+		   cost_mat, end_vec, mean_vec, intervals_mat);
   }
   
 }

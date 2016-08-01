@@ -140,7 +140,7 @@ PeakSegPDPAchrom <- structure(function
     segments=seg.df,
     loss=loss.df,
     modelSelection=with(only.feasible, {
-      exactModelSelection(PoissonLoss, segments-1, peaks)
+      exactModelSelection(PoissonLoss, peaks, peaks)
     }))
 ### List of data.frames: segments can be used for plotting the
 ### segmentation model, loss describes model loss and feasibility,

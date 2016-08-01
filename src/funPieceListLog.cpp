@@ -269,7 +269,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	}
       }else{
 	double mu = it->argmin();
-	if(verbose)printf("argmin=%a\n", mu);
+	if(verbose)printf("argmin=%f\n", mu);
 	if(mu <= it->min_log_mean){
 	  /* The minimum is achieved on the left or before this
 	     interval, so this function is always increasing in this
@@ -290,7 +290,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	  }
 	  prev_min_log_mean = mu;
 	  prev_min_cost = it->getCost(mu);
-	  if(verbose)printf("prev_min_cost=%a\n", prev_min_cost);
+	  if(verbose)printf("prev_min_cost=%f\n", prev_min_cost);
 	  prev_data_i = it->data_i;
 	}else{
 	  // Minimum after this interval, so this function is
@@ -349,19 +349,24 @@ void PiecewisePoissonLossLog::set_to_min_less_of
   }
 }
 
-void PiecewisePoissonLossLog::set_to_min_more_of(PiecewisePoissonLossLog *input){
-  int verbose=false;
+void PiecewisePoissonLossLog::set_to_min_more_of(PiecewisePoissonLossLog *input, int verbose){
   int prev_data_i = -2;
   piece_list.clear();
   PoissonLossPieceListLog::iterator it = input->piece_list.end();
   it--;
   double prev_min_cost = INFINITY, prev_max_log_mean = it->max_log_mean;
   it++;
+  if(verbose)print();
   while(it != input->piece_list.begin()){
     it--;
     if(prev_min_cost == INFINITY){
       // Look for min achieved in this interval.
+      if(verbose){
+	printf("Searching for min in\n");
+	it->print();
+      }
       if(it->Log==0){
+	if(verbose)printf("DEGENERATE LINEAR FUNCTION IN MIN MORE\n");
 	//degenerate Linear function. since the Linear coef is never
 	//negative, we know that this function must be increasing or
 	//numerically constant on this interval. In both cases we
@@ -376,6 +381,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of(PiecewisePoissonLossLog *input)
 	  /* The minimum is achieved after this interval, so this
 	     function is always decreasing in this interval. We don't
 	     need to store it. */
+	  if(verbose)printf("min after this interval\n");
 	  prev_min_cost = it->getCost(it->max_log_mean);
 	  prev_data_i = it->data_i;
 	}else if(it->min_log_mean < mu){
@@ -383,6 +389,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of(PiecewisePoissonLossLog *input)
 	  // min, and keep track of the min cost to create a constant
 	  // piece later. NB it is possible that mu==prev_max_log_mean, in
 	  // which case we do not need to save the convex piece.
+	  if(verbose)printf("min in this interval\n");
 	  if(mu < prev_max_log_mean){ 
 	    piece_list.emplace_front
 	      (it->Linear, it->Log, it->Constant, mu, prev_max_log_mean, 
@@ -395,6 +402,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of(PiecewisePoissonLossLog *input)
 	  // Minimum before this interval, so this function is
 	  // increasing on this entire interval, and so we can just
 	  // store it as is.
+	  if(verbose)printf("min before this interval\n");
 	  piece_list.emplace_front
 	    (it->Linear, it->Log, it->Constant, it->min_log_mean, prev_max_log_mean,
 	     it->data_i, true); // equality constraint active on convex piece.
@@ -403,10 +411,15 @@ void PiecewisePoissonLossLog::set_to_min_more_of(PiecewisePoissonLossLog *input)
       }//if(degenerate linear)else
     }else{//prev_min_cost is finite
       // Look for a function with prev_min_cost in its interval.
+      if(verbose){
+	printf("Searching for intersection with %f\n", prev_min_cost);
+	it->print();
+      }
       double mu = INFINITY;
       if(it->Log==0){
 	//degenerate Linear case, there is one intersection point.
-	mu = (prev_min_cost - it->Constant)/it->Linear;
+	mu = log((prev_min_cost - it->Constant)/it->Linear);
+	if(verbose)printf("degenerate linear intersection at log_mean=%f\n", mu);
       }else{// Log is not zero.
 	// Theoretically there can be zero, one, or two intersection
 	// points between the constant function prev_min_log_mean and a
@@ -417,12 +430,14 @@ void PiecewisePoissonLossLog::set_to_min_more_of(PiecewisePoissonLossLog *input)
 	  // are only concerned with the second mean value (the
 	  // greater of the two). 
 	  mu = it->get_larger_root(prev_min_cost);
+	  if(verbose)printf("large root log_mean=%f\n", mu);
 	}//if(there are two roots
       }//if(Log is zero
       if(it->min_log_mean < mu && mu < it->max_log_mean){
 	// The smaller intersection point occurs within the
 	// interval, so the constant interval ends here, and we
 	// can store it immediately.
+	if(verbose)printf("%f in interval\n", mu);
 	piece_list.emplace_front
 	  (0, 0, prev_min_cost,
 	   mu, prev_max_log_mean,
@@ -543,17 +558,17 @@ int PiecewisePoissonLossLog::check_min_of
     double cost_min = it->getCost(mid_mean);
     double cost_prev = prev->findCost(mid_mean);
     if(cost_prev+1e-6 < cost_min){
-      printf("prev(%.55f)=%f %a\n", mid_mean, cost_prev, cost_prev);
+      printf("prev(%f)=%f\n", mid_mean, cost_prev);
       prev->print();
-      printf("min(%.55f)=%f %a\n", mid_mean, cost_min, cost_min);
+      printf("min(%f)=%f\n", mid_mean, cost_min);
       print();
       return 1;
     }
     double cost_model = model->findCost(mid_mean);
     if(cost_model+1e-6 < cost_min){
-      printf("model(%.55f)=%f %a\n", mid_mean, cost_model, cost_model);
+      printf("model(%f)=%f\n", mid_mean, cost_model);
       model->print();
-      printf("min(%.55f)=%f %a\n", mid_mean, cost_min, cost_min);
+      printf("min(%f)=%f\n", mid_mean, cost_min);
       print();
       return 1;
     }
@@ -575,9 +590,9 @@ int PiecewisePoissonLossLog::check_min_of
     double cost_prev = it->getCost(mid_mean);
     double cost_min = findCost(mid_mean);
     if(cost_prev+1e-6 < cost_min){
-      printf("prev(%.55f)=%f %a\n", mid_mean, cost_prev, cost_prev);
+      printf("prev(%f)=%f\n", mid_mean, cost_prev);
       prev->print();
-      printf("min(%.55f)=%f %a\n", mid_mean, cost_min, cost_min);
+      printf("min(%f)=%f\n", mid_mean, cost_min);
       print();
       return 1;
     }
@@ -599,9 +614,9 @@ int PiecewisePoissonLossLog::check_min_of
     double cost_model = it->getCost(mid_mean);
     double cost_min = findCost(mid_mean);
     if(cost_model+1e-6 < cost_min){
-      printf("model(%.55f)=%f %a\n", mid_mean, cost_model, cost_model);
+      printf("model(%f)=%f\n", mid_mean, cost_model);
       model->print();
-      printf("min(%.55f)=%f %a\n", mid_mean, cost_min, cost_min);
+      printf("min(%f)=%f\n", mid_mean, cost_min);
       print();
       return 1;
     }
@@ -786,7 +801,7 @@ void PiecewisePoissonLossLog::push_min_pieces
     if(two_roots){
       // there could be a crossing point to the left.
       double mean_at_equal_cost = smaller_mean;
-      if(verbose)printf("smaller_mean=%a\n", mean_at_equal_cost);
+      if(verbose)printf("smaller_mean=%f\n", mean_at_equal_cost);
       if(last_min_log_mean < mean_at_equal_cost &&
       	 mean_at_equal_cost < first_max_log_mean){
 	//the cross point is in the interval.
@@ -816,7 +831,7 @@ void PiecewisePoissonLossLog::push_min_pieces
     if(two_roots){
       // There could be a crossing point to the right.
       double mean_at_equal_cost = larger_mean;
-      if(verbose)printf("larger_mean=%a\n", mean_at_equal_cost);
+      if(verbose)printf("larger_mean=%f\n", mean_at_equal_cost);
       if(last_min_log_mean < mean_at_equal_cost &&
       	 mean_at_equal_cost < first_max_log_mean){
 	// the crossing point is in this interval.

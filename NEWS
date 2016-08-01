@@ -4,7 +4,18 @@ Limited memory FPOP version. What serialization/file format to use for
 reading data (bigwig/bedGraph?) and storing the optimal cost
 functions?
 
-Regularized isotonic regression solver.
+Regularized isotonic regression solver, square loss and penalized
+(FPOP) parameterization.
+
+2016.08.xx
+
+PeakSegFPOPall C++ function which can start or end either up or down.
+
+PeakSegFPOPLog C++ function forces starts and ends down. This is used
+by the R function PeakSegFPOP.
+
+Bugfix in min_more computation for intersections between constant cost
+and degenerate linear cost.
 
 2016.07.13
 

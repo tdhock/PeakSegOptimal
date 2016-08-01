@@ -33,7 +33,6 @@ PeakSegFPOP <- structure(function
   ends.vec <- integer(n.data)
   mean.vec <- double(n.data)
   intervals.mat <- integer(n.data*2)
-  label.vec <- integer(n.data)
   result.list <- .C(
     "PeakSegFPOPLog_interface",
     count.vec=as.integer(count.vec),
@@ -44,7 +43,7 @@ PeakSegFPOP <- structure(function
     ends.vec=as.integer(ends.vec),
     mean.vec=as.double(mean.vec),
     intervals.mat=as.integer(intervals.mat),
-    label.vec=as.integer(label.vec),
+    ##label.vec=as.integer(label.vec),
     PACKAGE="coseg")
   ## 1-indexed segment ends!
   result.list$ends.vec <- result.list$ends.vec+1L
@@ -108,7 +107,8 @@ PeakSegFPOPchrom <- structure(function
   break.vec <- rev(fit$ends.vec[0<fit$ends.vec])
   first <- c(1, break.vec+1)
   last <- c(break.vec, nrow(count.df))
-  label.vec <- rev(fit$label.vec[0 <= fit$label.vec])
+  ##label.vec <- rev(fit$label.vec[0 <= fit$label.vec])
+  label.vec <- rep(c(0, 1), l=sum(is.finite(fit$mean.vec)))
   status.str <- ifelse(label.vec==0, "background", "peak")
   peaks <- sum(label.vec==1)
   mean.vec <- rev(fit$mean.vec[is.finite(fit$mean.vec)])
