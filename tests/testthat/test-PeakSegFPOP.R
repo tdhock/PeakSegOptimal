@@ -42,15 +42,16 @@ test_that("FPOP recovers the same models as PDPA", {
   }
   max.peaks <- as.integer((nrow(one)-1)/2)
   pdpa <- PeakSegPDPAchrom(one, max.peaks)
-  dec.loss <- subset(pdpa$loss, c(TRUE, diff(PoissonLoss) < 0))
-  some.models <- with(dec.loss, exactModelSelection(PoissonLoss, peaks, peaks))
   segs.by.peaks <- split(pdpa$segments, pdpa$segments$peaks)
   for(peaks.str in names(segs.by.peaks)){
     pdpa.segs <- segs.by.peaks[[peaks.str]]
+    rownames(pdpa.segs) <- NULL
     sign.diff <- sign(diff(pdpa.segs$mean))*c(1,-1)
     right.sign <- sign.diff %in% c(0, 1)
     expect_true(all(right.sign))
   }
+  dec.loss <- subset(pdpa$loss, c(TRUE, diff(PoissonLoss) < 0))
+  some.models <- with(dec.loss, exactModelSelection(PoissonLoss, peaks, peaks))
   for(model.i in 1:nrow(some.models)){
     model.row <- some.models[model.i,]
     lambda <- with(model.row, if(max.lambda==Inf){
@@ -61,9 +62,9 @@ test_that("FPOP recovers the same models as PDPA", {
     exp.segs <- segs.by.peaks[[paste(model.row$peaks)]]
     rownames(exp.segs) <- NULL
     fpop <- PeakSegFPOPchrom(one, lambda)
-    ##expect_equal(fpop$segments, exp.segs)
     if(nrow(fpop$segments) != nrow(exp.segs)){
       print(model.row)
     }
+    expect_equal(fpop$segments, exp.segs)
   }
 })

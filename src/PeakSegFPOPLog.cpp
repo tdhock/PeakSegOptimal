@@ -129,9 +129,8 @@ void PeakSegFPOPLog
     down_cost_prev = down_cost;
   }
   // Decoding the cost_model_vec, and writing to the output matrices.
-  double best_cost, best_log_mean, candidate_cost, candidate_log_mean;
-  bool equality_constraint_active, candidate_constraint;
-  int prev_seg_end=data_count, candidate_end;
+  double best_cost, best_log_mean, prev_log_mean;
+  int prev_seg_end=data_count;
   for(int i=0; i<data_count; i++){
     mean_vec[i] = INFINITY;
     end_vec[i] = -2;
@@ -141,8 +140,7 @@ void PeakSegFPOPLog
     intervals_mat[i] = up_cost->piece_list.size();
     up_cost->Minimize
       (cost_mat+i, &best_log_mean,
-       &prev_seg_end, &equality_constraint_active,
-       min_log_mean, max_log_mean);
+       &prev_seg_end, &prev_log_mean);
   }
   // last segment is down (offset N) so the second to last segment is
   // up (offset 0).
@@ -150,8 +148,7 @@ void PeakSegFPOPLog
   down_cost = &cost_model_mat[data_count*2-1];
   down_cost->Minimize
     (&best_cost, &best_log_mean,
-     &prev_seg_end, &equality_constraint_active,
-     min_log_mean, max_log_mean);
+     &prev_seg_end, &prev_log_mean);
   mean_vec[0] = exp(best_log_mean);
   end_vec[0] = prev_seg_end;
   int out_i=1;
@@ -160,29 +157,22 @@ void PeakSegFPOPLog
     up_cost = &cost_model_mat[prev_seg_offset + prev_seg_end];
     //printf("decoding out_i=%d prev_seg_end=%d prev_seg_offset=%d\n", out_i, prev_seg_end, prev_seg_offset);
     //up_cost->print();
-    double this_min, this_max;
-    if(prev_seg_offset==0){
-      //up_cost is actually up, minimization needs a lower bound.
-      prev_seg_offset = data_count;
-      this_min = best_log_mean;
-      this_max = max_log_mean;
-    }else{
-      //up_cost is actually down, minimization needs an upper bound.
-      prev_seg_offset = 0;
-      this_min = min_log_mean;
-      this_max = best_log_mean;
+    if(prev_log_mean != INFINITY){
+      //equality constraint inactive
+      best_log_mean = prev_log_mean;
     }
-    if(equality_constraint_active){
-      up_cost->findMean
-	(best_log_mean, &prev_seg_end, &equality_constraint_active);
-    }else{
-      up_cost->Minimize
-	(&best_cost, &best_log_mean,
-	 &prev_seg_end, &equality_constraint_active,
-	 this_min, this_max);
-    }
+    up_cost->findMean
+      (best_log_mean, &prev_seg_end, &prev_log_mean);
     mean_vec[out_i] = exp(best_log_mean);
     end_vec[out_i] = prev_seg_end;
+    // change prev_seg_offset and out_i for next iteration.
+    if(prev_seg_offset==0){
+      //up_cost is actually up
+      prev_seg_offset = data_count;
+    }else{
+      //up_cost is actually down
+      prev_seg_offset = 0;
+    }
     out_i++;
   }//for(data_i
 }

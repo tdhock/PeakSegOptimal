@@ -17,8 +17,10 @@ by the R function PeakSegFPOP.
 Bugfix in min_more computation for intersections between constant cost
 and degenerate linear cost.
 
-Bugfix in Minimize: we need to consider an upper or lower bound, even
-when the equality constraint is not active.
+Bugfix in decoding: we no longer call Minimize for segments other than
+the last one. Now we store the previous segment mean (which was
+already computed by the min-less/more operator). No more bool
+equality_constraint_active, instead test prev_seg_mean == INFINITY.
 
 2016.07.13
 

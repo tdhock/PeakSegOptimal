@@ -16,9 +16,10 @@ class PoissonLossPieceLog {
   double min_log_mean;
   double max_log_mean;
   int data_i;
-  bool equality_constraint_active;
+  double prev_log_mean;
+  bool equality_constraint_active();
   PoissonLossPieceLog
-    (double li, double lo, double co, double m, double M, int i, bool a);
+    (double li, double lo, double co, double m, double M, int i, double);
   double argmin();
   double argmin_mean();
   void print();
@@ -48,14 +49,13 @@ class PiecewisePoissonLossLog {
   void add(double Linear, double Log, double Constant);
   void print();
   void set_prev_seg_end(int prev_seg_end);
-  void findMean(double mean, int *seg_end, bool *equality_constraint_active);
+  void findMean(double mean, int *seg_end, double *prev_log_mean);
   double findCost(double mean);
   void Minimize
     (double *best_cost,
      double *best_mean,
      int *data_i,
-     bool *equality_constraint_active,
-     double, double);
+     double *prev_log_mean);
 };
 
 bool sameFuns(PoissonLossPieceListLog::iterator, PoissonLossPieceListLog::iterator);
