@@ -3,31 +3,30 @@
 \title{PeakSegFPOP}
 \description{Find the optimal change-points using the Poisson loss and the
 PeakSeg constraint. For N data points, the functional pruning
-algorithm is O(N) space and O(NlogN) time. It recovers the exact
+algorithm is O(N) space and O(N log N) time. It recovers the exact
 solution to the following optimization problem. Let Z be an
 N-vector of count data (non-negative integers). Find the N-vector
 M of real numbers (segment means) which minimize the penalized
-Poisson Loss, sum_{i=2}^N I(m_i != m_{i-1})*penalty + sum_{i=1}^N
+Poisson Loss, sum_{i=2}^N I(m_{i-1} < m_i)*penalty + sum_{i=1}^N
 m_i - z_i * log(m_i), subject to constraint: up changes are
 followed by down changes, and vice versa. Note that the segment
 means can be equal, in which case the recovered model is not
-feasible for the PeakSeg problem. Unlike PeakSegPDPA which forces
-the first segment mean to be down (mu1 <= mu2), PeakSegFPOP may
-recover a model with the first segment mean up (mu1 >= mu2).}
+feasible for the PeakSeg problem. This function constrains the
+first and last segment means to be down, mu_1 <= mu_2, mu_{N-1} >= mu_N).}
 \usage{PeakSegFPOP(count.vec, weight.vec = rep(1, length(count.vec)), 
     penalty = NULL)}
 \arguments{
-  \item{count.vec}{integer vector of count data.}
+  \item{count.vec}{integer vector of length >= 3: count data to segment.}
   \item{weight.vec}{numeric vector (same length as count.vec) of positive weights.}
-  \item{penalty}{numeric of length 1: penalty parameter (smaller for more peaks,
-larger for fewer peaks).}
+  \item{penalty}{non-negative numeric scalar: penalty parameter (smaller for more
+peaks, larger for fewer peaks).}
 }
 
 \value{List of model parameters. count.vec, weight.vec, n.data, penalty
 (input parameters), cost.mat (optimal Poisson loss), ends.vec
 (optimal position of segment ends, 1-indexed), mean.vec (optimal
 segment means), intervals.mat (number of intervals stored by the
-functional pruning algorithm), label.vec (1=up or 0=down).}
+functional pruning algorithm).}
 
 \author{Toby Dylan Hocking}
 

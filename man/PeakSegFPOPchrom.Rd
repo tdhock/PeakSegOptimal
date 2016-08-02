@@ -7,7 +7,8 @@ the PeakSegFPOP function.}
 \usage{PeakSegFPOPchrom(count.df, penalty = NULL)}
 \arguments{
   \item{count.df}{data.frame with columns count, chromStart, chromEnd.}
-  \item{penalty}{integer > 0: maximum number of peaks.}
+  \item{penalty}{non-negative numeric scalar: penalty parameter (smaller for more
+peaks, larger for fewer peaks).}
 }
 
 \value{List of data.frames: segments can be used for plotting the
