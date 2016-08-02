@@ -33,6 +33,7 @@ by the functional pruning algorithm).}
 
 
 \examples{
+
 data("H3K4me3_XJ_immune_chunk1")
 by.sample <-
   split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
@@ -56,4 +57,5 @@ ggplot()+
   scale_y_continuous(
     "intervals stored by the\nconstrained optimal segmentation algorithm",
     breaks=c(20, 40))
+
 }

@@ -1,27 +1,26 @@
 PeakSegFPOP <- structure(function
 ### Find the optimal change-points using the Poisson loss and the
 ### PeakSeg constraint. For N data points, the functional pruning
-### algorithm is O(N) space and O(NlogN) time. It recovers the exact
+### algorithm is O(N) space and O(N log N) time. It recovers the exact
 ### solution to the following optimization problem. Let Z be an
 ### N-vector of count data (non-negative integers). Find the N-vector
 ### M of real numbers (segment means) which minimize the penalized
-### Poisson Loss, sum_{i=2}^N I(m_i != m_{i-1})*penalty + sum_{i=1}^N
+### Poisson Loss, sum_{i=2}^N I(m_{i-1} < m_i)*penalty + sum_{i=1}^N
 ### m_i - z_i * log(m_i), subject to constraint: up changes are
 ### followed by down changes, and vice versa. Note that the segment
 ### means can be equal, in which case the recovered model is not
-### feasible for the PeakSeg problem. Unlike PeakSegPDPA which forces
-### the first segment mean to be down (mu1 <= mu2), PeakSegFPOP may
-### recover a model with the first segment mean up (mu1 >= mu2).
+### feasible for the PeakSeg problem. This function constrains the
+### first and last segment means to be down, mu_1 <= mu_2, mu_{N-1} >= mu_N).
 (count.vec,
-### integer vector of count data.
+### integer vector of length >= 3: count data to segment.
  weight.vec=rep(1, length(count.vec)),
 ### numeric vector (same length as count.vec) of positive weights.
  penalty=NULL
-### numeric of length 1: penalty parameter (smaller for more peaks,
-### larger for fewer peaks).
+### non-negative numeric scalar: penalty parameter (smaller for more
+### peaks, larger for fewer peaks).
 ){
   n.data <- length(count.vec)
-  stopifnot(1 < n.data)
+  stopifnot(3 <= n.data)
   stopifnot(is.integer(count.vec))
   stopifnot(is.numeric(weight.vec))
   stopifnot(n.data==length(weight.vec))
@@ -33,7 +32,6 @@ PeakSegFPOP <- structure(function
   ends.vec <- integer(n.data)
   mean.vec <- double(n.data)
   intervals.mat <- integer(n.data*2)
-  label.vec <- integer(n.data)
   result.list <- .C(
     "PeakSegFPOPLog_interface",
     count.vec=as.integer(count.vec),
@@ -44,7 +42,7 @@ PeakSegFPOP <- structure(function
     ends.vec=as.integer(ends.vec),
     mean.vec=as.double(mean.vec),
     intervals.mat=as.integer(intervals.mat),
-    label.vec=as.integer(label.vec),
+    ##label.vec=as.integer(label.vec),
     PACKAGE="coseg")
   ## 1-indexed segment ends!
   result.list$ends.vec <- result.list$ends.vec+1L
@@ -57,8 +55,9 @@ PeakSegFPOP <- structure(function
 ### (input parameters), cost.mat (optimal Poisson loss), ends.vec
 ### (optimal position of segment ends, 1-indexed), mean.vec (optimal
 ### segment means), intervals.mat (number of intervals stored by the
-### functional pruning algorithm), label.vec (1=up or 0=down).
+### functional pruning algorithm).
 }, ex=function(){
+
   library(coseg)
   data("H3K4me3_XJ_immune_chunk1")
   by.sample <-
@@ -80,6 +79,7 @@ PeakSegFPOP <- structure(function
     geom_line(aes(data, intervals), data=FPOP.intervals)+
     scale_y_continuous(
       "intervals stored by the\nconstrained optimal segmentation algorithm")
+
 })
 
 PeakSegFPOPchrom <- structure(function
@@ -89,11 +89,12 @@ PeakSegFPOPchrom <- structure(function
 (count.df,
 ### data.frame with columns count, chromStart, chromEnd.
  penalty=NULL
-### integer > 0: maximum number of peaks.
+### non-negative numeric scalar: penalty parameter (smaller for more
+### peaks, larger for fewer peaks).
 ){
   stopifnot(is.data.frame(count.df))
   n.data <- nrow(count.df)
-  stopifnot(1 < n.data)
+  stopifnot(3 <= n.data)
   stopifnot(is.integer(count.df$chromStart))
   stopifnot(is.integer(count.df$chromEnd))
   stopifnot(is.integer(count.df$count))
@@ -108,7 +109,8 @@ PeakSegFPOPchrom <- structure(function
   break.vec <- rev(fit$ends.vec[0<fit$ends.vec])
   first <- c(1, break.vec+1)
   last <- c(break.vec, nrow(count.df))
-  label.vec <- rev(fit$label.vec[0 <= fit$label.vec])
+  ##label.vec <- rev(fit$label.vec[0 <= fit$label.vec])
+  label.vec <- rep(c(0, 1), l=sum(is.finite(fit$mean.vec)))
   status.str <- ifelse(label.vec==0, "background", "peak")
   peaks <- sum(label.vec==1)
   mean.vec <- rev(fit$mean.vec[is.finite(fit$mean.vec)])
@@ -141,10 +143,10 @@ PeakSegFPOPchrom <- structure(function
   by.sample <-
     split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
   one.sample <- by.sample[[sample.id]]
-  penalty.constant <- 2000
+
+  penalty.constant <- 1100
   fpop.fit <- PeakSegFPOPchrom(one.sample, penalty.constant)
   fpop.breaks <- subset(fpop.fit$segments, 1 < first)
-
   library(ggplot2)
   ggplot()+
     theme_bw()+
@@ -162,13 +164,16 @@ PeakSegFPOPchrom <- structure(function
 
   max.peaks <- as.integer(fpop.fit$segments$peaks[1]+1)
   pdpa.fit <- PeakSegPDPAchrom(one.sample, max.peaks)
-  models <- pdpa.fit$modelSelection
-  models$PoissonLoss <- rev(pdpa.fit$loss$PoissonLoss)
+  models <- pdpa.fit$modelSelection.decreasing
+  models$PoissonLoss <- pdpa.fit$loss[paste(models$peaks), "PoissonLoss"]
   models$algorithm <- "PDPA"
   fpop.fit$loss$algorithm <- "FPOP"
   ggplot()+
-    geom_abline(aes(slope=segments-1, intercept=PoissonLoss, color=peaks),
+    geom_abline(aes(slope=peaks, intercept=PoissonLoss, color=peaks),
                 data=pdpa.fit$loss)+
+    geom_text(aes(0, PoissonLoss, label=peaks),
+              hjust=1,
+              data=pdpa.fit$loss)+
     geom_point(aes(penalty.constant, penalized.loss, fill=algorithm),
                shape=21,
                data=fpop.fit$loss)+
