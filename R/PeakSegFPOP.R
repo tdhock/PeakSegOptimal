@@ -58,6 +58,7 @@ PeakSegFPOP <- structure(function
 ### segment means), intervals.mat (number of intervals stored by the
 ### functional pruning algorithm), label.vec (1=up or 0=down).
 }, ex=function(){
+
   library(coseg)
   data("H3K4me3_XJ_immune_chunk1")
   by.sample <-
@@ -79,6 +80,7 @@ PeakSegFPOP <- structure(function
     geom_line(aes(data, intervals), data=FPOP.intervals)+
     scale_y_continuous(
       "intervals stored by the\nconstrained optimal segmentation algorithm")
+
 })
 
 PeakSegFPOPchrom <- structure(function
@@ -141,10 +143,10 @@ PeakSegFPOPchrom <- structure(function
   by.sample <-
     split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
   one.sample <- by.sample[[sample.id]]
-  penalty.constant <- 2000
+
+  penalty.constant <- 1100
   fpop.fit <- PeakSegFPOPchrom(one.sample, penalty.constant)
   fpop.breaks <- subset(fpop.fit$segments, 1 < first)
-
   library(ggplot2)
   ggplot()+
     theme_bw()+
@@ -162,13 +164,16 @@ PeakSegFPOPchrom <- structure(function
 
   max.peaks <- as.integer(fpop.fit$segments$peaks[1]+1)
   pdpa.fit <- PeakSegPDPAchrom(one.sample, max.peaks)
-  models <- pdpa.fit$modelSelection
-  models$PoissonLoss <- rev(pdpa.fit$loss$PoissonLoss)
+  models <- pdpa.fit$modelSelection.decreasing
+  models$PoissonLoss <- pdpa.fit$loss[paste(models$peaks), "PoissonLoss"]
   models$algorithm <- "PDPA"
   fpop.fit$loss$algorithm <- "FPOP"
   ggplot()+
-    geom_abline(aes(slope=segments-1, intercept=PoissonLoss, color=peaks),
+    geom_abline(aes(slope=peaks, intercept=PoissonLoss, color=peaks),
                 data=pdpa.fit$loss)+
+    geom_text(aes(0, PoissonLoss, label=peaks),
+              hjust=1,
+              data=pdpa.fit$loss)+
     geom_point(aes(penalty.constant, penalized.loss, fill=algorithm),
                shape=21,
                data=fpop.fit$loss)+

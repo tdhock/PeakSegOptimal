@@ -133,15 +133,19 @@ PeakSegPDPAchrom <- structure(function
     peaks=(seg.vec-1)/2,
     PoissonLoss=fit$cost.mat[seg.vec, length(data.vec)],
     feasible=apply(fit$mean.mat[seg.vec,], 1, is.feasible))
+  rownames(loss.df) <- loss.df$peaks
   seg.df <- do.call(rbind, segments.list)
   only.feasible <- loss.df[loss.df$feasible,]
   rownames(seg.df) <- NULL
+  dec.loss <- subset(loss.df, c(TRUE, diff(PoissonLoss) < 0))
+  dec.models <- with(dec.loss, exactModelSelection(PoissonLoss, peaks, peaks))
   list(
     segments=seg.df,
     loss=loss.df,
-    modelSelection=with(only.feasible, {
+    modelSelection.feasible=with(only.feasible, {
       exactModelSelection(PoissonLoss, peaks, peaks)
-    }))
+    }),
+    modelSelection.decreasing=dec.models)
 ### List of data.frames: segments can be used for plotting the
 ### segmentation model, loss describes model loss and feasibility,
 ### modelSelection describes the set of all linear penalty (lambda)

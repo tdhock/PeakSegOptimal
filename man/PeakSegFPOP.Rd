@@ -35,6 +35,7 @@ functional pruning algorithm), label.vec (1=up or 0=down).}
 
 
 \examples{
+
 library(coseg)
 data("H3K4me3_XJ_immune_chunk1")
 by.sample <-
@@ -56,4 +57,5 @@ ggplot()+
   geom_line(aes(data, intervals), data=FPOP.intervals)+
   scale_y_continuous(
     "intervals stored by the\nconstrained optimal segmentation algorithm")
+
 }

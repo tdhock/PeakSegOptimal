@@ -33,16 +33,16 @@ H3K4me3_XJ_immune_chunk1$count <- H3K4me3_XJ_immune_chunk1$coverage
 by.sample <- split(
   H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
 
-test_that("FPOP recovers the same models as PDPA", {
-  one.name <- "McGill0004"
-  one <- by.sample[[one.name]]
-  one$bases <- with(one, chromEnd-chromStart)
-  wmean <- function(df){
-    with(df, sum(bases*count)/sum(bases))
-  }
-  max.peaks <- as.integer((nrow(one)-1)/2)
-  pdpa <- PeakSegPDPAchrom(one, max.peaks)
-  segs.by.peaks <- split(pdpa$segments, pdpa$segments$peaks)
+one.name <- "McGill0004"
+one <- by.sample[[one.name]]
+one$bases <- with(one, chromEnd-chromStart)
+wmean <- function(df){
+  with(df, sum(bases*count)/sum(bases))
+}
+max.peaks <- as.integer((nrow(one)-1)/2)
+pdpa <- PeakSegPDPAchrom(one, max.peaks)
+segs.by.peaks <- split(pdpa$segments, pdpa$segments$peaks)
+test_that("PDPA segment means are feasible", {
   for(peaks.str in names(segs.by.peaks)){
     pdpa.segs <- segs.by.peaks[[peaks.str]]
     rownames(pdpa.segs) <- NULL
@@ -50,8 +50,11 @@ test_that("FPOP recovers the same models as PDPA", {
     right.sign <- sign.diff %in% c(0, 1)
     expect_true(all(right.sign))
   }
-  dec.loss <- subset(pdpa$loss, c(TRUE, diff(PoissonLoss) < 0))
-  some.models <- with(dec.loss, exactModelSelection(PoissonLoss, peaks, peaks))
+})
+
+dec.loss <- subset(pdpa$loss, c(TRUE, diff(PoissonLoss) < 0))
+some.models <- with(dec.loss, exactModelSelection(PoissonLoss, peaks, peaks))
+test_that("FPOP recovers the same models as PDPA", {
   for(model.i in 1:nrow(some.models)){
     model.row <- some.models[model.i,]
     lambda <- with(model.row, if(max.lambda==Inf){
