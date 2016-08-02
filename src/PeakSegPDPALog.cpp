@@ -5,7 +5,7 @@
 #include "funPieceListLog.h"
 #include <math.h>
 
-#define IFPRINT(arg) if(data_i==294 && total_changes==23) (arg)
+#define IFPRINT(arg) if(data_i==293 && total_changes==10) (arg)
 
 void PeakSegPDPALog
 (int *data_vec, double *weight_vec, int data_count,
@@ -115,7 +115,8 @@ void PeakSegPDPALog
       IFPRINT(cost_model->print());
       cost_model->Minimize
 	(&best_cost, &best_log_mean,
-	 &prev_seg_end, &equality_constraint_active);
+	 &prev_seg_end, &equality_constraint_active,
+	 min_log_mean, max_log_mean);
       IFPRINT(printf("cost=%f log_mean=%f prev_end=%d constraint=%d\n", best_cost, best_log_mean, prev_seg_end, equality_constraint_active));
       // for the models up to any data point, we store the best cost
       // and the total number of intervals.
@@ -137,8 +138,20 @@ void PeakSegPDPALog
 	    cost_model->findMean
 	      (best_log_mean, &prev_seg_end, &equality_constraint_active);
 	  }else{
-	    cost_model->Minimize(&best_cost, &best_log_mean,
-				 &prev_seg_end, &equality_constraint_active);
+	    double this_min, this_max;
+	    if(seg_i % 2){
+	      // 1, 3, 5, ... up segment, lower bound.
+	      this_min = best_log_mean;
+	      this_max = max_log_mean;
+	    }else{
+	      // 0, 2, 4, ... down segment, upper bound.
+	      this_min = min_log_mean;
+	      this_max = best_log_mean;
+	    }
+	    cost_model->Minimize
+	      (&best_cost, &best_log_mean,
+	       &prev_seg_end, &equality_constraint_active,
+	       this_min, this_max);
 	  }
 	  best_mean_vec[seg_i] = exp(best_log_mean);
 	  prev_seg_vec[seg_i] = prev_seg_end;

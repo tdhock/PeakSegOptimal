@@ -17,6 +17,9 @@ by the R function PeakSegFPOP.
 Bugfix in min_more computation for intersections between constant cost
 and degenerate linear cost.
 
+Bugfix in Minimize: we need to consider an upper or lower bound, even
+when the equality constraint is not active.
+
 2016.07.13
 
 FPOP version of PeakSeg constrained, Poisson loss problem.

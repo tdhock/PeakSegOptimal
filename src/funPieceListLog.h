@@ -50,10 +50,12 @@ class PiecewisePoissonLossLog {
   void set_prev_seg_end(int prev_seg_end);
   void findMean(double mean, int *seg_end, bool *equality_constraint_active);
   double findCost(double mean);
-  void Minimize(double *best_cost,
-		double *best_mean,
-		int *data_i,
-		bool *equality_constraint_active);
+  void Minimize
+    (double *best_cost,
+     double *best_mean,
+     int *data_i,
+     bool *equality_constraint_active,
+     double, double);
 };
 
 bool sameFuns(PoissonLossPieceListLog::iterator, PoissonLossPieceListLog::iterator);

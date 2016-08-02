@@ -513,10 +513,14 @@ void PoissonLossPieceLog::print(){
 	 min_log_mean, max_log_mean, data_i);
 }
 
-void PiecewisePoissonLossLog::Minimize(double *best_cost,
-	      double *best_log_mean,
-	      int *data_i,
-	      bool *equality_constraint_active){
+void PiecewisePoissonLossLog::Minimize
+(double *best_cost,
+ double *best_log_mean,
+ int *data_i,
+ bool *equality_constraint_active,
+ double min_log_mean,
+ double max_log_mean
+ ){
   double candidate_cost, candidate_log_mean;
   int verbose=false;
   PoissonLossPieceListLog::iterator it;
@@ -524,7 +528,9 @@ void PiecewisePoissonLossLog::Minimize(double *best_cost,
   for(it=piece_list.begin(); it != piece_list.end(); it++){
     candidate_log_mean = it->argmin();
     if(it->min_log_mean <= candidate_log_mean &&
-       candidate_log_mean <= it->max_log_mean){
+       candidate_log_mean <= it->max_log_mean &&
+       min_log_mean <= candidate_log_mean &&
+       candidate_log_mean <= max_log_mean){
       candidate_cost = it->getCost(candidate_log_mean);
       if(candidate_cost < *best_cost){
 	*best_cost = candidate_cost;
