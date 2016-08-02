@@ -7,7 +7,10 @@ functions?
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
-2016.08.xx
+To avoid root finding problems in large data sets, try storing mean
+cost rather than total cost.
+
+2016.08.02
 
 PeakSegFPOPall C++ function which can start or end either up or down.
 
