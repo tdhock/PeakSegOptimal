@@ -31,9 +31,11 @@ void PeakSegFPOPLog
   PiecewisePoissonLossLog *up_cost, *down_cost, *up_cost_prev, *down_cost_prev;
   PiecewisePoissonLossLog min_prev_cost;
   int verbose=0;
+  double cum_weight_i = 0.0, cum_weight_prev_i;
   for(int data_i=0; data_i<data_count; data_i++){
+    cum_weight_i += weight_vec[data_i];
     up_cost = &cost_model_mat[data_i];
-    down_cost = &cost_model_mat[data_i + data_count]; 
+    down_cost = &cost_model_mat[data_i + data_count];
     if(data_i==0){
       // initialization Cdown_1(m)=gamma_1(m)
       down_cost->piece_list.emplace_back
@@ -43,10 +45,12 @@ void PeakSegFPOPLog
       // initialization Cup_2(m)=Cdown_1(m)+penalty+gamma_2(m)
       up_cost->set_to_min_less_of(down_cost_prev, verbose);
       up_cost->set_prev_seg_end(data_i-1);
+      up_cost->multiply(cum_weight_prev_i);
       up_cost->add
 	(weight_vec[data_i],
 	 -data_vec[data_i]*weight_vec[data_i],
 	 penalty);
+      up_cost->multiply(1/cum_weight_i);
       // initialization Cdown_2(m)=gamma_1(m)+gamma_2(m)
       down_cost->piece_list.emplace_back
 	(weight_vec[0], -data_vec[0]*weight_vec[0], 0.0,
@@ -55,6 +59,7 @@ void PeakSegFPOPLog
 	(weight_vec[data_i],
 	 -data_vec[data_i]*weight_vec[data_i],
 	 0.0);
+      down_cost->multiply(1/cum_weight_i);
     }else{
       // if data_i is up, it could have come from down_cost_prev.
       // if(data_i==3){
@@ -74,8 +79,14 @@ void PeakSegFPOPLog
 	min_prev_cost.print();
 	throw status;
       }
+      // C^up_t(m) = (gamma_t + w_{1:t-1} * M^up_t(m))/w_{1:t}, where
+      // M^up_t(m) = min{
+      //   C^up_{t-1}(m),
+      //   C^{<=}_down_{t-1}(m) + lambda/w_{1:t-1}
+      // in other words, we need to divide the penalty by the previous cumsum,
+      // and add that to the min-less-ified function, before applying the min-env.
       min_prev_cost.set_prev_seg_end(data_i-1);
-      min_prev_cost.add(0.0, 0.0, penalty);
+      min_prev_cost.add(0.0, 0.0, penalty/cum_weight_prev_i);
       up_cost->set_to_min_env_of(&min_prev_cost, up_cost_prev, verbose);
       status = up_cost->check_min_of(&min_prev_cost, up_cost_prev);
       if(status){
@@ -90,10 +101,12 @@ void PeakSegFPOPLog
 	up_cost->print();
 	throw status;
       }
+      up_cost->multiply(cum_weight_prev_i);
       up_cost->add
 	(weight_vec[data_i],
 	 -data_vec[data_i]*weight_vec[data_i],
 	 0.0);
+      up_cost->multiply(1/cum_weight_i);
       // if data_i is down, it could have come from up_cost_prev.
       min_prev_cost.set_to_min_more_of(up_cost_prev, verbose);
       status = min_prev_cost.check_min_of(up_cost_prev, up_cost_prev);
@@ -121,11 +134,14 @@ void PeakSegFPOPLog
 	down_cost->print();
 	throw status;
       }
+      down_cost->multiply(cum_weight_prev_i);
       down_cost->add
 	(weight_vec[data_i],
 	 -data_vec[data_i]*weight_vec[data_i],
 	 0.0);
+      down_cost->multiply(1/cum_weight_i);
     }
+    cum_weight_prev_i = cum_weight_i;
     up_cost_prev = up_cost;
     down_cost_prev = down_cost;
   }

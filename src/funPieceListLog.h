@@ -47,6 +47,7 @@ class PiecewisePoissonLossLog {
      PoissonLossPieceListLog::iterator, PoissonLossPieceListLog::iterator, int);
   void push_piece(PoissonLossPieceListLog::iterator, double, double);
   void add(double Linear, double Log, double Constant);
+  void multiply(double);
   void print();
   void set_prev_seg_end(int prev_seg_end);
   void findMean(double mean, int *seg_end, double *prev_log_mean);

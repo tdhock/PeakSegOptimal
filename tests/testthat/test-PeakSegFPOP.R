@@ -65,9 +65,10 @@ test_that("FPOP recovers the same models as PDPA", {
     rownames(exp.segs) <- NULL
     ##print(lambda)
     fpop <- PeakSegFPOPchrom(one, lambda)
-    if(nrow(fpop$segments) != nrow(exp.segs)){
-      print(model.row)
-    }
-    expect_equal(fpop$segments, exp.segs)
+    fpop.mean.vec <- with(fpop$segments, rep(mean, last-first+1))
+    pdpa.mean.vec <- with(exp.segs, rep(mean, last-first+1))
+    print(model.row)
+    print(sum(abs(fpop.mean.vec-pdpa.mean.vec)))
+    expect_equal(fpop.mean.vec, pdpa.mean.vec)
   }
 })

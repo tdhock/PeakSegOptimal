@@ -482,6 +482,15 @@ void PiecewisePoissonLossLog::add(double Linear, double Log, double Constant){
   }
 }
 
+void PiecewisePoissonLossLog::multiply(double x){
+  PoissonLossPieceListLog::iterator it;
+  for(it=piece_list.begin(); it != piece_list.end(); it++){
+    it->Linear *= x;
+    it->Log *= x;
+    it->Constant *= x;
+  }
+}
+
 void PiecewisePoissonLossLog::set_prev_seg_end(int prev_seg_end){
   PoissonLossPieceListLog::iterator it;
   for(it=piece_list.begin(); it != piece_list.end(); it++){
