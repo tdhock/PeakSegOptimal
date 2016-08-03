@@ -52,8 +52,7 @@ test_that("PDPA segment means are feasible", {
   }
 })
 
-dec.loss <- subset(pdpa$loss, c(TRUE, diff(PoissonLoss) < 0))
-some.models <- with(dec.loss, exactModelSelection(PoissonLoss, peaks, peaks))
+some.models <- pdpa$modelSelection.decreasing
 test_that("FPOP recovers the same models as PDPA", {
   for(model.i in 1:nrow(some.models)){
     model.row <- some.models[model.i,]
@@ -64,6 +63,7 @@ test_that("FPOP recovers the same models as PDPA", {
     })
     exp.segs <- segs.by.peaks[[paste(model.row$peaks)]]
     rownames(exp.segs) <- NULL
+    ##print(lambda)
     fpop <- PeakSegFPOPchrom(one, lambda)
     if(nrow(fpop$segments) != nrow(exp.segs)){
       print(model.row)

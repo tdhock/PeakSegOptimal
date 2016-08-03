@@ -214,17 +214,27 @@ ggplot()+
 
 
 C153.370 <- gdata("
-=new cost model
+=prev down cost
     Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
-         5         -9   -20899.328801            -inf       -0.188525             inf 369
-        58        -66   -20953.968258       -0.188525        0.309648            -inf 366
-         4         -8   -20898.328801        0.309648        3.496508        0.000000 369
+       256          0     6834.434385            -inf      -39.735084        0.552375 1
+       355       -172        0.000000      -39.735084        3.496508        0.000000 -1
+=min less(prev down cost)
+    Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
+         0          0     6834.434385            -inf        3.496508            -inf 1
 ")
 ggplot()+
   ##coord_cartesian(xlim=c(-1, 1), ylim=c(-20900, -20897.5))+
   geom_vline(aes(xintercept=min_log_mean, color=fun),
              data=C153.370$vlines)+
   geom_line(aes(log.mean, cost, color=fun),
+            size=2,
+            data=C153.370$funs)
+
+ggplot()+
+  ##coord_cartesian(xlim=c(-1, 1), ylim=c(-20900, -20897.5))+
+  geom_vline(aes(xintercept=exp(min_log_mean), color=fun),
+             data=C153.370$vlines)+
+  geom_line(aes(mean, cost, color=fun),
             size=2,
             data=C153.370$funs)
 

@@ -57,7 +57,14 @@ void PeakSegFPOPLog
 	 0.0);
     }else{
       // if data_i is up, it could have come from down_cost_prev.
+      // if(data_i==3){
+      // 	printf("computing cost data_i=%d\n", data_i);
+      // 	verbose=1;
+      // }else{
+      // 	verbose=0;
+      // }
       min_prev_cost.set_to_min_less_of(down_cost_prev, verbose);
+      //verbose=0;
       int status = min_prev_cost.check_min_of(down_cost_prev, down_cost_prev);
       if(status){
 	printf("BAD MIN LESS CHECK data_i=%d status=%d\n", data_i, status);
@@ -88,12 +95,6 @@ void PeakSegFPOPLog
 	 -data_vec[data_i]*weight_vec[data_i],
 	 0.0);
       // if data_i is down, it could have come from up_cost_prev.
-      // if(data_i==9){
-      // 	printf("computing cost data_i=%d\n", data_i);
-      // 	verbose=1;
-      // }else{
-      // 	verbose=0;
-      // }
       min_prev_cost.set_to_min_more_of(up_cost_prev, verbose);
       status = min_prev_cost.check_min_of(up_cost_prev, up_cost_prev);
       if(status){

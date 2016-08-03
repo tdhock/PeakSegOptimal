@@ -249,7 +249,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	// numerically constant (e.g. Linear=156 between -inf and
 	// -44). So now we check to see if the cost on the left and
 	// right of the interval are equal.
-	if(left_cost==right_cost){
+	if(right_cost - left_cost < NEWTON_EPSILON){
 	  if(verbose){
 	    printf("Constant interval\n");
 	    it->print();
@@ -266,7 +266,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	  prev_min_cost = left_cost;
 	  prev_best_log_mean = it->min_log_mean;
 	  if(verbose){
-	    printf("Increasing interval left_cost=%e(stored) right_cost=%e\n", left_cost, right_cost);
+	    printf("Increasing interval left_cost=%e(stored) right_cost=%e diff=%e\n", left_cost, right_cost, right_cost-left_cost);
 	    it->print();
 	  }
 	  prev_data_i = it->data_i;
@@ -979,6 +979,11 @@ void PiecewisePoissonLossLog::push_min_pieces
 
 void PiecewisePoissonLossLog::push_piece
 (PoissonLossPieceListLog::iterator it, double min_log_mean, double max_log_mean){
+  if(max_log_mean <= min_log_mean){
+    // why do we need this? TODO: figure out where this is called, and
+    // just do not call push_piece at all.
+    return;
+  }
   PoissonLossPieceListLog::iterator last=piece_list.end();
   --last;
   if(piece_list.size() &&
