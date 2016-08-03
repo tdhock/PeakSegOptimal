@@ -139,7 +139,10 @@ PeakSegPDPAchrom <- structure(function
   seg.df <- do.call(rbind, segments.list)
   only.feasible <- loss.df[loss.df$feasible,]
   rownames(seg.df) <- NULL
-  dec.loss <- subset(loss.df, c(TRUE, diff(PoissonLoss) < 0))
+  cum.vec <- cummin(loss.df$PoissonLoss)
+  min.loss <- loss.df[cum.vec==loss.df$PoissonLoss,]
+  is.dec <- c(TRUE, diff(min.loss$PoissonLoss) < 0)
+  dec.loss <- min.loss[is.dec,]
   dec.models <- with(dec.loss, exactModelSelection(PoissonLoss, peaks, peaks))
   list(
     segments=seg.df,
