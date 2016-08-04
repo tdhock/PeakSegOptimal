@@ -26,14 +26,16 @@ void PeakSegPDPALog
     }
   }
   std::vector<PiecewisePoissonLossLog> cost_model_vec(data_count * maxSegments);
-  double Log_cumsum = 0.0;
-  double Linear_cumsum = 0.0;
+  double data_weight_cumsum = 0.0;
+  double weight_cumsum = 0.0;
+  std::vector<double> weight_cumsum_vec(data_count);
   for(int data_i=0; data_i<data_count; data_i++){
-    Linear_cumsum += weight_vec[data_i];
-    Log_cumsum += -data_vec[data_i]*weight_vec[data_i];
+    weight_cumsum += weight_vec[data_i];
+    weight_cumsum_vec[data_i] = weight_cumsum;
+    data_weight_cumsum += data_vec[data_i]*weight_vec[data_i];
     PiecewisePoissonLossLog *cost_model = &cost_model_vec[data_i];
     cost_model->piece_list.emplace_back
-      (Linear_cumsum, Log_cumsum, 0.0, min_log_mean, max_log_mean, -1, false);
+      (1.0, -data_weight_cumsum/weight_cumsum, 0.0, min_log_mean, max_log_mean, -1, false);
   }
 
   // DP: compute functional model of best cost in S segments up to
@@ -83,10 +85,12 @@ void PeakSegPDPALog
       }
       IFPRINT(printf("=new cost model\n"));
       IFPRINT(new_cost_model->print());
+      new_cost_model->multiply(weight_cumsum_vec[prev_i]);
       new_cost_model->add
 	(weight_vec[data_i],
 	 -data_vec[data_i]*weight_vec[data_i],
 	 0.0);
+      new_cost_model->multiply(1/weight_cumsum_vec[data_i]);
       IFPRINT(new_cost_model->print());
       cost_model = *new_cost_model;
     }

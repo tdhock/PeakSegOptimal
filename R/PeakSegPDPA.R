@@ -42,7 +42,7 @@ PeakSegPDPA <- structure(function
     intervals.mat=as.integer(intervals.mat),
     PACKAGE="coseg")
   result.list$cost.mat <- matrix(
-    result.list$cost.mat, max.segments, n.data, byrow=TRUE)
+    result.list$cost.mat*cumsum(weight.vec), max.segments, n.data, byrow=TRUE)
   result.list$ends.mat <- matrix(
     result.list$ends.mat+1L, max.segments, max.segments, byrow=TRUE)
   result.list$mean.mat <- matrix(

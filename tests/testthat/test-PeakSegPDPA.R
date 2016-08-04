@@ -142,6 +142,6 @@ for(one.name in names(by.sample)){
     cdpa=peakseg$error$error)
   diff.vec <- apply(cost.mat, 2, diff)
   min.diff <- min(diff.vec)
-  expect_gt(min.diff, -1e-10)
+  expect_gt(min.diff, -1e-8)
 }
 
