@@ -54,6 +54,7 @@ test_that("PDPA segment means are feasible", {
 
 some.models <- pdpa$modelSelection.decreasing
 test_that("FPOP recovers the same models as PDPA", {
+  model.i <- 147
   for(model.i in 1:nrow(some.models)){
     model.row <- some.models[model.i,]
     lambda <- with(model.row, if(max.lambda==Inf){
@@ -67,8 +68,10 @@ test_that("FPOP recovers the same models as PDPA", {
     fpop <- PeakSegFPOPchrom(one, lambda)
     fpop.mean.vec <- with(fpop$segments, rep(mean, last-first+1))
     pdpa.mean.vec <- with(exp.segs, rep(mean, last-first+1))
-    print(model.row)
-    print(sum(abs(fpop.mean.vec-pdpa.mean.vec)))
+    if(sum(abs(fpop.mean.vec-pdpa.mean.vec)) > 1e-6){
+      print(model.row)
+      print(sum(abs(fpop.mean.vec-pdpa.mean.vec)))
+    }
     expect_equal(fpop.mean.vec, pdpa.mean.vec)
   }
 })
