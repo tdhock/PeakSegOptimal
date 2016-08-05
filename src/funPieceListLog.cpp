@@ -5,7 +5,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#define NEWTON_EPSILON 1e-10
+#define NEWTON_EPSILON 1e-12
 #define NEWTON_STEPS 100
 
 #define ABS(x) ((x)<0 ? -(x) : (x))
@@ -239,6 +239,10 @@ void PiecewisePoissonLossLog::set_to_min_less_of
     double right_cost = it->getCost(it->max_log_mean);
     if(prev_min_cost == INFINITY){
       // Look for min achieved in this interval.
+      if(verbose){
+	printf("Searching for min in\n");
+	it->print();
+      }
       if(it->Log==0){
 	// degenerate linear function. since the Linear coef is never
 	// negative, we know that this function must be increasing or
@@ -274,7 +278,6 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	}
       }else{//not degenerate linear
 	double mu = it->argmin();
-	if(verbose)printf("argmin=%f\n", mu);
 	double mu_cost = it->getCost(mu);
 	// Compute the cost at the next interval (interval to the
 	// left), to check if the cost at the minimum is less than the
@@ -287,18 +290,24 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	if(next_it == input->piece_list.end()){
 	  next_ok = true;
 	}else{
-	  next_ok = mu_cost < next_cost;
+	  next_ok = NEWTON_EPSILON < next_cost-mu_cost;
 	}
-	if(mu <= it->min_log_mean){
+	if(verbose){
+	  printf("min cost=%f at log_mean=%f\n", mu_cost, mu);
+	  printf("next-mu=%e right-mu=%e\n", next_cost-mu, right_cost-mu);
+	}
+	bool cost_ok = NEWTON_EPSILON < right_cost-mu_cost && next_ok;
+	if(mu <= it->min_log_mean && cost_ok){
 	  /* The minimum is achieved on the left or before this
 	     interval, so this function is always increasing in this
 	     interval. We don't need to store it, but we do need to keep
 	     track of the minimum cost, which occurs at the min mean
 	     value in this interval. */
+	  if(verbose)printf("min before interval\n");
 	  prev_min_cost = it->getCost(it->min_log_mean);
 	  prev_data_i = it->data_i;
 	  prev_best_log_mean = it->min_log_mean;
-	}else if(mu < it->max_log_mean && mu_cost < right_cost && next_ok){
+	}else if(mu < it->max_log_mean && cost_ok){
 	  // Minimum in this interval, so add a convex piece up to the
 	  // min, and keep track of the min cost to create a constant
 	  // piece later. NB it is possible that prev_min_log_mean==mu in
@@ -322,6 +331,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	  // Minimum after this interval, so this function is
 	  // decreasing on this entire interval, and so we can just
 	  // store it as is.
+	  if(verbose)printf("min after interval\n");
 	  piece_list.emplace_back
 	    (it->Linear, it->Log, it->Constant, prev_min_log_mean, it->max_log_mean,
 	     it->data_i, INFINITY); // equality constraint active on convex piece.
@@ -369,22 +379,22 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	    it--;
 	  }
 	}
-	if(right_cost < prev_min_cost && prev_min_cost < INFINITY){
-	  //there is an intersection point somewhere in the interval,
-	  //but get_smaller_root did not find it precisely
-	  //enough. instead just take the point in the middle. a linear
-	  //approximation should not be used, since the cost is probably
-	  //nearly constant, and dividing by a very small slope value
-	  //would be numerically unstable.
-	  double mu = (it->min_log_mean + it->max_log_mean)/2;
-	  piece_list.emplace_back
-	    (0, 0, prev_min_cost,
-	     prev_min_log_mean, mu, prev_data_i,
-	     prev_best_log_mean);// equality constraint inactive.
-	  prev_min_cost = INFINITY;
-	  prev_min_log_mean = mu;
-	  it--;
-	}//if(there are two roots
+	// if(right_cost < prev_min_cost && prev_min_cost < INFINITY){
+	//   //there is an intersection point somewhere in the interval,
+	//   //but get_smaller_root did not find it precisely
+	//   //enough. instead just take the point in the middle. a linear
+	//   //approximation should not be used, since the cost is probably
+	//   //nearly constant, and dividing by a very small slope value
+	//   //would be numerically unstable.
+	//   double mu = (it->min_log_mean + it->max_log_mean)/2;
+	//   piece_list.emplace_back
+	//     (0, 0, prev_min_cost,
+	//      prev_min_log_mean, mu, prev_data_i,
+	//      prev_best_log_mean);// equality constraint inactive.
+	//   prev_min_cost = INFINITY;
+	//   prev_min_log_mean = mu;
+	//   it--;
+	// }//if(there are two roots
       }//if(Log is zero
     }//if(prev_min_cost is finite
     it++;
@@ -443,7 +453,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	  prev_it = it;
 	  prev_it--;
 	  double prev_cost_right = prev_it->getCost(prev_it->max_log_mean);
-	  prev_ok = mu_cost < prev_cost_right;
+	  prev_ok = NEWTON_EPSILON < prev_cost_right-mu_cost;
 	}
 	double this_cost_left = it->getCost(it->min_log_mean);
 	if(it->max_log_mean <= mu){
@@ -454,7 +464,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	  prev_min_cost = it->getCost(it->max_log_mean);
 	  prev_best_log_mean = it->max_log_mean;
 	  prev_data_i = it->data_i;
-	}else if(it->min_log_mean < mu && mu_cost < this_cost_left && prev_ok){
+	}else if(it->min_log_mean < mu && NEWTON_EPSILON < this_cost_left-mu_cost && prev_ok){
 	  // Minimum in this interval, so add a convex piece up to the
 	  // min, and keep track of the min cost to create a constant
 	  // piece later. NB it is possible that mu==prev_max_log_mean, in
@@ -523,24 +533,24 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	prev_max_log_mean = mu;
 	it++;
       }
-      if(left_cost < prev_min_cost && prev_min_cost < INFINITY){
-	//there is an intersection point somewhere in the interval,
-	//but get_larger_root did not find it precisely
-	//enough. instead just take the point in the middle. a linear
-	//approximation should not be used, since the cost is probably
-	//nearly constant, and dividing by a very small slope value
-	//would be numerically unstable.
-	mu = (it->min_log_mean + it->max_log_mean)/2;
-	if(verbose)printf("stopping at midpoint=%f\n", mu);
-	piece_list.emplace_front
-	  (0, 0, prev_min_cost,
-	   mu, prev_max_log_mean,
-	   prev_data_i,
-	   prev_best_log_mean);// equality constraint inactive on constant piece.
-	prev_min_cost = INFINITY;
-	prev_max_log_mean = mu;
-	it++;
-      }
+      // if(left_cost < prev_min_cost && prev_min_cost < INFINITY){
+      // 	//there is an intersection point somewhere in the interval,
+      // 	//but get_larger_root did not find it precisely
+      // 	//enough. instead just take the point in the middle. a linear
+      // 	//approximation should not be used, since the cost is probably
+      // 	//nearly constant, and dividing by a very small slope value
+      // 	//would be numerically unstable.
+      // 	mu = (it->min_log_mean + it->max_log_mean)/2;
+      // 	if(verbose)printf("stopping at midpoint=%f\n", mu);
+      // 	piece_list.emplace_front
+      // 	  (0, 0, prev_min_cost,
+      // 	   mu, prev_max_log_mean,
+      // 	   prev_data_i,
+      // 	   prev_best_log_mean);// equality constraint inactive on constant piece.
+      // 	prev_min_cost = INFINITY;
+      // 	prev_max_log_mean = mu;
+      // 	it++;
+      // }
     }//if(prev_min_cost is finite
   }//while(it
   if(prev_data_i != -2){
@@ -613,7 +623,7 @@ void PiecewisePoissonLossLog::print(){
 }
 
 void PoissonLossPieceLog::print(){
-  printf("%10e %10e %15f %15f %15f %15f %d\n",
+  printf("%.20e %.20e %.20e %15f %15f %15f %d\n",
 	 Linear, Log, Constant,
 	 min_log_mean, max_log_mean,
 	 prev_log_mean, data_i);

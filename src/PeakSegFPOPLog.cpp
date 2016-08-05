@@ -66,9 +66,9 @@ void PeakSegFPOPLog
       int status = min_prev_cost.check_min_of(down_cost_prev, down_cost_prev);
       if(status){
 	printf("BAD MIN LESS CHECK data_i=%d status=%d\n", data_i, status);
-	printf("prev down cost\n");
+	printf("=prev down cost\n");
 	down_cost_prev->print();
-	printf("min less(prev down cost)\n");
+	printf("=min less(prev down cost)\n");
 	min_prev_cost.print();
 	throw status;
       }
@@ -80,24 +80,17 @@ void PeakSegFPOPLog
       // and add that to the min-less-ified function, before applying the min-env.
       min_prev_cost.set_prev_seg_end(data_i-1);
       min_prev_cost.add(0.0, 0.0, penalty/cum_weight_prev_i);
-      // if(data_i==40939){
-      // 	printf("computing cost data_i=%d\n", data_i);
-      // 	verbose=1;
-      // }else{
-      // 	verbose=0;
-      // } 
       up_cost->set_to_min_env_of(&min_prev_cost, up_cost_prev, verbose);
-      //verbose=0;
       status = up_cost->check_min_of(&min_prev_cost, up_cost_prev);
       if(status){
 	printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
-	printf("prev down cost\n");
+	printf("=prev down cost\n");
 	down_cost_prev->print();
-	printf("min less(prev down cost) + %f\n", penalty);
+	printf("=min less(prev down cost) + %f\n", penalty);
 	min_prev_cost.print();
-	printf("prev up cost\n");
+	printf("=prev up cost\n");
 	up_cost_prev->print();
-	printf("new up cost model\n");
+	printf("=new up cost model\n");
 	up_cost->print();
 	throw status;
       }
@@ -108,13 +101,20 @@ void PeakSegFPOPLog
 	 0.0);
       up_cost->multiply(1/cum_weight_i);
       // if data_i is down, it could have come from up_cost_prev.
+      // if(data_i==444494){
+      // 	printf("computing cost data_i=%d\n", data_i);
+      // 	verbose=1;
+      // }else{
+      // 	verbose=0;
+      // } 
       min_prev_cost.set_to_min_more_of(up_cost_prev, verbose);
+      //verbose=0;
       status = min_prev_cost.check_min_of(up_cost_prev, up_cost_prev);
       if(status){
 	printf("BAD MIN MORE CHECK data_i=%d status=%d\n", data_i, status);
-	printf("prev up cost\n");
+	printf("=prev up cost\n");
 	up_cost_prev->print();
-	printf("min more(prev up cost)\n");
+	printf("=min more(prev up cost)\n");
 	min_prev_cost.print();
 	throw status;
       }
@@ -124,13 +124,13 @@ void PeakSegFPOPLog
       status = down_cost->check_min_of(&min_prev_cost, down_cost_prev);
       if(status){
 	printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
-	printf("prev up cost\n");
+	printf("=prev up cost\n");
 	up_cost_prev->print();
-	printf("min more(prev up cost)\n");
+	printf("=min more(prev up cost)\n");
 	min_prev_cost.print();
-	printf("prev down cost\n");
+	printf("=prev down cost\n");
 	down_cost_prev->print();
-	printf("new down cost model\n");
+	printf("=new down cost model\n");
 	down_cost->print();
 	throw status;
       }
