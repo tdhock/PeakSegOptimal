@@ -763,7 +763,7 @@ bool sameFuns
  PoissonLossPieceListLog::iterator it2){
   return it1->Linear == it2->Linear &&
     it1->Log == it2->Log &&
-    it1->Constant == it2->Constant;
+    ABS(it1->Constant - it2->Constant) < NEWTON_EPSILON;
 }
 
 void PiecewisePoissonLossLog::push_min_pieces
@@ -861,7 +861,7 @@ void PiecewisePoissonLossLog::push_min_pieces
       }else{
 	push_piece(it2, last_min_log_mean, first_max_log_mean);
       }
-      if(verbose)printf("offset by a constant\n");
+      if(verbose)printf("offset by a constant=%e\n", diff_piece.Constant);
       return;
     }
     if(diff_piece.Constant == 0){

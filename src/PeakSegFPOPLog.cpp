@@ -62,14 +62,7 @@ void PeakSegFPOPLog
       down_cost->multiply(1/cum_weight_i);
     }else{
       // if data_i is up, it could have come from down_cost_prev.
-      // if(data_i==733355){
-      // 	printf("computing cost data_i=%d\n", data_i);
-      // 	verbose=1;
-      // }else{
-      // 	verbose=0;
-      // } 
       min_prev_cost.set_to_min_less_of(down_cost_prev, verbose);
-      //verbose=0;
       int status = min_prev_cost.check_min_of(down_cost_prev, down_cost_prev);
       if(status){
 	printf("BAD MIN LESS CHECK data_i=%d status=%d\n", data_i, status);
@@ -87,7 +80,14 @@ void PeakSegFPOPLog
       // and add that to the min-less-ified function, before applying the min-env.
       min_prev_cost.set_prev_seg_end(data_i-1);
       min_prev_cost.add(0.0, 0.0, penalty/cum_weight_prev_i);
+      // if(data_i==40939){
+      // 	printf("computing cost data_i=%d\n", data_i);
+      // 	verbose=1;
+      // }else{
+      // 	verbose=0;
+      // } 
       up_cost->set_to_min_env_of(&min_prev_cost, up_cost_prev, verbose);
+      //verbose=0;
       status = up_cost->check_min_of(&min_prev_cost, up_cost_prev);
       if(status){
 	printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
