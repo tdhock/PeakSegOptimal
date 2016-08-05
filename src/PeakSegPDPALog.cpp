@@ -49,12 +49,22 @@ void PeakSegPDPALog
       IFPRINT(printf("DP changes=%d data_i=%d\n", total_changes, data_i));
       IFPRINT(printf("=prev cost model\n"));
       IFPRINT(prev_cost_model->print());
-      int verbose = 0;
+      int verbose = 0, status;
       IFPRINT(verbose=1);
       if(total_changes % 2){
 	min_prev_cost.set_to_min_less_of(prev_cost_model, verbose);
       }else{
 	min_prev_cost.set_to_min_more_of(prev_cost_model, verbose);
+      }
+      status = min_prev_cost.check_min_of(prev_cost_model, prev_cost_model);
+      if(status){
+	printf("BAD MIN LESS/MORE CHECK status=%d changes=%d data_i=%d\n",
+	       status, total_changes, data_i);
+	printf("prev cost\n");
+	prev_cost_model->print();
+	printf("min less/more(prev cost)\n");
+	min_prev_cost.print();
+	throw status;
       }
       min_prev_cost.set_prev_seg_end(prev_i);
       new_cost_model = &cost_model_vec[data_i + total_changes*data_count];
@@ -69,7 +79,7 @@ void PeakSegPDPALog
 	IFPRINT(cost_model.print());
 	new_cost_model->set_to_min_env_of
 	  (&min_prev_cost, &cost_model, verbose);
-	int status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
+	status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
 	if(status){
 	  printf("DP changes=%d data_i=%d BAD CHECK status=%d\n", total_changes, data_i, status);
 	  printf("=prev cost model\n");
