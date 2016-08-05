@@ -129,21 +129,31 @@ sapply(by.sample, nrow)
 ##   geom_step(aes(chromStart/1e3, coverage),
 ##             data=H3K4me3_XJ_immune_chunk1, color="grey")
 
-max.segments <- 19L
-one.name <- "McGill0004"
-
+one.name <- "McGill0010"
 test_that("PeakSegPDPA is as good as PeakSegDP on real data", {
   for(one.name in names(by.sample)){
     one <- by.sample[[one.name]]
-    count.vec <- one$coverage
-    weight.vec <- with(one, chromEnd-chromStart)
+    some <- one
+    count.vec <- some$coverage
+    weight.vec <- with(some, chromEnd-chromStart)
+    max.segments <- 19L
     pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
-    peakseg <- PeakSegDP(one, 9L)
-    cost.mat <- rbind(
-      pdpa=pdpa$cost.mat[peakseg$error$segments, length(count.vec)],
-      cdpa=peakseg$error$error)
-    diff.vec <- apply(cost.mat, 2, diff)
-    min.diff <- min(diff.vec)
-    expect_gt(min.diff, -1e-8)
+    cdpa <- cDPA(count.vec, weight.vec, max.segments)
+    cdpa$loss[cdpa$ends==0] <- Inf
+    both.loss.list <- list()
+    for(seg.i in 1:max.segments){
+      both.loss.list[[seg.i]] <- data.frame(
+        segments=max.segments,
+        data.i=1:nrow(some),
+        cdpa=cdpa$loss[max.segments,],
+        pdpa=pdpa$cost.mat[max.segments,])
+    }
+    both.loss <- do.call(rbind, both.loss.list)
+    bad <- subset(both.loss, cdpa < pdpa-1e-5)
+    if(nrow(bad)){
+      print(one.name)
+      print(bad)
+    }
+    expect_equal(nrow(bad), 0)
   }
 })
