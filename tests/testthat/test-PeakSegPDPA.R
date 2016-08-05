@@ -131,17 +131,19 @@ sapply(by.sample, nrow)
 
 max.segments <- 19L
 one.name <- "McGill0004"
-for(one.name in names(by.sample)){
-  one <- by.sample[[one.name]]
-  count.vec <- one$coverage
-  weight.vec <- with(one, chromEnd-chromStart)
-  pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
-  peakseg <- PeakSegDP(one, 9L)
-  cost.mat <- rbind(
-    pdpa=pdpa$cost.mat[peakseg$error$segments, length(count.vec)],
-    cdpa=peakseg$error$error)
-  diff.vec <- apply(cost.mat, 2, diff)
-  min.diff <- min(diff.vec)
-  expect_gt(min.diff, -1e-8)
-}
 
+test_that("PeakSegPDPA is as good as PeakSegDP on real data", {
+  for(one.name in names(by.sample)){
+    one <- by.sample[[one.name]]
+    count.vec <- one$coverage
+    weight.vec <- with(one, chromEnd-chromStart)
+    pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
+    peakseg <- PeakSegDP(one, 9L)
+    cost.mat <- rbind(
+      pdpa=pdpa$cost.mat[peakseg$error$segments, length(count.vec)],
+      cdpa=peakseg$error$error)
+    diff.vec <- apply(cost.mat, 2, diff)
+    min.diff <- min(diff.vec)
+    expect_gt(min.diff, -1e-8)
+  }
+})
