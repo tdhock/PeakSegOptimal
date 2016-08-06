@@ -64,6 +64,15 @@ double PoissonLossPieceLog::PoissonDeriv(double mean){
 double PoissonLossPieceLog::get_larger_root(double equals){
   double optimal_mean = argmin_mean(); //min or max!
   double optimal_cost = PoissonLoss(optimal_mean);
+  double right_cost = getCost(max_log_mean);
+  if(
+     (optimal_cost < right_cost && right_cost < equals) ||
+     (optimal_cost > right_cost && right_cost > equals)
+     ){
+    // intersection to the right of this interval, so just return some
+    // value on the right side.
+    return max_log_mean+1;
+  }
   // Approximate the solution by the line through
   // (optimal_mean,optimal_cost) with the asymptotic slope. As m tends
   // to Inf, f'(m)=Linear+Log/m tends to Linear.
@@ -127,6 +136,15 @@ double PoissonLossPieceLog::get_larger_root(double equals){
 double PoissonLossPieceLog::get_smaller_root(double equals){
   double optimal_log_mean = argmin(); //min or max!
   double optimal_cost = getCost(optimal_log_mean);
+  double left_cost = getCost(min_log_mean);
+  if(
+     (equals < left_cost && left_cost < optimal_cost) ||
+     (equals > left_cost && left_cost > optimal_cost)
+     ){
+    // intersection to the left of this interval, so just return some
+    // value on the left side-- it will be ignored later.
+    return min_log_mean-1;
+  }
   // Approximate the solution by the line through
   // (optimal_mean,optimal_cost) with the asymptotic slope. As x tends
   // to -Inf, g'(x)=Linear*e^x+Log tends to Log.
