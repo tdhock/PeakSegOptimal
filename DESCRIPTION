@@ -6,5 +6,5 @@ License: GPL-3
 Title: Constrained Optimal Segmentation
 Description: Computes optimal segmentations subject to constraints
  on the directions of changes.
-Suggests: testthat, PeakSegDP, ggplot2
+Suggests: testthat, PeakSegDP (>= 2016.08.06), ggplot2
 Remotes: tdhock/PeakSegDP
