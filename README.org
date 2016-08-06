@@ -17,10 +17,11 @@ Poisson loss and the PeakSeg constraint.
 
 *** PeakSeg Segment Neighborhood problem
 
-There are two R functions that solve the Segment Neighborhood
-problem. The constraints are first segment mean <= second segment mean
->= third segment mean, etc. For S segments and N data points,
-complexity is O(S*N) memory and O(S*N log N) time.
+There are two R functions that solve the Segment Neighborhood problem
+(best models with at most 1,...,S segments). The constraints are first
+segment mean <= second segment mean >= third segment mean, etc. For S
+segments and N data points, complexity is O(S*N) memory and O(S*N log
+N) time.
 - PeakSegPDPA is a direct interface to the C++ code. Returns matrices
   for the optimal cost and number of intervals stored by the algorithm
   at each step. Input parameter is the maximum number of segments S,
@@ -32,13 +33,13 @@ complexity is O(S*N) memory and O(S*N log N) time.
 
 *** PeakSeg Optimal Partitioning problem
 
-There are two R functions that solve the Optimal Partitioning
-problem. Input parameter is a non-negative penalty constant (bigger
-for fewer peaks, smaller for more peaks), and output is the model that
-minimizes the penalized cost using the specified penalty constant. For
-N data points, complexity is O(N) memory and O(N log N) time. The
-first segment mean is constrained to be down (mu_1 <= mu_2), as is the
-last (mu_{N-1} >= mu_N).
+There are two R functions that solve the Optimal Partitioning problem
+(best model for a given penalty parameter). Input parameter is a
+non-negative penalty constant (bigger for fewer peaks, smaller for
+more peaks), and output is the model that minimizes the penalized cost
+using the specified penalty constant. For N data points, complexity is
+O(N) memory and O(N log N) time. The first segment mean is constrained
+to be down (mu_1 <= mu_2), as is the last (mu_{N-1} >= mu_N).
 - PeakSegFPOP is a direct interface to the C++ code. Returns matrices
   for the optimal cost and number of intervals stored by the algorithm
   at each step.
