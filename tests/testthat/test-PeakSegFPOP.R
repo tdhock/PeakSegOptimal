@@ -75,3 +75,29 @@ test_that("FPOP recovers the same models as PDPA", {
     expect_equal(fpop.mean.vec, pdpa.mean.vec)
   }
 })
+
+## some.models <- pdpa$modelSelection.decreasing[144:148,]
+## lambda.vec <- with(some.models, ceiling(min(min.lambda)):floor(max(max.lambda)))
+## some.loss <- subset(pdpa$loss, peaks %in% some.models$peaks)
+## loss.list <- list()
+## for(lambda.i in seq_along(lambda.vec)){
+##   lambda <- lambda.vec[[lambda.i]]
+##   fit <- PeakSegFPOPchrom(one, lambda)
+##   loss.list[[lambda.i]] <- data.frame(lambda, fit$loss)
+## }
+## loss <- do.call(rbind, loss.list)
+## ggplot()+
+##   geom_abline(aes(slope=peaks, intercept=PoissonLoss), data=some.loss)+
+##   geom_point(aes(lambda, penalized.loss, color=factor(peaks)), data=loss)
+
+## ## lambda=150 should select 3-segment model, but buggy code selects
+## ## 2-segment model.
+## lambda <- 150
+## data.i <- 3
+## some <- one[1:data.i,]
+## fpop <- PeakSegFPOPchrom(some, lambda)
+## pdpa <- PeakSegPDPAchrom(some, 1L)
+## loss <- pdpa$loss
+## loss$penalized.cost <- with(loss, peaks*lambda+PoissonLoss)
+## loss
+## fpop$loss

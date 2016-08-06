@@ -433,28 +433,16 @@ ggplot()+
   geom_line(aes(log.mean, cost, color=fun, size=fun, alpha=fun),
             data=C19492$funs)
 
-
-C19492 <- gdata("
+C3down <- gdata("
 =prev up cost
     Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
-2.17344882315896605030e-06 -2.22778504373794066743e-05 -2.34689577819593298003e+00            -inf        1.396865             inf 444492
-1.04868905717420116586e-04 -5.50018392810666038699e-04 -2.34657374296480902842e+00        1.396865        1.409194        0.312519 444416
-7.17238111642459118472e-05 -4.62265396575622933284e-04 -2.34656175251945287030e+00        1.409194        1.527703        0.578273 444430
-6.54751457976638376541e-05 -4.43519400475876548074e-04 -2.34656159959770782564e+00        1.527703        1.998502        0.616914 444431
-6.53393052462164383807e-05 -4.42976038270087059401e-04 -2.34656168327717162825e+00        1.998502        2.284420        0.618364 444432
-1.76592716881666014881e-05 -1.56352474715998183454e-04 -2.34674823455000591821e+00        2.284420        2.330659        1.607634 444472
-7.87875198395125341466e-06 -8.10968092141189418219e-05 -2.34682303995661012408e+00        2.330659        2.333657        1.800826 444480
-7.74291143250381856591e-06 -8.00100848025394494794e-05 -2.34682417472217430543e+00        2.333657        2.545006        1.802570 444481
-7.60707088105638202309e-06 -7.87875198395125307584e-05 -2.34682555509999568599e+00        2.545006        2.734500        1.805182 444482
-5.43362205789741618455e-07 -5.97698426368715790888e-06 -2.34691585998293872350e+00        2.734500        4.189655        1.907836 444492
+5.40909090909090934929e+01 -1.07919191919191931106e+02 1.51515151515151536010e+00            -inf        0.693147             inf 0
 =min more(prev up cost)
     Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
-0.00000000000000000000e+00 0.00000000000000000000e+00 -2.34693101818243210488e+00            -inf        2.335375        2.335375 444481
-7.74291143250381856591e-06 -8.00100848025394494794e-05 -2.34682417472217430543e+00        2.335375        2.545006             inf 444481
-7.60707088105638202309e-06 -7.87875198395125307584e-05 -2.34682555509999568599e+00        2.545006        2.734500             inf 444482
-5.43362205789741618455e-07 -5.97698426368715790888e-06 -2.34691585998293872350e+00        2.734500        4.189655             inf 444492
+0.00000000000000000000e+00 0.00000000000000000000e+00 3.48927670508883096545e+01            -inf        0.690717        0.690717 0
+5.40909090909090934929e+01 -1.07919191919191931106e+02 1.51515151515151536010e+00        0.690717        0.693147             inf 0
 ")
-fun.names <- unique(paste(C19492$funs$fun))
+fun.names <- unique(paste(C3down$funs$fun))
 fun.alpha <- rep(1, length(fun.names))
 names(fun.alpha) <- fun.names
 fun.alpha[grepl("min", fun.names)] <- 0.5
@@ -463,18 +451,54 @@ names(fun.size) <- fun.names
 fun.size[grepl("min", fun.names)] <- 2
 ggplot()+
   scale_size_manual(values=fun.size)+
-  geom_vline(xintercept=1.230057)+
   scale_alpha_manual(values=fun.alpha)+
   geom_line(aes(log.mean, cost, color=fun, size=fun, alpha=fun),
-            data=C19492$funs)
+            data=C3down$funs)
 
 ggplot()+
-  coord_cartesian(xlim=c(2.25, 2.4), ylim=c(-2.34693102, -2.34693101))+
-  geom_vline(xintercept=1.230057)+
+  coord_cartesian(xlim=c(0.67, 0.7), ylim=c(34.8925,34.9))+
   geom_vline(aes(xintercept=min_log_mean, color=fun),
-             data=C19492$vlines)+
+             data=C3down$vlines)+
   scale_size_manual(values=fun.size)+
   scale_alpha_manual(values=fun.alpha)+
   geom_line(aes(log.mean, cost, color=fun, size=fun, alpha=fun),
-            data=C19492$funs)
+            data=C3down$funs)
+
+
+
+C3down <- gdata("
+=min more(prev up cost)
+    Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
+0.00000000000000000000e+00 0.00000000000000000000e+00 3.48927670508883096545e+01            -inf        0.690717        0.690717 1
+5.40909090909090934929e+01 -1.07919191919191931106e+02 1.51515151515151536010e+00        0.690717        0.693147             inf 1
+=prev down cost
+    Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
+1.00000000000000000000e+00 -1.73737373737373745897e+00 0.00000000000000000000e+00            -inf        0.693147        0.000000 -1
+=new down cost model
+    Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
+0.00000000000000000000e+00 0.00000000000000000000e+00 3.48927670508883096545e+01            -inf      -20.083628        0.690717 1
+1.00000000000000000000e+00 -1.73737373737373745897e+00 0.00000000000000000000e+00      -20.083628        0.693147        0.000000 -1
+")
+fun.names <- unique(paste(C3down$funs$fun))
+fun.alpha <- rep(1, length(fun.names))
+names(fun.alpha) <- fun.names
+fun.alpha[grepl("new", fun.names)] <- 0.5
+fun.size <- rep(1, length(fun.names))
+names(fun.size) <- fun.names
+fun.size[grepl("new", fun.names)] <- 2
+ggplot()+
+  scale_size_manual(values=fun.size)+
+  scale_alpha_manual(values=fun.alpha)+
+  geom_line(aes(log.mean, cost, color=fun, size=fun, alpha=fun),
+            data=C3down$funs)
+
+ggplot()+
+  coord_cartesian(xlim=c(0.67, 0.7), ylim=c(34.8925,34.9))+
+  geom_vline(aes(xintercept=min_log_mean, color=fun),
+             data=C3down$vlines)+
+  scale_size_manual(values=fun.size)+
+  scale_alpha_manual(values=fun.alpha)+
+  geom_line(aes(log.mean, cost, color=fun, size=fun, alpha=fun),
+            data=C3down$funs)
+
 
