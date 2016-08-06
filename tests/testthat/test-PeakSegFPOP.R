@@ -110,3 +110,14 @@ test_that("error for less than 3 data points", {
     PeakSegFPOPchrom(one[1:2,])
   })
 })
+
+test_that("error for negative data", {
+  count <- as.integer(c(1, 2, -3))
+  expect_error({
+    PeakSegFPOP(count, penalty=0)
+  })
+  df <- data.frame(count,chromStart=0:2, chromEnd=1:3)
+  expect_error({
+    PeakSegFPOPchrom(df, 0)
+  })
+})
