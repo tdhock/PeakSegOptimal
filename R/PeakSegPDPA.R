@@ -20,6 +20,7 @@ PeakSegPDPA <- structure(function
 ){
   n.data <- length(count.vec)
   stopifnot(is.integer(count.vec))
+  stopifnot(0 <= count.vec)
   stopifnot(is.numeric(weight.vec))
   stopifnot(n.data==length(weight.vec))
   stopifnot(0 < weight.vec)

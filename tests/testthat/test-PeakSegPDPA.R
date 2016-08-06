@@ -157,3 +157,14 @@ test_that("PeakSegPDPA is as good as PeakSegDP on real data", {
     expect_equal(nrow(bad), 0)
   }
 })
+
+test_that("error for negative data", {
+  count <- as.integer(c(1, 2, -3))
+  expect_error({
+    PeakSegPDPA(count, max.segments=3L)
+  })
+  df <- data.frame(count,chromStart=0:2, chromEnd=1:3)
+  expect_error({
+    PeakSegPDPAchrom(df, 1L)
+  })
+})

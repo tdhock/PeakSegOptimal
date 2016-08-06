@@ -14,7 +14,7 @@ PeakSegFPOP <- structure(function
 ### This function constrains the first and last segment means to
 ### be down, mu_1 <= mu_2, mu_{N-1} >= mu_N.
 (count.vec,
-### integer vector of length >= 3: count data to segment.
+### integer vector of length >= 3: non-negative count data to segment.
  weight.vec=rep(1, length(count.vec)),
 ### numeric vector (same length as count.vec) of positive weights.
  penalty=NULL
@@ -24,6 +24,7 @@ PeakSegFPOP <- structure(function
   n.data <- length(count.vec)
   stopifnot(3 <= n.data)
   stopifnot(is.integer(count.vec))
+  stopifnot(0 <= count.vec)
   stopifnot(is.numeric(weight.vec))
   stopifnot(n.data==length(weight.vec))
   stopifnot(0 < weight.vec)
