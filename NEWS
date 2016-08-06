@@ -7,7 +7,7 @@ functions?
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
-2016.08.xx
+2016.08.06
 
 To avoid root finding problems in large data sets, we now store the
 mean cost rather than total cost in the C++ code. The R functions
