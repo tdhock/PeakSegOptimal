@@ -101,3 +101,12 @@ test_that("FPOP recovers the same models as PDPA", {
 ## loss$penalized.cost <- with(loss, peaks*lambda+PoissonLoss)
 ## loss
 ## fpop$loss
+
+test_that("error for less than 3 data points", {
+  expect_error({
+    PeakSegFPOP(data.vec[1:2], weight.vec[1:2], 0)
+  })
+  expect_error({
+    PeakSegFPOPchrom(one[1:2,])
+  })
+})
