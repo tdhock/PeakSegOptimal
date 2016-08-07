@@ -29,7 +29,8 @@ N) time.
 - PeakSegPDPAchrom is a more user-friendly interface, which takes a
   data.frame with columns chrom, chromStart, chromEnd as input, and
   returns data.frames as output. Input parameter is the maximum number
-  of peaks P, and outputs are the optimal models from 0 to P peaks.
+  of peaks P (implying S = P*2+1 segments), and outputs are the
+  optimal models from 0 to P peaks.
 
 *** PeakSeg Optimal Partitioning problem
 
@@ -46,3 +47,48 @@ to be down (mu_1 <= mu_2), as is the last (mu_{N-1} >= mu_N).
 - PeakSegFPOPchrom is a more user-friendly interface, which takes a
   data.frame with columns chrom, chromStart, chromEnd as input, and
   returns data.frames as output.
+
+*** Note about inequality constraints
+
+Note that as defined in the [[http://jmlr.org/proceedings/papers/v37/hocking15.html][PeakSeg ICML'15 paper]], the PeakSeg problem
+has strict inequality constraints (segment mean 1 < segment mean 2 >
+segment mean 3, etc). However, the solvers in this package use
+non-strict inequality constraints (segment mean 1 <= segment mean 2 >=
+segment mean 3, etc), and so may return a model with adjacent segment
+means that are equal. In this case, the minimum of the PeakSeg problem
+with strict inequality constraints is undefined. For example,
+
+#+BEGIN_SRC R
+  library(coseg)
+  data.vec <- as.integer(c(1, 2, 3))
+  fit <- PeakSegPDPA(data.vec, max.segments=3L)
+#+END_SRC
+
+For the data 1, 2, 3 the optimal model with 3 segments has means 1,
+2.5, 2.5:
+
+#+BEGIN_SRC 
+> fit$mean.mat[3,]
+[1] 1.0 2.5 2.5
+#+END_SRC
+
+This implies that the optimal model with strict inequality constraints
+is undefined for these data. For example, the model with means 1, 3, 2
+satisfies the strict inequality constraint, and has a PoissonLoss of
+
+#+BEGIN_SRC 
+> PoissonLoss(c(1,2,3), c(1,3,2))
+[1] 1.723334
+#+END_SRC
+
+But that model is not optimal, because there is another model that
+satisfies the strict inequality constraints, but has a better
+cost. For example, 
+
+#+BEGIN_SRC 
+> PoissonLoss(c(1,2,3), c(1,2.9,2.1))
+[1] 1.644766
+#+END_SRC
+
+But that model is not optimal, for the same reason (exercise for the
+reader).
