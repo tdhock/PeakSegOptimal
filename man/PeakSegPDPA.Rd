@@ -11,8 +11,9 @@ which minimize the Poisson Loss, sum_i m_i - z_i * log(m_i),
 subject to constraints: (1) there are at most S changes in M, and
 (2) up changes are followed by down changes, and vice versa (mu1
 <= mu2 >= mu3 <= mu4 >= mu5, etc). Note that the segment means can
-be equal, in which case the recovered model is not feasible for
-the PeakSeg problem.}
+be equal, in which case the recovered model is not
+feasible for the strict inequality constraints of the PeakSeg
+problem, and the optimum of the PeakSeg problem is undefined.}
 \usage{PeakSegPDPA(count.vec, weight.vec = rep(1, length(count.vec)), 
     max.segments = NULL)}
 \arguments{
