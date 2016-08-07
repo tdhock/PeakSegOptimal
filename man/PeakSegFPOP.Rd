@@ -3,7 +3,7 @@
 \title{PeakSegFPOP}
 \description{Find the optimal change-points using the Poisson loss and the
 PeakSeg constraint. For N data points, the functional pruning
-algorithm is O(N) space and O(N log N) time. It recovers the exact
+algorithm is O(N log N) time and memory. It recovers the exact
 solution to the following optimization problem. Let Z be an
 N-vector of count data (non-negative integers). Find the N-vector
 M of real numbers (segment means) which minimize the penalized
@@ -11,12 +11,14 @@ Poisson Loss, sum_{i=2}^N I(m_{i-1} < m_i)*penalty + sum_{i=1}^N
 m_i - z_i * log(m_i), subject to constraint: up changes are
 followed by down changes, and vice versa. Note that the segment
 means can be equal, in which case the recovered model is not
-feasible for the PeakSeg problem. This function constrains the
-first and last segment means to be down, mu_1 <= mu_2, mu_{N-1} >= mu_N).}
+feasible for the strict inequality constraints of the PeakSeg
+problem, and the optimum of the PeakSeg problem is undefined.
+This function constrains the first and last segment means to
+be down, mu_1 <= mu_2, mu_{N-1} >= mu_N.}
 \usage{PeakSegFPOP(count.vec, weight.vec = rep(1, length(count.vec)), 
     penalty = NULL)}
 \arguments{
-  \item{count.vec}{integer vector of length >= 3: count data to segment.}
+  \item{count.vec}{integer vector of length >= 3: non-negative count data to segment.}
   \item{weight.vec}{numeric vector (same length as count.vec) of positive weights.}
   \item{penalty}{non-negative numeric scalar: penalty parameter (smaller for more
 peaks, larger for fewer peaks).}
