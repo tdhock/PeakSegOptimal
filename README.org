@@ -64,8 +64,8 @@ with strict inequality constraints is undefined. For example,
   fit <- PeakSegPDPA(data.vec, max.segments=3L)
 #+END_SRC
 
-For the data 1, 2, 3 the optimal model with 3 segments has means 1,
-2.5, 2.5:
+For the data 1, 2, 3 the optimal model with at most 3 segments
+actually has only 2 segments:
 
 #+BEGIN_SRC 
 > fit$mean.mat[3,]
