@@ -9,8 +9,9 @@ PeakSegPDPA <- structure(function
 ### subject to constraints: (1) there are at most S changes in M, and
 ### (2) up changes are followed by down changes, and vice versa (mu1
 ### <= mu2 >= mu3 <= mu4 >= mu5, etc). Note that the segment means can
-### be equal, in which case the recovered model is not feasible for
-### the PeakSeg problem.
+### be equal, in which case the recovered model is not
+### feasible for the strict inequality constraints of the PeakSeg
+### problem, and the optimum of the PeakSeg problem is undefined.
 (count.vec,
 ### integer vector of count data.
  weight.vec=rep(1, length(count.vec)),
@@ -20,6 +21,7 @@ PeakSegPDPA <- structure(function
 ){
   n.data <- length(count.vec)
   stopifnot(is.integer(count.vec))
+  stopifnot(0 <= count.vec)
   stopifnot(is.numeric(weight.vec))
   stopifnot(n.data==length(weight.vec))
   stopifnot(0 < weight.vec)
@@ -42,7 +44,7 @@ PeakSegPDPA <- structure(function
     intervals.mat=as.integer(intervals.mat),
     PACKAGE="coseg")
   result.list$cost.mat <- matrix(
-    result.list$cost.mat, max.segments, n.data, byrow=TRUE)
+    result.list$cost.mat*cumsum(weight.vec), max.segments, n.data, byrow=TRUE)
   result.list$ends.mat <- matrix(
     result.list$ends.mat+1L, max.segments, max.segments, byrow=TRUE)
   result.list$mean.mat <- matrix(
@@ -139,7 +141,10 @@ PeakSegPDPAchrom <- structure(function
   seg.df <- do.call(rbind, segments.list)
   only.feasible <- loss.df[loss.df$feasible,]
   rownames(seg.df) <- NULL
-  dec.loss <- subset(loss.df, c(TRUE, diff(PoissonLoss) < 0))
+  cum.vec <- cummin(loss.df$PoissonLoss)
+  min.loss <- loss.df[cum.vec==loss.df$PoissonLoss,]
+  is.dec <- c(TRUE, diff(min.loss$PoissonLoss) < 0)
+  dec.loss <- min.loss[is.dec,]
   dec.models <- with(dec.loss, exactModelSelection(PoissonLoss, peaks, peaks))
   list(
     segments=seg.df,

@@ -5,7 +5,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#define NEWTON_EPSILON 1e-8
+#define NEWTON_EPSILON 1e-12
 #define NEWTON_STEPS 100
 
 #define ABS(x) ((x)<0 ? -(x) : (x))
@@ -38,10 +38,10 @@ bool PoissonLossPieceLog::has_two_roots(double equals){
   // g'(x)= Linear*e^x + Log,
   // g''(x)= Linear*e^x.
   if(0 < Linear){//convex.
-    return optimal_cost < equals && optimal_cost2 < equals;
+    return optimal_cost + NEWTON_EPSILON < equals && optimal_cost2 + NEWTON_EPSILON < equals;
   }
   //concave.
-  return equals < optimal_cost && equals < optimal_cost2;
+  return equals + NEWTON_EPSILON < optimal_cost && equals + NEWTON_EPSILON < optimal_cost2;
 }
 
 double PoissonLossPieceLog::PoissonLoss(double mean){
@@ -64,6 +64,15 @@ double PoissonLossPieceLog::PoissonDeriv(double mean){
 double PoissonLossPieceLog::get_larger_root(double equals){
   double optimal_mean = argmin_mean(); //min or max!
   double optimal_cost = PoissonLoss(optimal_mean);
+  double right_cost = getCost(max_log_mean);
+  if(
+     (optimal_cost < right_cost && right_cost < equals) ||
+     (optimal_cost > right_cost && right_cost > equals)
+     ){
+    // intersection to the right of this interval, so just return some
+    // value on the right side.
+    return max_log_mean+1;
+  }
   // Approximate the solution by the line through
   // (optimal_mean,optimal_cost) with the asymptotic slope. As m tends
   // to Inf, f'(m)=Linear+Log/m tends to Linear.
@@ -127,6 +136,15 @@ double PoissonLossPieceLog::get_larger_root(double equals){
 double PoissonLossPieceLog::get_smaller_root(double equals){
   double optimal_log_mean = argmin(); //min or max!
   double optimal_cost = getCost(optimal_log_mean);
+  double left_cost = getCost(min_log_mean);
+  if(
+     (equals < left_cost && left_cost < optimal_cost) ||
+     (equals > left_cost && left_cost > optimal_cost)
+     ){
+    // intersection to the left of this interval, so just return some
+    // value on the left side-- it will be ignored later.
+    return min_log_mean-1;
+  }
   // Approximate the solution by the line through
   // (optimal_mean,optimal_cost) with the asymptotic slope. As x tends
   // to -Inf, g'(x)=Linear*e^x+Log tends to Log.
@@ -230,26 +248,31 @@ void PiecewisePoissonLossLog::set_to_min_less_of
   int prev_data_i = -2;
   piece_list.clear();
   PoissonLossPieceListLog::iterator it = input->piece_list.begin();
+  PoissonLossPieceListLog::iterator next_it;
   double prev_min_cost = INFINITY;
   double prev_min_log_mean = it->min_log_mean;
   double prev_best_log_mean;
   while(it != input->piece_list.end()){
+    double left_cost = it->getCost(it->min_log_mean);
+    double right_cost = it->getCost(it->max_log_mean);
     if(prev_min_cost == INFINITY){
       // Look for min achieved in this interval.
+      if(verbose){
+	printf("Searching for min in\n");
+	it->print();
+      }
       if(it->Log==0){
 	// degenerate linear function. since the Linear coef is never
 	// negative, we know that this function must be increasing or
 	// numerically constant on this interval.
 	// g(x) = Linear*e^x + Constant,
 	if(verbose)printf("DEGENERATE LINEAR FUNCTION IN MIN LESS\n");
-	double left_cost = it->getCost(it->min_log_mean);
-	double right_cost = it->getCost(it->max_log_mean);
 	// We used to check if(it->Linear==0) but there are some cases
 	// when the function has a non-zero Linear coefficient, but is
 	// numerically constant (e.g. Linear=156 between -inf and
 	// -44). So now we check to see if the cost on the left and
 	// right of the interval are equal.
-	if(left_cost==right_cost){
+	if(right_cost - left_cost < NEWTON_EPSILON){
 	  if(verbose){
 	    printf("Constant interval\n");
 	    it->print();
@@ -266,28 +289,52 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	  prev_min_cost = left_cost;
 	  prev_best_log_mean = it->min_log_mean;
 	  if(verbose){
-	    printf("Increasing interval left_cost=%e(stored) right_cost=%e\n", left_cost, right_cost);
+	    printf("Increasing interval left_cost=%e(stored) right_cost=%e diff=%e\n", left_cost, right_cost, right_cost-left_cost);
 	    it->print();
 	  }
 	  prev_data_i = it->data_i;
 	}
-      }else{
+      }else{//not degenerate linear
 	double mu = it->argmin();
-	if(verbose)printf("argmin=%f\n", mu);
-	if(mu <= it->min_log_mean){
+	double mu_cost = it->getCost(mu);
+	// Compute the cost at the next interval (interval to the
+	// left), to check if the cost at the minimum is less than the
+	// cost on the edge of the next function piece. This is
+	// necessary because sometimes there are numerical issues.
+	bool next_ok;
+	next_it = it;
+	next_it++;
+	double next_cost = next_it->getCost(next_it->min_log_mean);
+	if(next_it == input->piece_list.end()){
+	  next_ok = true;
+	}else{
+	  next_ok = NEWTON_EPSILON < next_cost-mu_cost;
+	}
+	if(verbose){
+	  printf("min cost=%f at log_mean=%f\n", mu_cost, mu);
+	  printf("next-mu=%e right-mu=%e\n", next_cost-mu, right_cost-mu);
+	}
+	bool cost_ok = NEWTON_EPSILON < right_cost-mu_cost && next_ok;
+	if(mu <= it->min_log_mean && cost_ok){
 	  /* The minimum is achieved on the left or before this
 	     interval, so this function is always increasing in this
 	     interval. We don't need to store it, but we do need to keep
 	     track of the minimum cost, which occurs at the min mean
 	     value in this interval. */
+	  if(verbose)printf("min before interval\n");
 	  prev_min_cost = it->getCost(it->min_log_mean);
 	  prev_data_i = it->data_i;
 	  prev_best_log_mean = it->min_log_mean;
-	}else if(mu < it->max_log_mean){
+	}else if(mu < it->max_log_mean && cost_ok){
 	  // Minimum in this interval, so add a convex piece up to the
 	  // min, and keep track of the min cost to create a constant
 	  // piece later. NB it is possible that prev_min_log_mean==mu in
 	  // which case we do not need to store the convex piece.
+	  if(verbose){
+	    printf("min in this interval at log_mean=%f cost=%f\n", mu, mu_cost);
+	    printf("right_cost=%f right-constant=%e\n", right_cost, right_cost-mu_cost);
+	    printf("next_cost=%f next-constant=%e\n", next_cost, next_cost-mu_cost);
+	  }
 	  if(prev_min_log_mean < mu){
 	    piece_list.emplace_back
 	      (it->Linear, it->Log, it->Constant, prev_min_log_mean, mu,
@@ -295,13 +342,14 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	  }
 	  prev_min_log_mean = mu;
 	  prev_best_log_mean = mu;
-	  prev_min_cost = it->getCost(mu);
+	  prev_min_cost = mu_cost;
 	  if(verbose)printf("prev_min_cost=%f\n", prev_min_cost);
 	  prev_data_i = it->data_i;
 	}else{
 	  // Minimum after this interval, so this function is
 	  // decreasing on this entire interval, and so we can just
 	  // store it as is.
+	  if(verbose)printf("min after interval\n");
 	  piece_list.emplace_back
 	    (it->Linear, it->Log, it->Constant, prev_min_log_mean, it->max_log_mean,
 	     it->data_i, INFINITY); // equality constraint active on convex piece.
@@ -310,6 +358,13 @@ void PiecewisePoissonLossLog::set_to_min_less_of
       }//if(degenerate linear cost.
     }else{//prev_min_cost is finite
       // Look for a function with prev_min_cost in its interval.
+      if(verbose){
+	printf("Searching for intersection with %f\n", prev_min_cost);
+	printf("cost at limits=[%f,%f] cost-constant=[%e,%e]\n",
+	       left_cost, right_cost,
+	       left_cost-prev_min_cost, right_cost-prev_min_cost);
+	it->print();
+      }
       if(it->Log==0){
 	//degenerate Linear case
 	if(it->Linear < 0){
@@ -340,8 +395,24 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	    prev_min_cost = INFINITY;
 	    prev_min_log_mean = mu;
 	    it--;
-	  }//if(mu occurs in interval
-	}//if(there are two roots
+	  }
+	}
+	// if(right_cost < prev_min_cost && prev_min_cost < INFINITY){
+	//   //there is an intersection point somewhere in the interval,
+	//   //but get_smaller_root did not find it precisely
+	//   //enough. instead just take the point in the middle. a linear
+	//   //approximation should not be used, since the cost is probably
+	//   //nearly constant, and dividing by a very small slope value
+	//   //would be numerically unstable.
+	//   double mu = (it->min_log_mean + it->max_log_mean)/2;
+	//   piece_list.emplace_back
+	//     (0, 0, prev_min_cost,
+	//      prev_min_log_mean, mu, prev_data_i,
+	//      prev_best_log_mean);// equality constraint inactive.
+	//   prev_min_cost = INFINITY;
+	//   prev_min_log_mean = mu;
+	//   it--;
+	// }//if(there are two roots
       }//if(Log is zero
     }//if(prev_min_cost is finite
     it++;
@@ -362,6 +433,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of
   int prev_data_i = -2;
   piece_list.clear();
   PoissonLossPieceListLog::iterator it = input->piece_list.end();
+  PoissonLossPieceListLog::iterator prev_it;
   it--;
   double prev_min_cost = INFINITY;
   double prev_max_log_mean = it->max_log_mean;
@@ -388,6 +460,20 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	prev_max_log_mean = it->min_log_mean;
       }else{
 	double mu = it->argmin();
+	double mu_cost = it->getCost(mu);
+	// Compute the cost at the prev interval (interval to the
+	// left), to check if the minimum is really a minimum. This is
+	// necessary because sometimes there are numerical issues.
+	bool prev_ok;
+	if(it == input->piece_list.begin()){
+	  prev_ok = true;
+	}else{
+	  prev_it = it;
+	  prev_it--;
+	  double prev_cost_right = prev_it->getCost(prev_it->max_log_mean);
+	  prev_ok = NEWTON_EPSILON < prev_cost_right-mu_cost;
+	}
+	double this_cost_left = it->getCost(it->min_log_mean);
 	if(it->max_log_mean <= mu){
 	  /* The minimum is achieved after this interval, so this
 	     function is always decreasing in this interval. We don't
@@ -396,12 +482,12 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	  prev_min_cost = it->getCost(it->max_log_mean);
 	  prev_best_log_mean = it->max_log_mean;
 	  prev_data_i = it->data_i;
-	}else if(it->min_log_mean < mu){
+	}else if(it->min_log_mean < mu && NEWTON_EPSILON < this_cost_left-mu_cost && prev_ok){
 	  // Minimum in this interval, so add a convex piece up to the
 	  // min, and keep track of the min cost to create a constant
 	  // piece later. NB it is possible that mu==prev_max_log_mean, in
 	  // which case we do not need to save the convex piece.
-	  if(verbose)printf("min in this interval\n");
+	  if(verbose)printf("min in this interval at mu=%f\n", mu);
 	  if(mu < prev_max_log_mean){ 
 	    piece_list.emplace_front
 	      (it->Linear, it->Log, it->Constant, mu, prev_max_log_mean, 
@@ -409,7 +495,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	  }
 	  prev_max_log_mean = mu;
 	  prev_best_log_mean = mu;
-	  prev_min_cost = it->getCost(mu);
+	  prev_min_cost = mu_cost;
 	  prev_data_i = it->data_i;
 	}else{
 	  // Minimum before this interval, so this function is
@@ -424,8 +510,13 @@ void PiecewisePoissonLossLog::set_to_min_more_of
       }//if(degenerate linear)else
     }else{//prev_min_cost is finite
       // Look for a function with prev_min_cost in its interval.
+      double left_cost = it->getCost(it->min_log_mean);
+      double right_cost = it->getCost(it->max_log_mean);
       if(verbose){
 	printf("Searching for intersection with %f\n", prev_min_cost);
+	printf("cost at limits=[%f,%f] cost-constant=[%e,%e]\n",
+	       left_cost, right_cost,
+	       left_cost-prev_min_cost, right_cost-prev_min_cost);
 	it->print();
       }
       double mu = INFINITY;
@@ -447,9 +538,9 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	}//if(there are two roots
       }//if(Log is zero
       if(it->min_log_mean < mu && mu < it->max_log_mean){
-	// The smaller intersection point occurs within the
-	// interval, so the constant interval ends here, and we
-	// can store it immediately.
+	// The intersection point occurs within the interval, so the
+	// constant interval ends here, and we can store it
+	// immediately.
 	if(verbose)printf("%f in interval\n", mu);
 	piece_list.emplace_front
 	  (0, 0, prev_min_cost,
@@ -459,7 +550,25 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	prev_min_cost = INFINITY;
 	prev_max_log_mean = mu;
 	it++;
-      }//if(mu occurs in interval
+      }
+      // if(left_cost < prev_min_cost && prev_min_cost < INFINITY){
+      // 	//there is an intersection point somewhere in the interval,
+      // 	//but get_larger_root did not find it precisely
+      // 	//enough. instead just take the point in the middle. a linear
+      // 	//approximation should not be used, since the cost is probably
+      // 	//nearly constant, and dividing by a very small slope value
+      // 	//would be numerically unstable.
+      // 	mu = (it->min_log_mean + it->max_log_mean)/2;
+      // 	if(verbose)printf("stopping at midpoint=%f\n", mu);
+      // 	piece_list.emplace_front
+      // 	  (0, 0, prev_min_cost,
+      // 	   mu, prev_max_log_mean,
+      // 	   prev_data_i,
+      // 	   prev_best_log_mean);// equality constraint inactive on constant piece.
+      // 	prev_min_cost = INFINITY;
+      // 	prev_max_log_mean = mu;
+      // 	it++;
+      // }
     }//if(prev_min_cost is finite
   }//while(it
   if(prev_data_i != -2){
@@ -479,6 +588,15 @@ void PiecewisePoissonLossLog::add(double Linear, double Log, double Constant){
     it->Linear += Linear;
     it->Log += Log;
     it->Constant += Constant;
+  }
+}
+
+void PiecewisePoissonLossLog::multiply(double x){
+  PoissonLossPieceListLog::iterator it;
+  for(it=piece_list.begin(); it != piece_list.end(); it++){
+    it->Linear *= x;
+    it->Log *= x;
+    it->Constant *= x;
   }
 }
 
@@ -523,7 +641,7 @@ void PiecewisePoissonLossLog::print(){
 }
 
 void PoissonLossPieceLog::print(){
-  printf("%10.0f %10.0f %15f %15f %15f %15f %d\n",
+  printf("%.20e %.20e %.20e %15f %15f %15f %d\n",
 	 Linear, Log, Constant,
 	 min_log_mean, max_log_mean,
 	 prev_log_mean, data_i);
@@ -673,7 +791,7 @@ bool sameFuns
  PoissonLossPieceListLog::iterator it2){
   return it1->Linear == it2->Linear &&
     it1->Log == it2->Log &&
-    it1->Constant == it2->Constant;
+    ABS(it1->Constant - it2->Constant) < NEWTON_EPSILON;
 }
 
 void PiecewisePoissonLossLog::push_min_pieces
@@ -771,7 +889,7 @@ void PiecewisePoissonLossLog::push_min_pieces
       }else{
 	push_piece(it2, last_min_log_mean, first_max_log_mean);
       }
-      if(verbose)printf("offset by a constant\n");
+      if(verbose)printf("offset by a constant=%e\n", diff_piece.Constant);
       return;
     }
     if(diff_piece.Constant == 0){
@@ -822,9 +940,13 @@ void PiecewisePoissonLossLog::push_min_pieces
     if(two_roots){
       // there could be a crossing point to the left.
       double mean_at_equal_cost = smaller_mean;
-      if(verbose)printf("smaller_mean=%f\n", mean_at_equal_cost);
-      if(last_min_log_mean < mean_at_equal_cost &&
-      	 mean_at_equal_cost < first_max_log_mean){
+      if(verbose){
+	printf("smaller_mean=%f\n", mean_at_equal_cost);
+	printf("cost_diff=[%e,%e,%e]\n",
+	       cost_diff_left, diff_piece.getCost(mean_at_equal_cost), cost_diff_right);
+      }
+      if(last_min_log_mean + NEWTON_EPSILON < mean_at_equal_cost &&
+      	 mean_at_equal_cost + NEWTON_EPSILON < first_max_log_mean){
 	//the cross point is in the interval.
 	if(cost_diff_left < 0){
 	  push_piece(it1, last_min_log_mean, mean_at_equal_cost);
@@ -979,6 +1101,11 @@ void PiecewisePoissonLossLog::push_min_pieces
 
 void PiecewisePoissonLossLog::push_piece
 (PoissonLossPieceListLog::iterator it, double min_log_mean, double max_log_mean){
+  if(max_log_mean <= min_log_mean){
+    // why do we need this? TODO: figure out where this is called, and
+    // just do not call push_piece at all.
+    return;
+  }
   PoissonLossPieceListLog::iterator last=piece_list.end();
   --last;
   if(piece_list.size() &&

@@ -52,9 +52,9 @@ test_that("PDPA segment means are feasible", {
   }
 })
 
-dec.loss <- subset(pdpa$loss, c(TRUE, diff(PoissonLoss) < 0))
-some.models <- with(dec.loss, exactModelSelection(PoissonLoss, peaks, peaks))
+some.models <- pdpa$modelSelection.decreasing
 test_that("FPOP recovers the same models as PDPA", {
+  model.i <- 147
   for(model.i in 1:nrow(some.models)){
     model.row <- some.models[model.i,]
     lambda <- with(model.row, if(max.lambda==Inf){
@@ -64,10 +64,60 @@ test_that("FPOP recovers the same models as PDPA", {
     })
     exp.segs <- segs.by.peaks[[paste(model.row$peaks)]]
     rownames(exp.segs) <- NULL
+    ##print(lambda)
     fpop <- PeakSegFPOPchrom(one, lambda)
-    if(nrow(fpop$segments) != nrow(exp.segs)){
+    fpop.mean.vec <- with(fpop$segments, rep(mean, last-first+1))
+    pdpa.mean.vec <- with(exp.segs, rep(mean, last-first+1))
+    if(sum(abs(fpop.mean.vec-pdpa.mean.vec)) > 1e-6){
       print(model.row)
+      print(sum(abs(fpop.mean.vec-pdpa.mean.vec)))
     }
-    expect_equal(fpop$segments, exp.segs)
+    expect_equal(fpop.mean.vec, pdpa.mean.vec)
   }
+})
+
+## some.models <- pdpa$modelSelection.decreasing[144:148,]
+## lambda.vec <- with(some.models, ceiling(min(min.lambda)):floor(max(max.lambda)))
+## some.loss <- subset(pdpa$loss, peaks %in% some.models$peaks)
+## loss.list <- list()
+## for(lambda.i in seq_along(lambda.vec)){
+##   lambda <- lambda.vec[[lambda.i]]
+##   fit <- PeakSegFPOPchrom(one, lambda)
+##   loss.list[[lambda.i]] <- data.frame(lambda, fit$loss)
+## }
+## loss <- do.call(rbind, loss.list)
+## ggplot()+
+##   geom_abline(aes(slope=peaks, intercept=PoissonLoss), data=some.loss)+
+##   geom_point(aes(lambda, penalized.loss, color=factor(peaks)), data=loss)
+
+## ## lambda=150 should select 3-segment model, but buggy code selects
+## ## 2-segment model.
+## lambda <- 150
+## data.i <- 3
+## some <- one[1:data.i,]
+## fpop <- PeakSegFPOPchrom(some, lambda)
+## pdpa <- PeakSegPDPAchrom(some, 1L)
+## loss <- pdpa$loss
+## loss$penalized.cost <- with(loss, peaks*lambda+PoissonLoss)
+## loss
+## fpop$loss
+
+test_that("error for less than 3 data points", {
+  expect_error({
+    PeakSegFPOP(data.vec[1:2], weight.vec[1:2], 0)
+  })
+  expect_error({
+    PeakSegFPOPchrom(one[1:2,])
+  })
+})
+
+test_that("error for negative data", {
+  count <- as.integer(c(1, 2, -3))
+  expect_error({
+    PeakSegFPOP(count, penalty=0)
+  })
+  df <- data.frame(count,chromStart=0:2, chromEnd=1:3)
+  expect_error({
+    PeakSegFPOPchrom(df, 0)
+  })
 })

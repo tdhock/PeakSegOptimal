@@ -26,14 +26,16 @@ void PeakSegPDPALog
     }
   }
   std::vector<PiecewisePoissonLossLog> cost_model_vec(data_count * maxSegments);
-  double Log_cumsum = 0.0;
-  double Linear_cumsum = 0.0;
+  double data_weight_cumsum = 0.0;
+  double weight_cumsum = 0.0;
+  std::vector<double> weight_cumsum_vec(data_count);
   for(int data_i=0; data_i<data_count; data_i++){
-    Linear_cumsum += weight_vec[data_i];
-    Log_cumsum += -data_vec[data_i]*weight_vec[data_i];
+    weight_cumsum += weight_vec[data_i];
+    weight_cumsum_vec[data_i] = weight_cumsum;
+    data_weight_cumsum += data_vec[data_i]*weight_vec[data_i];
     PiecewisePoissonLossLog *cost_model = &cost_model_vec[data_i];
     cost_model->piece_list.emplace_back
-      (Linear_cumsum, Log_cumsum, 0.0, min_log_mean, max_log_mean, -1, false);
+      (1.0, -data_weight_cumsum/weight_cumsum, 0.0, min_log_mean, max_log_mean, -1, false);
   }
 
   // DP: compute functional model of best cost in S segments up to
@@ -47,12 +49,22 @@ void PeakSegPDPALog
       IFPRINT(printf("DP changes=%d data_i=%d\n", total_changes, data_i));
       IFPRINT(printf("=prev cost model\n"));
       IFPRINT(prev_cost_model->print());
-      int verbose = 0;
+      int verbose = 0, status;
       IFPRINT(verbose=1);
       if(total_changes % 2){
 	min_prev_cost.set_to_min_less_of(prev_cost_model, verbose);
       }else{
 	min_prev_cost.set_to_min_more_of(prev_cost_model, verbose);
+      }
+      status = min_prev_cost.check_min_of(prev_cost_model, prev_cost_model);
+      if(status){
+	printf("BAD MIN LESS/MORE CHECK status=%d changes=%d data_i=%d\n",
+	       status, total_changes, data_i);
+	printf("prev cost\n");
+	prev_cost_model->print();
+	printf("min less/more(prev cost)\n");
+	min_prev_cost.print();
+	throw status;
       }
       min_prev_cost.set_prev_seg_end(prev_i);
       new_cost_model = &cost_model_vec[data_i + total_changes*data_count];
@@ -67,7 +79,7 @@ void PeakSegPDPALog
 	IFPRINT(cost_model.print());
 	new_cost_model->set_to_min_env_of
 	  (&min_prev_cost, &cost_model, verbose);
-	int status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
+	status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
 	if(status){
 	  printf("DP changes=%d data_i=%d BAD CHECK status=%d\n", total_changes, data_i, status);
 	  printf("=prev cost model\n");
@@ -83,10 +95,12 @@ void PeakSegPDPALog
       }
       IFPRINT(printf("=new cost model\n"));
       IFPRINT(new_cost_model->print());
+      new_cost_model->multiply(weight_cumsum_vec[prev_i]);
       new_cost_model->add
 	(weight_vec[data_i],
 	 -data_vec[data_i]*weight_vec[data_i],
 	 0.0);
+      new_cost_model->multiply(1/weight_cumsum_vec[data_i]);
       IFPRINT(new_cost_model->print());
       cost_model = *new_cost_model;
     }

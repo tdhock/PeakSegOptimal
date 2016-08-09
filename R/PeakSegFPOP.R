@@ -1,7 +1,7 @@
 PeakSegFPOP <- structure(function
 ### Find the optimal change-points using the Poisson loss and the
 ### PeakSeg constraint. For N data points, the functional pruning
-### algorithm is O(N) space and O(N log N) time. It recovers the exact
+### algorithm is O(N log N) time and memory. It recovers the exact
 ### solution to the following optimization problem. Let Z be an
 ### N-vector of count data (non-negative integers). Find the N-vector
 ### M of real numbers (segment means) which minimize the penalized
@@ -9,10 +9,12 @@ PeakSegFPOP <- structure(function
 ### m_i - z_i * log(m_i), subject to constraint: up changes are
 ### followed by down changes, and vice versa. Note that the segment
 ### means can be equal, in which case the recovered model is not
-### feasible for the PeakSeg problem. This function constrains the
-### first and last segment means to be down, mu_1 <= mu_2, mu_{N-1} >= mu_N).
+### feasible for the strict inequality constraints of the PeakSeg
+### problem, and the optimum of the PeakSeg problem is undefined.
+### This function constrains the first and last segment means to
+### be down, mu_1 <= mu_2, mu_{N-1} >= mu_N.
 (count.vec,
-### integer vector of length >= 3: count data to segment.
+### integer vector of length >= 3: non-negative count data to segment.
  weight.vec=rep(1, length(count.vec)),
 ### numeric vector (same length as count.vec) of positive weights.
  penalty=NULL
@@ -22,6 +24,7 @@ PeakSegFPOP <- structure(function
   n.data <- length(count.vec)
   stopifnot(3 <= n.data)
   stopifnot(is.integer(count.vec))
+  stopifnot(0 <= count.vec)
   stopifnot(is.numeric(weight.vec))
   stopifnot(n.data==length(weight.vec))
   stopifnot(0 < weight.vec)
@@ -47,7 +50,7 @@ PeakSegFPOP <- structure(function
   ## 1-indexed segment ends!
   result.list$ends.vec <- result.list$ends.vec+1L
   result.list$cost.mat <- matrix(
-    result.list$cost.mat, 2, n.data, byrow=TRUE)
+    result.list$cost.mat*cumsum(weight.vec), 2, n.data, byrow=TRUE)
   result.list$intervals.mat <- matrix(
     result.list$intervals.mat, 2, n.data, byrow=TRUE)
   result.list
