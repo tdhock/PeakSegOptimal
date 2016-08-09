@@ -92,3 +92,17 @@ cost. For example,
 
 But that model is not optimal, for the same reason (exercise for the
 reader).
+
+** Related work
+
+An on-disk implementation of PeakSegFPOP is available as a [[https://github.com/tdhock/PeakSegFPOP][command
+line program]].
+
+| implementation | time       | memory     | disk       |
+|----------------+------------+------------+------------|
+| command line   | O(N log N) | O(1)       | O(N log N) |
+| R pkg coseg    | O(N log N) | O(N log N) | 0          |
+
+Note that although both implementations are O(N log N) time complexity
+for N data points, the command line program is slower due to disk
+read/write overhead.
