@@ -100,7 +100,7 @@ line program]].
 
 | implementation | time       | memory     | disk       |
 |----------------+------------+------------+------------|
-| command line   | O(N log N) | O(1)       | O(N log N) |
+| command line   | O(N log N) | O(log N)   | O(N log N) |
 | R pkg coseg    | O(N log N) | O(N log N) | 0          |
 
 Note that although both implementations are O(N log N) time complexity
