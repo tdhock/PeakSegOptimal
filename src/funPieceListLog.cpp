@@ -688,28 +688,36 @@ int PiecewisePoissonLossLog::check_min_of
 	printf("prev->max_log_mean != it->min_log_mean min\n");
 	return 3;
       }
+      if(NEWTON_EPSILON < ABS(pit->getCost(pit->max_log_mean) - it->getCost(it->min_log_mean))){
+	printf("discontinuity detected\n");
+	pit->print();
+	it->print();
+	return 4;
+      }
     }
     if(it->max_log_mean <= it->min_log_mean){
       printf("max_log_mean<=min_log_mean=%15.10f min\n", it->min_log_mean);
       return 2;
     }
     double mid_mean = (it->min_log_mean + it->max_log_mean)/2;
-    double cost_min = it->getCost(mid_mean);
-    double cost_prev = prev->findCost(mid_mean);
-    if(cost_prev+1e-6 < cost_min){
-      printf("prev(%f)=%f\n", mid_mean, cost_prev);
-      prev->print();
-      printf("min(%f)=%f\n", mid_mean, cost_min);
-      print();
-      return 1;
-    }
-    double cost_model = model->findCost(mid_mean);
-    if(cost_model+1e-6 < cost_min){
-      printf("model(%f)=%f\n", mid_mean, cost_model);
-      model->print();
-      printf("min(%f)=%f\n", mid_mean, cost_min);
-      print();
-      return 1;
+    if(-INFINITY < mid_mean){
+      double cost_min = it->getCost(mid_mean);
+      double cost_prev = prev->findCost(mid_mean);
+      if(cost_prev+1e-6 < cost_min){
+	printf("prev(%f)=%f\n", mid_mean, cost_prev);
+	prev->print();
+	printf("min(%f)=%f\n", mid_mean, cost_min);
+	print();
+	return 1;
+      }
+      double cost_model = model->findCost(mid_mean);
+      if(cost_model+1e-6 < cost_min){
+	printf("model(%f)=%f\n", mid_mean, cost_model);
+	model->print();
+	printf("min(%f)=%f\n", mid_mean, cost_min);
+	print();
+	return 1;
+      }
     }
   }
   for(it = prev->piece_list.begin(); it != prev->piece_list.end(); it++){
@@ -726,14 +734,16 @@ int PiecewisePoissonLossLog::check_min_of
       return 2;
     }
     double mid_mean = (it->min_log_mean + it->max_log_mean)/2;
-    double cost_prev = it->getCost(mid_mean);
-    double cost_min = findCost(mid_mean);
-    if(cost_prev+1e-6 < cost_min){
-      printf("prev(%f)=%f\n", mid_mean, cost_prev);
-      prev->print();
-      printf("min(%f)=%f\n", mid_mean, cost_min);
-      print();
-      return 1;
+    if(-INFINITY < mid_mean){
+      double cost_prev = it->getCost(mid_mean);
+      double cost_min = findCost(mid_mean);
+      if(cost_prev+1e-6 < cost_min){
+	printf("prev(%f)=%f\n", mid_mean, cost_prev);
+	prev->print();
+	printf("min(%f)=%f\n", mid_mean, cost_min);
+	print();
+	return 1;
+      }
     }
   }
   for(it = model->piece_list.begin(); it != model->piece_list.end(); it++){
@@ -750,14 +760,16 @@ int PiecewisePoissonLossLog::check_min_of
       return 2;
     }
     double mid_mean = (it->min_log_mean + it->max_log_mean)/2;
-    double cost_model = it->getCost(mid_mean);
-    double cost_min = findCost(mid_mean);
-    if(cost_model+1e-6 < cost_min){
-      printf("model(%f)=%f\n", mid_mean, cost_model);
-      model->print();
-      printf("min(%f)=%f\n", mid_mean, cost_min);
-      print();
-      return 1;
+    if(-INFINITY < mid_mean){
+      double cost_model = it->getCost(mid_mean);
+      double cost_min = findCost(mid_mean);
+      if(cost_model+1e-6 < cost_min){
+	printf("model(%f)=%f\n", mid_mean, cost_model);
+	model->print();
+	printf("min(%f)=%f\n", mid_mean, cost_min);
+	print();
+	return 1;
+      }
     }
   }
   return 0;
@@ -1090,7 +1102,13 @@ void PiecewisePoissonLossLog::push_min_pieces
     // "zero" crossing points. actually there may be a crossing point
     // in the interval that is numerically so close as to be identical
     // with last_min_log_mean or first_max_log_mean.
-    if(cost_diff_mid < 0){
+    double cost_diff;
+    if(last_min_log_mean == -INFINITY){
+      cost_diff = cost_diff_right;
+    }else{
+      cost_diff = cost_diff_mid;
+    }
+    if(cost_diff < 0){
       push_piece(it1, last_min_log_mean, first_max_log_mean);
     }else{
       push_piece(it2, last_min_log_mean, first_max_log_mean);
