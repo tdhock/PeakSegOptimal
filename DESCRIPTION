@@ -7,4 +7,4 @@ Title: Constrained Optimal Segmentation
 Description: Computes optimal segmentations subject to constraints
  on the directions of changes.
 Suggests: testthat, ggplot2, PeakSegDP (>= 2016.08.06)
-Remotes: tdhock/PeakSegDP
+Remotes: tdhock/PeakSegDP@4e476f1ddf8b6252179b73dfec8c4cd616e9b5ad
