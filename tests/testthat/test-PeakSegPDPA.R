@@ -130,13 +130,11 @@ real.data <- list(
 one.name <- "McGill0010"
 test_that("PeakSegPDPA is as good as PeakSegDP on real data", {
   for(counts in real.data){
-    counts$count <- counts$coverage
     by.sample <- split(counts, counts$sample.id)
     for(one.name in names(by.sample)){
       one <- by.sample[[one.name]]
-      some <- one
-      count.vec <- some$coverage
-      weight.vec <- with(some, chromEnd-chromStart)
+      count.vec <- one$coverage
+      weight.vec <- with(one, chromEnd-chromStart)
       max.segments <- 19L
       pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
       cdpa <- cDPA(count.vec, weight.vec, max.segments)
@@ -145,7 +143,7 @@ test_that("PeakSegPDPA is as good as PeakSegDP on real data", {
       for(seg.i in 1:max.segments){
         both.loss.list[[seg.i]] <- data.frame(
           segments=seg.i,
-          data.i=1:nrow(some),
+          data.i=1:nrow(one),
           cdpa=cdpa$loss[seg.i,],
           pdpa=pdpa$cost.mat[seg.i,])
       }
@@ -159,26 +157,6 @@ test_that("PeakSegPDPA is as good as PeakSegDP on real data", {
     }
   }
 })
-
-counts.by.sample <- split(counts, counts$sample.id)
-sample.counts <- data.table(counts.by.sample[[sample.id]])
-ggplot()+
-  geom_step(aes(chromStart/1e3, coverage),
-            data=sample.counts)
-library(PeakSegDP)
-library(coseg)
-data.vec <- sample.counts$coverage
-weight.vec <- sample.counts[, chromEnd-chromStart]
-max.segments <- 19L
-cdpa <- cDPA(data.vec, weight.vec, max.segments)
-pdpa <- PeakSegPDPA(data.vec, weight.vec, max.segments)
-cost.mat <- rbind(
-  cdpa=with(cdpa, loss[, nData]),
-  pdpa=with(pdpa, cost.mat[, n.data]))
-n.segs <- 13
-plot(cdpa$loss[13,]-pdpa$cost.mat[13,])
-which(cdpa$loss[13,]+1e-6 < pdpa$cost.mat[13,])
-
 
 test_that("error for negative data", {
   count <- as.integer(c(1, 2, -3))
