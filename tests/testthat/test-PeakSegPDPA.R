@@ -113,11 +113,10 @@ test_that("segment mean 0 is OK", {
 })
 
 data(H3K4me3_XJ_immune_chunk1)
-H3K4me3_XJ_immune_chunk1$count <- H3K4me3_XJ_immune_chunk1$coverage
-by.sample <- split(
-  H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
-sapply(by.sample, nrow)
-
+data(H3K4me3_PGP_immune_chunk24)
+real.data <- list(
+  H3K4me3_PGP_immune_chunk24,
+  H3K4me3_XJ_immune_chunk1)
 ## library(ggplot2)
 ## ggplot()+
 ##   theme_bw()+
@@ -128,35 +127,58 @@ sapply(by.sample, nrow)
 ##   })+
 ##   geom_step(aes(chromStart/1e3, coverage),
 ##             data=H3K4me3_XJ_immune_chunk1, color="grey")
-
 one.name <- "McGill0010"
 test_that("PeakSegPDPA is as good as PeakSegDP on real data", {
-  for(one.name in names(by.sample)){
-    one <- by.sample[[one.name]]
-    some <- one
-    count.vec <- some$coverage
-    weight.vec <- with(some, chromEnd-chromStart)
-    max.segments <- 19L
-    pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
-    cdpa <- cDPA(count.vec, weight.vec, max.segments)
-    cdpa$loss[cdpa$ends==0] <- Inf
-    both.loss.list <- list()
-    for(seg.i in 1:max.segments){
-      both.loss.list[[seg.i]] <- data.frame(
-        segments=max.segments,
-        data.i=1:nrow(some),
-        cdpa=cdpa$loss[max.segments,],
-        pdpa=pdpa$cost.mat[max.segments,])
+  for(counts in real.data){
+    counts$count <- counts$coverage
+    by.sample <- split(counts, counts$sample.id)
+    for(one.name in names(by.sample)){
+      one <- by.sample[[one.name]]
+      some <- one
+      count.vec <- some$coverage
+      weight.vec <- with(some, chromEnd-chromStart)
+      max.segments <- 19L
+      pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
+      cdpa <- cDPA(count.vec, weight.vec, max.segments)
+      cdpa$loss[cdpa$ends==0] <- Inf
+      both.loss.list <- list()
+      for(seg.i in 1:max.segments){
+        both.loss.list[[seg.i]] <- data.frame(
+          segments=seg.i,
+          data.i=1:nrow(some),
+          cdpa=cdpa$loss[seg.i,],
+          pdpa=pdpa$cost.mat[seg.i,])
+      }
+      both.loss <- do.call(rbind, both.loss.list)
+      bad <- subset(both.loss, cdpa < pdpa-1e-5)
+      if(nrow(bad)){
+        print(one.name)
+        print(bad)
+      }
+      expect_equal(nrow(bad), 0)
     }
-    both.loss <- do.call(rbind, both.loss.list)
-    bad <- subset(both.loss, cdpa < pdpa-1e-5)
-    if(nrow(bad)){
-      print(one.name)
-      print(bad)
-    }
-    expect_equal(nrow(bad), 0)
   }
 })
+
+counts.by.sample <- split(counts, counts$sample.id)
+sample.counts <- data.table(counts.by.sample[[sample.id]])
+ggplot()+
+  geom_step(aes(chromStart/1e3, coverage),
+            data=sample.counts)
+library(PeakSegDP)
+library(coseg)
+data.vec <- sample.counts$coverage
+weight.vec <- sample.counts[, chromEnd-chromStart]
+max.segments <- 19L
+cdpa <- cDPA(data.vec, weight.vec, max.segments)
+pdpa <- PeakSegPDPA(data.vec, weight.vec, max.segments)
+cost.mat <- rbind(
+  cdpa=with(cdpa, loss[, nData]),
+  pdpa=with(pdpa, cost.mat[, n.data]))
+n.segs <- 13
+plot(cdpa$loss[13,]-pdpa$cost.mat[13,])
+which(cdpa$loss[13,]+1e-6 < pdpa$cost.mat[13,])
+
 
 test_that("error for negative data", {
   count <- as.integer(c(1, 2, -3))
