@@ -688,7 +688,7 @@ int PiecewisePoissonLossLog::check_min_of
 	printf("prev->max_log_mean != it->min_log_mean min\n");
 	return 3;
       }
-      if(NEWTON_EPSILON < ABS(pit->getCost(pit->max_log_mean) - it->getCost(it->min_log_mean))){
+      if(0.1 < ABS(pit->getCost(pit->max_log_mean) - it->getCost(it->min_log_mean))){
 	printf("discontinuity detected\n");
 	pit->print();
 	it->print();
