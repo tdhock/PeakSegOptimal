@@ -112,11 +112,10 @@ test_that("segment mean 0 is OK", {
   expect_equal(fit$mean.mat, exp.mat)
 })
 
-data(H3K4me3_XJ_immune_chunk1)
-data(H3K4me3_PGP_immune_chunk24)
-real.data <- list(
-  H3K4me3_PGP_immune_chunk24,
-  H3K4me3_XJ_immune_chunk1)
+real.data.names <- c(
+  "H3K4me3_PGP_immune_chunk24",
+  "H3K4me3_XJ_immune_chunk1")
+data(list=real.data.names)
 ## library(ggplot2)
 ## ggplot()+
 ##   theme_bw()+
@@ -129,7 +128,8 @@ real.data <- list(
 ##             data=H3K4me3_XJ_immune_chunk1, color="grey")
 one.name <- "McGill0010"
 test_that("PeakSegPDPA is as good as PeakSegDP on real data", {
-  for(counts in real.data){
+  for(real.name in real.data.names){
+    counts <- get(real.name)
     by.sample <- split(counts, counts$sample.id)
     for(one.name in names(by.sample)){
       one <- by.sample[[one.name]]
@@ -139,15 +139,11 @@ test_that("PeakSegPDPA is as good as PeakSegDP on real data", {
       pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
       cdpa <- cDPA(count.vec, weight.vec, max.segments)
       cdpa$loss[cdpa$ends==0] <- Inf
-      both.loss.list <- list()
-      for(seg.i in 1:max.segments){
-        both.loss.list[[seg.i]] <- data.frame(
-          segments=seg.i,
-          data.i=1:nrow(one),
-          cdpa=cdpa$loss[seg.i,],
-          pdpa=pdpa$cost.mat[seg.i,])
-      }
-      both.loss <- do.call(rbind, both.loss.list)
+      both.loss <- data.frame(
+        segments=as.integer(row(cdpa$loss)),
+        data.i=as.integer(col(cdpa$loss)),
+        cdpa=as.numeric(cdpa$loss),
+        pdpa=as.numeric(pdpa$cost.mat))
       bad <- subset(both.loss, cdpa < pdpa-1e-5)
       if(nrow(bad)){
         print(one.name)
