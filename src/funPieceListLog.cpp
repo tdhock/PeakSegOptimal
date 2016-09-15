@@ -845,19 +845,26 @@ void PiecewisePoissonLossLog::push_min_pieces
   bool same_at_right;
   double first_max_log_mean;
   if(it1->max_log_mean < it2->max_log_mean){
-    // it2 function piece continues to the right of it1.
+    if(verbose)printf("it2 function piece continues to the right of it1.\n");
     same_at_right = sameFuns(next1, it2);
     first_max_log_mean = it1->max_log_mean;
   }else{
     first_max_log_mean = it2->max_log_mean;
     if(it2->max_log_mean < it1->max_log_mean){
-      // it2 function piece ends before it1.
+      if(verbose)printf("it2 function piece ends before it1.\n");
       same_at_right = sameFuns(it1, next2);
     }else{
+      if(verbose)printf("it2 and it1 end at same max_log_mean.\n");
       if(next1==fun1->piece_list.end() &&
 	 next2==fun2->piece_list.end()){
+	if(verbose)printf("at the end so next can't be the same.\n");
 	same_at_right = false;
       }else{
+	if(verbose){
+	  printf("comparing next function pieces.\n");
+	  next1->print();
+	  next2->print();
+	}
 	same_at_right = sameFuns(next1, next2);
       }
     }
@@ -887,10 +894,10 @@ void PiecewisePoissonLossLog::push_min_pieces
      it1->Constant - it2->Constant,
      last_min_log_mean, first_max_log_mean,
      -5, false);
-  // printf("it1->Constant=%a\nit2->Constant=%a\n",
-  // 	 it1->Constant, it2->Constant);
-  double mid_mean = (first_max_log_mean + last_min_log_mean)/2;
-  double cost_diff_mid = diff_piece.getCost(mid_mean);
+  // Evaluate the middle in the original space, to avoid problems when
+  // first_max_log_mean is -Inf.
+  double mid_mean = (exp(first_max_log_mean) + exp(last_min_log_mean))/2;
+  double cost_diff_mid = diff_piece.getCost(log(mid_mean));
   if(diff_piece.Log == 0){
     // g(x) = Linear*e^x + Constant = 0,
     // x = log(-Constant/Linear).
@@ -1103,12 +1110,7 @@ void PiecewisePoissonLossLog::push_min_pieces
     // in the interval that is numerically so close as to be identical
     // with last_min_log_mean or first_max_log_mean.
     double cost_diff;
-    if(last_min_log_mean == -INFINITY){
-      cost_diff = cost_diff_right;
-    }else{
-      cost_diff = cost_diff_mid;
-    }
-    if(cost_diff < 0){
+    if(cost_diff_mid < 0){
       push_piece(it1, last_min_log_mean, first_max_log_mean);
     }else{
       push_piece(it2, last_min_log_mean, first_max_log_mean);

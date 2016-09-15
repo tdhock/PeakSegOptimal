@@ -10,8 +10,9 @@ the PeakSegPDPA solution with 13 segments was not as likely as the
 PeakSegDP solution. I figured out that this was being caused by a bug
 in the "not equal on the sides, zero crossing points" code. When we
 compare the cost of the first interval (with min_log_mean at -Inf), we
-now use the cost at max_log_mean (not in the middle, which is actually
-at -Inf and so the same for both functions).
+still use the cost at the middle, but now we compute the middle in the
+original space (so the smaller interval limit is at least 0, never
+-Inf).
 
 2016.08.06
 

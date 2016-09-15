@@ -146,7 +146,7 @@ test_that("PeakSegPDPA is as good as PeakSegDP on real data", {
         pdpa=as.numeric(pdpa$cost.mat))
       bad <- subset(both.loss, cdpa < pdpa-1e-5)
       if(nrow(bad)){
-        print(one.name)
+        cat("Problems for", real.name, one.name, "\n")
         print(bad)
       }
       expect_equal(nrow(bad), 0)
