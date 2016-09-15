@@ -1,13 +1,21 @@
 TODOs
 
-Limited memory FPOP version. What serialization/file format to use for
-reading data (bigwig/bedGraph?) and storing the optimal cost
-functions?
-
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2016.09.15
+
+New H3K4me3_PGP_immune_chunk24 data set, one of the samples for which
+the PeakSegPDPA solution with 13 segments was not as likely as the
+PeakSegDP solution. I figured out that this was being caused by a bug
+in the "not equal on the sides, zero crossing points" code. When we
+compare the cost of the first interval (with min_log_mean at -Inf), we
+now use the cost at max_log_mean (not in the middle, which is actually
+at -Inf and so the same for both functions).
+
 2016.08.06
+
+Limited memory FPOP version at https://github.com/tdhock/PeakSegFPOP
 
 To avoid root finding problems in large data sets, we now store the
 mean cost rather than total cost in the C++ code. The R functions
