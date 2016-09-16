@@ -23,7 +23,7 @@ feasibilty of the computed model.}
 \examples{
 
 library(coseg)
-data("H3K4me3_XJ_immune_chunk1")
+data("H3K4me3_XJ_immune_chunk1", envir=environment())
 sample.id <- "McGill0106"
 H3K4me3_XJ_immune_chunk1$count <- H3K4me3_XJ_immune_chunk1$coverage
 by.sample <-

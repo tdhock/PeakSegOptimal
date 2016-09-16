@@ -397,22 +397,6 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	    it--;
 	  }
 	}
-	// if(right_cost < prev_min_cost && prev_min_cost < INFINITY){
-	//   //there is an intersection point somewhere in the interval,
-	//   //but get_smaller_root did not find it precisely
-	//   //enough. instead just take the point in the middle. a linear
-	//   //approximation should not be used, since the cost is probably
-	//   //nearly constant, and dividing by a very small slope value
-	//   //would be numerically unstable.
-	//   double mu = (it->min_log_mean + it->max_log_mean)/2;
-	//   piece_list.emplace_back
-	//     (0, 0, prev_min_cost,
-	//      prev_min_log_mean, mu, prev_data_i,
-	//      prev_best_log_mean);// equality constraint inactive.
-	//   prev_min_cost = INFINITY;
-	//   prev_min_log_mean = mu;
-	//   it--;
-	// }//if(there are two roots
       }//if(Log is zero
     }//if(prev_min_cost is finite
     it++;
@@ -551,29 +535,14 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	prev_max_log_mean = mu;
 	it++;
       }
-      // if(left_cost < prev_min_cost && prev_min_cost < INFINITY){
-      // 	//there is an intersection point somewhere in the interval,
-      // 	//but get_larger_root did not find it precisely
-      // 	//enough. instead just take the point in the middle. a linear
-      // 	//approximation should not be used, since the cost is probably
-      // 	//nearly constant, and dividing by a very small slope value
-      // 	//would be numerically unstable.
-      // 	mu = (it->min_log_mean + it->max_log_mean)/2;
-      // 	if(verbose)printf("stopping at midpoint=%f\n", mu);
-      // 	piece_list.emplace_front
-      // 	  (0, 0, prev_min_cost,
-      // 	   mu, prev_max_log_mean,
-      // 	   prev_data_i,
-      // 	   prev_best_log_mean);// equality constraint inactive on constant piece.
-      // 	prev_min_cost = INFINITY;
-      // 	prev_max_log_mean = mu;
-      // 	it++;
-      // }
     }//if(prev_min_cost is finite
+    if(verbose){
+      printf("current min-more-------------------\n");
+      print();
+    }
   }//while(it
-  if(prev_data_i != -2){
-    // ending on a constant piece -- we never have a convex piece at
-    // the start, because the end is the min observed data.
+  if(prev_data_i != -2 && prev_min_cost < INFINITY){
+    // ending on a constant piece.
     piece_list.emplace_front
       (0, 0, prev_min_cost,
        it->min_log_mean, prev_max_log_mean,
@@ -1019,7 +988,7 @@ void PiecewisePoissonLossLog::push_min_pieces
   // The only remaining case is that the curves are equal neither on
   // the left nor on the right of the interval. However they may be
   // equal inside the interval, so let's check for that.
-  double first_mean = INFINITY, second_mean = INFINITY;
+  double first_log_mean = INFINITY, second_log_mean = INFINITY;
   if(two_roots){
     bool larger_inside =
       last_min_log_mean < larger_mean && larger_mean < first_max_log_mean;
@@ -1031,8 +1000,8 @@ void PiecewisePoissonLossLog::push_min_pieces
     if(larger_inside){
       if(smaller_inside && smaller_mean < larger_mean){
 	// both are in the interval.
-	first_mean = smaller_mean;
-	second_mean = larger_mean;
+	first_log_mean = smaller_mean;
+	second_log_mean = larger_mean;
 	if(verbose){
 	  diff_piece.print();
 	  printf("%f and %f in [%f,%f]\n",
@@ -1041,10 +1010,10 @@ void PiecewisePoissonLossLog::push_min_pieces
 	}
       }else{
 	// smaller mean is not in the interval, but the larger is.
-	first_mean = larger_mean;
+	first_log_mean = larger_mean;
 	if(verbose){
 	  printf("%f in [%f,%f]\n",
-		 first_mean,
+		 first_log_mean,
 		 last_min_log_mean, first_max_log_mean);
 	}
       }
@@ -1052,38 +1021,40 @@ void PiecewisePoissonLossLog::push_min_pieces
       // larger mean is not in the interval
       if(smaller_inside){
 	// smaller mean is in the interval, but not the larger.
-	first_mean = smaller_mean;
+	first_log_mean = smaller_mean;
 	if(verbose){
 	  printf("%f in [%f,%f]\n",
-		 first_mean,
+		 first_log_mean,
 		 last_min_log_mean, first_max_log_mean);
 	}
       }
     }
   }//if(two_roots
-  if(second_mean != INFINITY){
+  if(second_log_mean != INFINITY){
     // two crossing points.
-    double before_mean = (last_min_log_mean + first_mean)/2;
-    double cost_diff_before = diff_piece.getCost(before_mean);
+    double before_mean = (exp(last_min_log_mean) + exp(first_log_mean))/2;
+    double cost_diff_before = diff_piece.getCost(log(before_mean));
     if(cost_diff_before < 0){
-      push_piece(it1, last_min_log_mean, first_mean);
-      push_piece(it2, first_mean, second_mean);
-      push_piece(it1, second_mean, first_max_log_mean);
+      push_piece(it1, last_min_log_mean, first_log_mean);
+      push_piece(it2, first_log_mean, second_log_mean);
+      push_piece(it1, second_log_mean, first_max_log_mean);
     }else{
-      push_piece(it2, last_min_log_mean, first_mean);
-      push_piece(it1, first_mean, second_mean);
-      push_piece(it2, second_mean, first_max_log_mean);
+      push_piece(it2, last_min_log_mean, first_log_mean);
+      push_piece(it1, first_log_mean, second_log_mean);
+      push_piece(it2, second_log_mean, first_max_log_mean);
     }
     if(verbose)printf("not equal on the sides, 2 crossing points\n");
-  }else if(first_mean != INFINITY){
+  }else if(first_log_mean != INFINITY){
     // "one" crossing point. actually sometimes we have last_min_log_mean
-    // < first_mean < first_max_log_mean but cost_diff_before and
+    // < first_log_mean < first_max_log_mean but cost_diff_before and
     // cost_diff_after have the same sign! In that case we need to
     // just push one piece.
-    double before_mean = (last_min_log_mean + first_mean)/2;
-    double cost_diff_before = diff_piece.getCost(before_mean);
-    if(verbose)printf("cost_diff_before(%.55f)=%f\n", before_mean, cost_diff_before);
-    double after_mean = (first_max_log_mean + first_mean)/2;
+    double before_mean = (exp(last_min_log_mean) + exp(first_log_mean))/2;
+    double cost_diff_before = diff_piece.getCost(log(before_mean));
+    if(verbose){
+      printf("cost_diff_before(%.55f)=%f\n", log(before_mean), cost_diff_before);
+    }
+    double after_mean = (first_max_log_mean + first_log_mean)/2;
     double cost_diff_after = diff_piece.getCost(after_mean);
     if(verbose)printf("cost_diff_after(%.55f)=%f\n", after_mean, cost_diff_after);
     if(cost_diff_before < 0){
@@ -1091,14 +1062,14 @@ void PiecewisePoissonLossLog::push_min_pieces
 	// f1-f2<0 meaning f1<f2 on the entire interval, so just push it1.
 	push_piece(it1, last_min_log_mean, first_max_log_mean);
       }else{
-	push_piece(it1, last_min_log_mean, first_mean);
-	push_piece(it2, first_mean, first_max_log_mean);
+	push_piece(it1, last_min_log_mean, first_log_mean);
+	push_piece(it2, first_log_mean, first_max_log_mean);
       }
     }else{//f1(before)-f2(before)>=0 meaning f1(before)>=f2(before)
       if(cost_diff_after < 0){
 	//f1(after)-f2(after)<0 meaning f1(after)<f2(after)
-	push_piece(it2, last_min_log_mean, first_mean);
-	push_piece(it1, first_mean, first_max_log_mean);
+	push_piece(it2, last_min_log_mean, first_log_mean);
+	push_piece(it1, first_log_mean, first_max_log_mean);
       }else{
 	//f1(after)-f2(after)>=0 meaning f1(after)>=f2(after)
 	push_piece(it2, last_min_log_mean, first_max_log_mean);

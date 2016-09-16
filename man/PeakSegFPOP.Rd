@@ -38,7 +38,7 @@ functional pruning algorithm).}
 \examples{
 
 library(coseg)
-data("H3K4me3_XJ_immune_chunk1")
+data("H3K4me3_XJ_immune_chunk1", envir=environment())
 by.sample <-
   split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
 n.data.vec <- sapply(by.sample, nrow)
