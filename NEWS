@@ -3,7 +3,11 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
-2016.09.15
+2016.09.16
+
+New test-simulation.R which previously was failing the run-time
+min-more check. Fixed by not adding an interval at the end of
+min-more, if we end on a degenerate linear function.
 
 New H3K4me3_PGP_immune_chunk24 data set, one of the samples for which
 the PeakSegPDPA solution with 13 segments was not as likely as the
