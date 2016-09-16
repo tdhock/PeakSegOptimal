@@ -21,6 +21,9 @@ PoissonLossPieceLog::PoissonLossPieceLog
   prev_log_mean = prev;
 }
 
+PoissonLossPieceLog::PoissonLossPieceLog(){
+}
+
 bool PoissonLossPieceLog::has_two_roots(double equals){
   // are there two solutions to the equation Linear*e^x + Log*x +
   // Constant = equals ?

@@ -18,6 +18,7 @@ class PoissonLossPieceLog {
   int data_i;
   double prev_log_mean;
   bool equality_constraint_active();
+  PoissonLossPieceLog();
   PoissonLossPieceLog
     (double li, double lo, double co, double m, double M, int i, double);
   double argmin();
