@@ -112,12 +112,10 @@ test_that("segment mean 0 is OK", {
   expect_equal(fit$mean.mat, exp.mat)
 })
 
-data(H3K4me3_XJ_immune_chunk1)
-H3K4me3_XJ_immune_chunk1$count <- H3K4me3_XJ_immune_chunk1$coverage
-by.sample <- split(
-  H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
-sapply(by.sample, nrow)
-
+real.data.names <- c(
+  "H3K4me3_PGP_immune_chunk24",
+  "H3K4me3_XJ_immune_chunk1")
+data(list=real.data.names)
 ## library(ggplot2)
 ## ggplot()+
 ##   theme_bw()+
@@ -128,33 +126,31 @@ sapply(by.sample, nrow)
 ##   })+
 ##   geom_step(aes(chromStart/1e3, coverage),
 ##             data=H3K4me3_XJ_immune_chunk1, color="grey")
-
 one.name <- "McGill0010"
 test_that("PeakSegPDPA is as good as PeakSegDP on real data", {
-  for(one.name in names(by.sample)){
-    one <- by.sample[[one.name]]
-    some <- one
-    count.vec <- some$coverage
-    weight.vec <- with(some, chromEnd-chromStart)
-    max.segments <- 19L
-    pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
-    cdpa <- cDPA(count.vec, weight.vec, max.segments)
-    cdpa$loss[cdpa$ends==0] <- Inf
-    both.loss.list <- list()
-    for(seg.i in 1:max.segments){
-      both.loss.list[[seg.i]] <- data.frame(
-        segments=max.segments,
-        data.i=1:nrow(some),
-        cdpa=cdpa$loss[max.segments,],
-        pdpa=pdpa$cost.mat[max.segments,])
+  for(real.name in real.data.names){
+    counts <- get(real.name)
+    by.sample <- split(counts, counts$sample.id)
+    for(one.name in names(by.sample)){
+      one <- by.sample[[one.name]]
+      count.vec <- one$coverage
+      weight.vec <- with(one, chromEnd-chromStart)
+      max.segments <- 19L
+      pdpa <- PeakSegPDPA(count.vec, weight.vec, max.segments)
+      cdpa <- cDPA(count.vec, weight.vec, max.segments)
+      cdpa$loss[cdpa$ends==0] <- Inf
+      both.loss <- data.frame(
+        segments=as.integer(row(cdpa$loss)),
+        data.i=as.integer(col(cdpa$loss)),
+        cdpa=as.numeric(cdpa$loss),
+        pdpa=as.numeric(pdpa$cost.mat))
+      bad <- subset(both.loss, cdpa < pdpa-1e-5)
+      if(nrow(bad)){
+        cat("Problems for", real.name, one.name, "\n")
+        print(bad)
+      }
+      expect_equal(nrow(bad), 0)
     }
-    both.loss <- do.call(rbind, both.loss.list)
-    bad <- subset(both.loss, cdpa < pdpa-1e-5)
-    if(nrow(bad)){
-      print(one.name)
-      print(bad)
-    }
-    expect_equal(nrow(bad), 0)
   }
 })
 

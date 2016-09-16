@@ -31,7 +31,7 @@ sample.id <- "McGill0322"
 sample.id <- "McGill0079"
 sample.id <- "McGill0106"
 n.peaks <- 3
-data("H3K4me3_XJ_immune_chunk1")
+data("H3K4me3_XJ_immune_chunk1", envir=environment())
 H3K4me3_XJ_immune_chunk1$count <- H3K4me3_XJ_immune_chunk1$coverage
 by.sample <-
   split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)

@@ -48,7 +48,7 @@ exactModelSelection <- structure(function # Exact model selection function
              max.lambda = c(vL[-1], Inf))
 },ex=function(){
 
-  data("H3K4me3_XJ_immune_chunk1")
+  data("H3K4me3_XJ_immune_chunk1", envir=environment())
   sample.id <- "McGill0106"
   by.sample <-
     split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
@@ -133,7 +133,7 @@ largestContinuousMinimum <- structure(function
   list(start=starts[largest],end=ends[largest])
 }, ex=function(){
 
-  data("H3K4me3_XJ_immune_chunk1")
+  data("H3K4me3_XJ_immune_chunk1", envir=environment())
   sample.id <- "McGill0106"
   by.sample <-
     split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)

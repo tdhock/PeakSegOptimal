@@ -5,7 +5,7 @@
 #include "funPieceListLog.h"
 #include <math.h>
 
-#define IFPRINT(arg) if(data_i==370 && total_changes==-308) (arg)
+#define IFPRINT(arg) if(data_i==222 && total_changes==-12) (arg)
 
 void PeakSegPDPALog
 (int *data_vec, double *weight_vec, int data_count,

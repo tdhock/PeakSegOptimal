@@ -19,7 +19,7 @@
 
 \examples{
 
-data("H3K4me3_XJ_immune_chunk1")
+data("H3K4me3_XJ_immune_chunk1", envir=environment())
 sample.id <- "McGill0106"
 by.sample <-
   split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
