@@ -92,14 +92,14 @@ void PeakSegFPOPLog
 	*down_cost = *down_cost_prev;
       }else{
 	// if data_i is down, it could have come from up_cost_prev.
-	if(data_i==292){
-	  printf("computing cost data_i=%d\n", data_i);
-	  verbose=1;
-	}else{
-	  verbose=0;
-	}
+	// if(data_i==292){
+	//   printf("computing cost data_i=%d\n", data_i);
+	//   verbose=1;
+	// }else{
+	//   verbose=0;
+	// }
 	min_prev_cost.set_to_min_more_of(up_cost_prev, verbose);
-	verbose=0;
+	//verbose=0;
 	status = min_prev_cost.check_min_of(up_cost_prev, up_cost_prev);
 	if(status){
 	  printf("BAD MIN MORE CHECK data_i=%d status=%d\n", data_i, status);
