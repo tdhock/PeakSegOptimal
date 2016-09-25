@@ -398,6 +398,16 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	    prev_min_cost = INFINITY;
 	    prev_min_log_mean = mu;
 	    it--;
+	  }else if(left_cost < prev_min_cost){
+	    //ends exactly/numerically on the right.
+	    if(verbose)printf("constant numerically equal on right\n");
+	    piece_list.emplace_back
+	      (0, 0, prev_min_cost,
+	       prev_min_log_mean, it->max_log_mean, 
+	       prev_data_i,
+	       prev_best_log_mean);
+	    prev_min_cost = INFINITY;
+	    prev_min_log_mean = it->max_log_mean;
 	  }
 	}
       }//if(Log is zero
@@ -537,6 +547,16 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	prev_min_cost = INFINITY;
 	prev_max_log_mean = mu;
 	it++;
+      }else if(left_cost < prev_min_cost){
+	//ends exactly/numerically on the left.
+	if(verbose)printf("constant numerically equal on left\n");
+	piece_list.emplace_front
+	  (0, 0, prev_min_cost,
+	   it->min_log_mean, prev_max_log_mean,
+	   prev_data_i,
+	   prev_best_log_mean);// equality constraint inactive on constant piece.
+	prev_min_cost = INFINITY;
+	prev_max_log_mean = it->min_log_mean;
       }
     }//if(prev_min_cost is finite
     if(verbose){
