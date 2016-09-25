@@ -634,15 +634,17 @@ void PiecewisePoissonLossLog::Minimize
   *best_cost = INFINITY;
   for(it=piece_list.begin(); it != piece_list.end(); it++){
     candidate_log_mean = it->argmin();
-    if(it->min_log_mean <= candidate_log_mean &&
-       candidate_log_mean <= it->max_log_mean){
-      candidate_cost = it->getCost(candidate_log_mean);
-      if(candidate_cost < *best_cost){
-	*best_cost = candidate_cost;
-	*best_log_mean = candidate_log_mean;
-	*data_i = it->data_i;
-	*prev_log_mean = it->prev_log_mean;
-      }
+    if(candidate_log_mean < it->min_log_mean){
+      candidate_log_mean = it->min_log_mean;
+    }else if(it->max_log_mean < candidate_log_mean){
+      candidate_log_mean = it->max_log_mean;
+    }
+    candidate_cost = it->getCost(candidate_log_mean);
+    if(candidate_cost < *best_cost){
+      *best_cost = candidate_cost;
+      *best_log_mean = candidate_log_mean;
+      *data_i = it->data_i;
+      *prev_log_mean = it->prev_log_mean;
     }
   }
 }
