@@ -3,6 +3,11 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2016.09.25
+
+Bugfix in C++ Minimize function which sometimes returned infinite cost
+when the minimum is exactly on the interval border.
+
 2016.09.16
 
 New test-simulation.R which previously was failing the run-time

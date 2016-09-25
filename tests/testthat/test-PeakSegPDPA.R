@@ -126,7 +126,9 @@ data(list=real.data.names)
 ##   })+
 ##   geom_step(aes(chromStart/1e3, coverage),
 ##             data=H3K4me3_XJ_immune_chunk1, color="grey")
-one.name <- "McGill0010"
+real.name <- "H3K4me3_PGP_immune_chunk24"
+one.name <- "McGill0001"
+
 test_that("PeakSegPDPA is as good as PeakSegDP on real data", {
   for(real.name in real.data.names){
     counts <- get(real.name)
