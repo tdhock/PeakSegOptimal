@@ -3,6 +3,12 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2016.09.26
+
+Bugfix for min-less: only add a constant piece at the end if we need
+to. New simulated data set in test-simulation.R which was crashing
+before the bugfix.
+
 2016.09.25
 
 Bugfix in C++ Minimize function which sometimes returned infinite cost
