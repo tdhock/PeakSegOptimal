@@ -29,5 +29,21 @@ test_that("no problem without weights", {
 })
 
 
-
+up <- 30
+bckg <- 29
+true.signal <- c(
+  rep(bckg, 50),
+  rep(c(rep(c(bckg, up), 2), bckg), each=10),
+  rep(bckg, 50))
+true.change <- which(diff(true.signal)!=0)
+true.signal <- true.signal #+ 2*sin(1:length(true.signal)/10)
+true.S <- length(true.change)
+set.seed(1060)
+for(i in 1:65){
+  print(i)
+  Y <- rpois(lambda=true.signal, n=length(true.signal))
+}
+test_that("simulated data does not crash PDPA", {
+  res_coseg <- PeakSegPDPA(Y, weight.vec= rep(1, length(Y)), max.segments = as.integer(true.S+1))
+})
 

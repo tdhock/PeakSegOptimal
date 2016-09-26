@@ -413,10 +413,13 @@ void PiecewisePoissonLossLog::set_to_min_less_of
       }//if(Log is zero
     }//if(prev_min_cost is finite
     it++;
+    if(verbose){
+      printf("current min-less-------------------\n");
+      print();
+    }
   }//while(it
-  if(prev_data_i != -2){
-    // ending on a constant piece -- we never have a convex piece at
-    // the end, because the end is the maximum observed data.
+  if(prev_data_i != -2 && prev_min_cost < INFINITY){
+    // ending on a constant piece.
     it--;
     piece_list.emplace_back
       (0, 0, prev_min_cost,
