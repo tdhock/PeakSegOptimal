@@ -1,7 +1,8 @@
+library(testthat)
+context("PeakSegFPOP")
 library(coseg)
 data.vec <- as.integer(c(1, 10, 14, 13))
 fit <- PeakSegFPOP(data.vec, rep(1L, 4), 0)
-library(testthat)
 test_that("no penalty is OK", {
   best.cost <- min(fit$cost.mat[2,4])
   mean.vec <- c(1, rep(37/3, 3))
