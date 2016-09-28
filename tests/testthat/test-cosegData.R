@@ -1,10 +1,11 @@
+library(testthat)
 context("cosegData")
+library(coseg)
 
-data.name.vec <- c(
-  "H3K36me3_AM_immune_McGill0079_chr3_60000_66170270"
-)
-for(data.name in data.name.vec){
-  data(list=data.name, package="cosegData")
-  data.list <- get(data.name)
-  fit <- with(data.list, PeakSegFPOPchrom(coverage, as.numeric(penalty)))
-}
+data(H3K36me3_AM_immune_McGill0079_chr3_60000_66170270, package="cosegData")
+
+test_that("big data and penalty do not crash", {
+  data.list <- H3K36me3_AM_immune_McGill0079_chr3_60000_66170270
+  fit <- with(data.list, PeakSegFPOPchrom(coverage[1:100,], as.numeric(penalty)))
+})
+
