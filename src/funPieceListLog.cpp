@@ -685,12 +685,14 @@ int PiecewisePoissonLossLog::check_min_of
 	printf("prev->max_log_mean != it->min_log_mean min\n");
 	return 3;
       }
-      if(0.1 < ABS(pit->getCost(pit->max_log_mean) - it->getCost(it->min_log_mean))){
-	printf("discontinuity detected\n");
-	pit->print();
-	it->print();
-	return 4;
-      }
+      // double cost_prev = pit->getCost(pit->max_log_mean);
+      // double cost_here = it->getCost(it->min_log_mean);
+      // if(0.1 < ABS(cost_prev - cost_here)){
+      // 	printf("discontinuity detected at %f, %f != %f\n", pit->max_log_mean, cost_prev, cost_here);
+      // 	pit->print();
+      // 	it->print();
+      // 	return 4;
+      // }
     }
     if(it->max_log_mean <= it->min_log_mean){
       printf("max_log_mean<=min_log_mean=%15.10f min\n", it->min_log_mean);
@@ -777,6 +779,13 @@ void PiecewisePoissonLossLog::set_to_min_env_of
   PoissonLossPieceListLog::iterator
     it1 = fun1->piece_list.begin(),
     it2 = fun2->piece_list.begin();
+  if(verbose){
+    printf("computing min env of:\n");
+    printf("=min-less/more\n");
+    fun1->print();
+    printf("=cost model\n");
+    fun2->print();
+  }
   piece_list.clear();
   while(it1 != fun1->piece_list.end() &&
 	it2 != fun2->piece_list.end()){
@@ -945,19 +954,19 @@ void PiecewisePoissonLossLog::push_min_pieces
   double cost_diff_left = diff_piece.getCost(last_min_log_mean);
   double cost_diff_right = diff_piece.getCost(first_max_log_mean);
   bool two_roots = diff_piece.has_two_roots(0.0);
-  double smaller_mean, larger_mean;
+  double smaller_log_mean, larger_log_mean;
   if(two_roots){
-    smaller_mean = diff_piece.get_smaller_root(0.0);
-    larger_mean = diff_piece.get_larger_root(0.0);
+    smaller_log_mean = diff_piece.get_smaller_root(0.0);
+    larger_log_mean = diff_piece.get_larger_root(0.0);
   }
   if(same_at_right){
     // they are equal on the right, but we don't know if there is
     // another crossing point somewhere to the left.
     if(two_roots){
       // there could be a crossing point to the left.
-      double mean_at_equal_cost = smaller_mean;
+      double mean_at_equal_cost = smaller_log_mean;
       if(verbose){
-	printf("smaller_mean=%f\n", mean_at_equal_cost);
+	printf("smaller_log_mean=%f\n", mean_at_equal_cost);
 	printf("cost_diff=[%e,%e,%e]\n",
 	       cost_diff_left, diff_piece.getCost(mean_at_equal_cost), cost_diff_right);
       }
@@ -989,8 +998,8 @@ void PiecewisePoissonLossLog::push_min_pieces
     // equal on the left.
     if(two_roots){
       // There could be a crossing point to the right.
-      double mean_at_equal_cost = larger_mean;
-      if(verbose)printf("larger_mean=%f\n", mean_at_equal_cost);
+      double mean_at_equal_cost = larger_log_mean;
+      if(verbose)printf("larger_log_mean=%f\n", mean_at_equal_cost);
       if(last_min_log_mean < mean_at_equal_cost &&
       	 mean_at_equal_cost < first_max_log_mean){
 	// the crossing point is in this interval.
@@ -1019,26 +1028,28 @@ void PiecewisePoissonLossLog::push_min_pieces
   double first_log_mean = INFINITY, second_log_mean = INFINITY;
   if(two_roots){
     bool larger_inside =
-      last_min_log_mean < larger_mean && larger_mean < first_max_log_mean;
-    if(verbose)printf("smaller_mean=%f %a\nlarger_mean=%f %a\n",
-		      smaller_mean, smaller_mean,
-		      larger_mean, larger_mean);
+      last_min_log_mean < larger_log_mean && larger_log_mean < first_max_log_mean;
+    if(verbose)printf("smaller_log_mean=%f %a\nlarger_log_mean=%f %a\n",
+		      smaller_log_mean, smaller_log_mean,
+		      larger_log_mean, larger_log_mean);
     bool smaller_inside =
-      last_min_log_mean < smaller_mean && smaller_mean < first_max_log_mean;
+      last_min_log_mean < smaller_log_mean &&
+      0 < exp(smaller_log_mean) &&
+      smaller_log_mean < first_max_log_mean;
     if(larger_inside){
-      if(smaller_inside && smaller_mean < larger_mean){
+      if(smaller_inside && smaller_log_mean < larger_log_mean){
 	// both are in the interval.
-	first_log_mean = smaller_mean;
-	second_log_mean = larger_mean;
+	first_log_mean = smaller_log_mean;
+	second_log_mean = larger_log_mean;
 	if(verbose){
 	  diff_piece.print();
 	  printf("%f and %f in [%f,%f]\n",
-		 smaller_mean, larger_mean,
+		 smaller_log_mean, larger_log_mean,
 		 last_min_log_mean, first_max_log_mean);
 	}
       }else{
 	// smaller mean is not in the interval, but the larger is.
-	first_log_mean = larger_mean;
+	first_log_mean = larger_log_mean;
 	if(verbose){
 	  printf("%f in [%f,%f]\n",
 		 first_log_mean,
@@ -1049,7 +1060,7 @@ void PiecewisePoissonLossLog::push_min_pieces
       // larger mean is not in the interval
       if(smaller_inside){
 	// smaller mean is in the interval, but not the larger.
-	first_log_mean = smaller_mean;
+	first_log_mean = smaller_log_mean;
 	if(verbose){
 	  printf("%f in [%f,%f]\n",
 		 first_log_mean,
