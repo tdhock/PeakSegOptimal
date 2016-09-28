@@ -9,5 +9,5 @@ Description: Computes optimal segmentations subject to constraints
 Depends: R (>= 2.10)
 Suggests: testthat, ggplot2, PeakSegDP (>= 2016.08.06), cosegData
 Remotes:
- tdhock/PeakSegDP@4e476f1ddf8b6252179b73dfec8c4cd616e9b5ad
+ tdhock/PeakSegDP@4e476f1ddf8b6252179b73dfec8c4cd616e9b5ad,
  tdhock/cosegData
