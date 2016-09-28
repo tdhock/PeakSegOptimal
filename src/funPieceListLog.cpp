@@ -970,8 +970,8 @@ void PiecewisePoissonLossLog::push_min_pieces
 	printf("cost_diff=[%e,%e,%e]\n",
 	       cost_diff_left, diff_piece.getCost(mean_at_equal_cost), cost_diff_right);
       }
-      if(last_min_log_mean + NEWTON_EPSILON < mean_at_equal_cost &&
-      	 mean_at_equal_cost + NEWTON_EPSILON < first_max_log_mean){
+      if(last_min_log_mean < mean_at_equal_cost && mean_at_equal_cost < first_max_log_mean &&
+	 NEWTON_EPSILON < ABS(cost_diff_left) && NEWTON_EPSILON < ABS(cost_diff_right)){
 	//the cross point is in the interval.
 	if(cost_diff_left < 0){
 	  push_piece(it1, last_min_log_mean, mean_at_equal_cost);

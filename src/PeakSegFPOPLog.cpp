@@ -43,6 +43,12 @@ void PeakSegFPOPLog
 	 min_log_mean, max_log_mean, -1, false);
     }else{
       // if data_i is up, it could have come from down_cost_prev.
+      // if(data_i==8323){
+      // 	printf("computing cost data_i=%d\n", data_i);
+      // 	verbose=1;
+      // }else{
+      // 	verbose=0;
+      // }
       min_prev_cost.set_to_min_less_of(down_cost_prev, verbose);
       int status = min_prev_cost.check_min_of(down_cost_prev, down_cost_prev);
       if(status){
@@ -104,14 +110,7 @@ void PeakSegFPOPLog
 	}
 	min_prev_cost.set_prev_seg_end(data_i-1);
 	//NO PENALTY FOR DOWN CHANGE
-	// if(data_i==4){
-	//   printf("computing cost data_i=%d\n", data_i);
-	//   verbose=1;
-	// }else{
-	//   verbose=0;
-	// }
 	down_cost->set_to_min_env_of(&min_prev_cost, down_cost_prev, verbose);
-	//verbose=0;
 	status = down_cost->check_min_of(&min_prev_cost, down_cost_prev);
 	if(status){
 	  printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
