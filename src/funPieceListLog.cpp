@@ -965,21 +965,27 @@ void PiecewisePoissonLossLog::push_min_pieces
     // another crossing point somewhere to the left.
     if(two_roots){
       // there could be a crossing point to the left.
-      double mean_at_equal_cost = smaller_log_mean;
+      double log_mean_at_crossing = smaller_log_mean;
+      double log_mean_between_zeros = (log_mean_at_crossing + first_max_log_mean)/2;
+      double cost_between_zeros = diff_piece.getCost(log_mean_between_zeros);
+      double log_mean_at_optimum = diff_piece.argmin();
       if(verbose){
-	printf("smaller_log_mean=%f\n", mean_at_equal_cost);
-	printf("cost_diff=[%e,%e,%e]\n",
-	       cost_diff_left, diff_piece.getCost(mean_at_equal_cost), cost_diff_right);
+	printf("cost_diff(left:%e)=%e\n", last_min_log_mean, cost_diff_left);
+	printf("cost_diff(cross:%e)=%e\n", log_mean_at_crossing, diff_piece.getCost(log_mean_at_crossing));
+	printf("cost_diff(between:%e)=%e\n", log_mean_between_zeros, cost_between_zeros);
+	printf("cost_diff(optimum:%e)=%e\n", log_mean_at_optimum, diff_piece.getCost(log_mean_at_optimum));
+	printf("cost_diff(right:%e)=%e\n", first_max_log_mean, cost_diff_right);
       }
-      if(last_min_log_mean < mean_at_equal_cost && mean_at_equal_cost < first_max_log_mean &&
-	 NEWTON_EPSILON < ABS(cost_diff_left) && NEWTON_EPSILON < ABS(cost_diff_right)){
+      if(last_min_log_mean < log_mean_at_crossing &&
+	 log_mean_at_crossing < log_mean_at_optimum &&
+	 log_mean_at_optimum < first_max_log_mean){
 	//the cross point is in the interval.
 	if(cost_diff_left < 0){
-	  push_piece(it1, last_min_log_mean, mean_at_equal_cost);
-	  push_piece(it2, mean_at_equal_cost, first_max_log_mean);
+	  push_piece(it1, last_min_log_mean, log_mean_at_crossing);
+	  push_piece(it2, log_mean_at_crossing, first_max_log_mean);
 	}else{
-	  push_piece(it2, last_min_log_mean, mean_at_equal_cost);
-	  push_piece(it1, mean_at_equal_cost, first_max_log_mean);
+	  push_piece(it2, last_min_log_mean, log_mean_at_crossing);
+	  push_piece(it1, log_mean_at_crossing, first_max_log_mean);
 	}
 	if(verbose)printf("equal on the right with one crossing in interval\n");
 	return;
@@ -999,17 +1005,19 @@ void PiecewisePoissonLossLog::push_min_pieces
     // equal on the left.
     if(two_roots){
       // There could be a crossing point to the right.
-      double mean_at_equal_cost = larger_log_mean;
-      if(verbose)printf("larger_log_mean=%f\n", mean_at_equal_cost);
-      if(last_min_log_mean < mean_at_equal_cost &&
-      	 mean_at_equal_cost < first_max_log_mean){
+      double log_mean_at_crossing = larger_log_mean;
+      double log_mean_at_optimum = diff_piece.argmin();
+      if(verbose)printf("larger_log_mean=%f\n", log_mean_at_crossing);
+      if(last_min_log_mean < log_mean_at_optimum &&
+	 log_mean_at_optimum < log_mean_at_crossing &&
+      	 log_mean_at_crossing < first_max_log_mean){
 	// the crossing point is in this interval.
 	if(cost_diff_right < 0){
-	  push_piece(it2, last_min_log_mean, mean_at_equal_cost);
-	  push_piece(it1, mean_at_equal_cost, first_max_log_mean);
+	  push_piece(it2, last_min_log_mean, log_mean_at_crossing);
+	  push_piece(it1, log_mean_at_crossing, first_max_log_mean);
 	}else{
-	  push_piece(it1, last_min_log_mean, mean_at_equal_cost);
-	  push_piece(it2, mean_at_equal_cost, first_max_log_mean);
+	  push_piece(it1, last_min_log_mean, log_mean_at_crossing);
+	  push_piece(it2, log_mean_at_crossing, first_max_log_mean);
 	}
 	if(verbose)printf("equal on the left with crossing in interval\n");
 	return;
