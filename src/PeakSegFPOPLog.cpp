@@ -43,7 +43,7 @@ void PeakSegFPOPLog
 	 min_log_mean, max_log_mean, -1, false);
     }else{
       // if data_i is up, it could have come from down_cost_prev.
-      // if(data_i==8323){
+      // if(data_i==140364){
       // 	printf("computing cost data_i=%d\n", data_i);
       // 	verbose=1;
       // }else{
