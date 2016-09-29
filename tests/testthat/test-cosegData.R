@@ -19,3 +19,9 @@ test_that("data set and penalty 3 do not crash", {
   data.list <- get(obj.name)
   fit <- with(data.list, PeakSegFPOPchrom(coverage[1:200000,], as.numeric(penalty)))
 })
+
+obj.name <- data(H3K36me3_AM_immune_McGill0001_chr16_46385801_88389383, package="cosegData")
+test_that("data set and penalty 4 do not crash", {
+  data.list <- get(obj.name)
+  fit <- with(data.list, PeakSegFPOPchrom(coverage[1:30000,], as.numeric(penalty)))
+})
