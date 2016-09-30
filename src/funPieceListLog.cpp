@@ -905,6 +905,16 @@ void PiecewisePoissonLossLog::push_min_pieces
   // first_max_log_mean is -Inf.
   double mid_mean = (exp(first_max_log_mean) + exp(last_min_log_mean))/2;
   double cost_diff_mid = diff_piece.getCost(log(mid_mean));
+  // Easy case of equality on both left and right.
+  if(same_at_left && same_at_right){
+    if(verbose)printf("Same on both the left and the right\n");
+    if(cost_diff_mid < 0){
+      push_piece(it1, last_min_log_mean, first_max_log_mean);
+    }else{
+      push_piece(it2, last_min_log_mean, first_max_log_mean);
+    }
+  }
+  // Easy degenerate cases that do not require root finding.
   if(diff_piece.Log == 0){
     // g(x) = Linear*e^x + Constant = 0,
     // x = log(-Constant/Linear).
