@@ -913,6 +913,7 @@ void PiecewisePoissonLossLog::push_min_pieces
     }else{
       push_piece(it2, last_min_log_mean, first_max_log_mean);
     }
+    return;
   }
   // Easy degenerate cases that do not require root finding.
   if(diff_piece.Log == 0){
