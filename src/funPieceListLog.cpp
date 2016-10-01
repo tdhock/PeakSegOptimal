@@ -400,7 +400,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	    it--;
 	  }//if(mu in interval)
 	}//if(has two roots
-	if(prev_min_cost < INFINITY && right_cost < prev_min_cost){
+	if(right_cost <= prev_min_cost+NEWTON_EPSILON && prev_min_cost < INFINITY){
 	  //ends exactly/numerically on the right.
 	  if(verbose)printf("constant numerically equal on right\n");
 	  piece_list.emplace_back
@@ -551,7 +551,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	prev_min_cost = INFINITY;
 	prev_max_log_mean = mu;
 	it++;
-      }else if(left_cost < prev_min_cost){
+      }else if(left_cost <= prev_min_cost+NEWTON_EPSILON){
 	//ends exactly/numerically on the left.
 	if(verbose)printf("constant numerically equal on left\n");
 	piece_list.emplace_front

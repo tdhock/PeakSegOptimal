@@ -25,3 +25,4 @@ test_that("data set and penalty 4 do not crash", {
   data.list <- get(obj.name)
   fit <- with(data.list, PeakSegFPOPchrom(coverage[1:30000,], as.numeric(penalty)))
 })
+
