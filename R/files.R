@@ -137,11 +137,11 @@ problem.features <- function
     sd=sd(long),
     bases=sum(bases),
     data=nrow(coverage))
-  log.features <-
-    c(feature.vec,
-      `log+1`=log(feature.vec+1),
-      log=log(feature.vec),
-      log.log=log(log(feature.vec)))
+  log.features <- suppressWarnings(c(
+    feature.vec,
+    `log+1`=log(feature.vec+1),
+    log=log(feature.vec),
+    log.log=log(log(feature.vec))))
   feature.dt <- data.table(t(log.features))
   write.table(
     feature.dt,
