@@ -371,6 +371,8 @@ problem.predict <- function
   
   load(model.RData)
 
+  problem.coverage(problem.dir)
+
   features.tsv <- file.path(problem.dir, "features.tsv")
   if(!file.exists(features.tsv)){
     cat(sprintf("Computing %s\n", features.tsv))
