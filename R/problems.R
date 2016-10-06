@@ -410,7 +410,9 @@ problem.predict <- function
     NULL
   })
   if(nrow(loss.ord) && length(target.vec)==2){
-    cat(sprintf("Target interval %f < log(penalty) < %f\n", target.vec[1], target.vec[2]))
+    cat(sprintf(
+      "Target interval %f < log(penalty) < %f\n",
+      target.vec[1], target.vec[2]))
     if(log(pred.penalty) < target.vec[1]){
       pred.penalty <- loss.ord[target.vec[1] < log.penalty, penalty[.N]]
       cat(sprintf(
@@ -438,9 +440,10 @@ problem.predict <- function
     smaller.peaks <- loss.ord[last.before, peaks]
     bigger.peaks <- loss.ord[first.after, peaks]
     if(smaller.peaks + 1 == bigger.peaks){
-      loss.unique <- unique(loss.ord[, .(peaks, total.cost)])
+      loss.unique <- loss.ord[c(TRUE, diff(peaks) != 0), ]
       exact <- loss.unique[, exactModelSelection(total.cost, peaks, peaks)]
-      selected <- subset(exact, min.lambda < pred.penalty & pred.penalty < max.lambda)
+      selected <- subset(
+        exact, min.lambda < pred.penalty & pred.penalty < max.lambda)
       same.peaks <- loss.ord[peaks==selected$peaks, ]
       pen.num <- same.peaks$penalty[1]
       cat(
