@@ -254,6 +254,11 @@ problem.target <- function
     after.min.error <- check(min.errors.last < seq_along(error.dt$errors))
     lower.candidates <- rbind(feasible, fp, before.min.error)[order(penalty),]
     lower <- lower.candidates[.N,]
+    i.after.lower <- which(lower$penalty < error.dt$penalty)[1]
+    fn.diff <- error.dt[i.after.lower + c(-1, 0), diff(fn)]
+    if(0 < fn.diff){
+      next.side <- "lower"
+    }
     upper <- if(!is.null(after.min.error)){
       after.min.error
     }else{
