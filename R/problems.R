@@ -242,8 +242,10 @@ problem.target <- function
         found=two.lambda||adjacent.models)
     }
     feasible <- check(error.dt$status=="infeasible")
+    is.fn <- error.dt$fn == min.fn
+    is.fn[error.dt$status=="infeasible"] <- TRUE
     fp <- check(error.dt$fp==0)
-    fn <- check(error.dt$fn==min.fn)
+    fn <- check(is.fn)
     min.errors <- min(error.dt$errors)
     min.errors.i.vec <- which(error.dt$errors==min.errors)
     min.errors.first <- min(min.errors.i.vec)
