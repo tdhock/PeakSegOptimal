@@ -1141,9 +1141,16 @@ void PiecewisePoissonLossLog::push_min_pieces
     // with last_min_log_mean or first_max_log_mean.
     if(verbose){
       printf("not equal on the sides, zero crossing points\n");
-      printf("cost_diff_mid=%e\n", cost_diff_mid);
+      printf("cost_diff left=%e mid=%e right=%e\n",
+	     cost_diff_left, cost_diff_mid, cost_diff_right);
     }
-    if(cost_diff_mid < NEWTON_EPSILON){
+    double cost_diff;
+    if(ABS(cost_diff_mid) < NEWTON_EPSILON){
+      cost_diff = cost_diff_right;
+    }else{
+      cost_diff = cost_diff_mid;
+    }
+    if(cost_diff < 0){
       push_piece(it1, last_min_log_mean, first_max_log_mean);
     }else{
       push_piece(it2, last_min_log_mean, first_max_log_mean);
