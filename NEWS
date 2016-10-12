@@ -3,6 +3,16 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2016.10.xx
+
+Many fixes for min-less/more/env bugs which were encountered while
+running the PeakSegFPOP command line program on large data sets (test
+cases in test-cosegData.R).
+
+problems.R contains problem.* functions which run the PeakSegFPOP
+command line program and parse its output (compute the target
+interval, features, predicted peaks).
+
 2016.09.26
 
 Bugfix for min-less: only add a constant piece at the end if we need

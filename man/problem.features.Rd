@@ -1,7 +1,7 @@
 \name{problem.features}
 \alias{problem.features}
 \title{problem features}
-\description{Make sure features are computed for one segmentation problem.}
+\description{Compute features for one segmentation problem.}
 \usage{problem.features(problem.dir)}
 \arguments{
   \item{problem.dir}{problemID directory with problemID/coverage.bedGraph.}
