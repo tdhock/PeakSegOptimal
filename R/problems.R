@@ -120,7 +120,7 @@ problem.PeakSegFPOP <- function
 }  
 
 problem.features <- function
-### Make sure features are computed for one segmentation problem.
+### Compute features for one segmentation problem.
 (problem.dir
 ### problemID directory with problemID/coverage.bedGraph.
  ){
@@ -381,9 +381,21 @@ problem.predict <- function
   problem.coverage(problem.dir)
 
   features.tsv <- file.path(problem.dir, "features.tsv")
-  if(!file.exists(features.tsv)){
-    cat(sprintf("Computing %s\n", features.tsv))
-    problem.features(problem.dir)
+  is.computed <- if(file.exists(features.tsv)){
+    TRUE
+  }else{
+    tryCatch({
+      problem.features(problem.dir)
+      cat(sprintf("Computed %s\n", features.tsv))
+      TRUE
+    }, error=function(e){
+      FALSE
+    })
+  }
+
+  if(!is.computed){
+    cat("Unable to compute", features.tsv, "so not predicting.\n")
+    return(NULL)
   }
 
   features <- fread(features.tsv)
