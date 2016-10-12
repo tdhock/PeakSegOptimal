@@ -1139,13 +1139,15 @@ void PiecewisePoissonLossLog::push_min_pieces
     // "zero" crossing points. actually there may be a crossing point
     // in the interval that is numerically so close as to be identical
     // with last_min_log_mean or first_max_log_mean.
-    double cost_diff;
-    if(cost_diff_mid < 0){
+    if(verbose){
+      printf("not equal on the sides, zero crossing points\n");
+      printf("cost_diff_mid=%e\n", cost_diff_mid);
+    }
+    if(cost_diff_mid < NEWTON_EPSILON){
       push_piece(it1, last_min_log_mean, first_max_log_mean);
     }else{
       push_piece(it2, last_min_log_mean, first_max_log_mean);
     }
-    if(verbose)printf("not equal on the sides, zero crossing points\n");
   }
 }
 

@@ -74,7 +74,7 @@ ggplot()+
             data=C12.221minless$funs)
 
 ggplot()+
-  coord_cartesian(ylim=c(-1.68690, -1.68689), xlim=c(0.95, 0.98))+
+  coord_cartesian(ylim=c(-1.506, -1.5055), xlim=c(-0.5, 1.5))+
   geom_vline(aes(xintercept=min_log_mean, color=fun),
              data=C12.221minless$vlines)+
   geom_vline(xintercept=xi, linetype="dashed")+
