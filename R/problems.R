@@ -178,184 +178,102 @@ problem.target <- function
       annotation=character())
   })
 
-  ## Compute the target interval. Even if there are no labels, we can
-  ## still compute an upper bound on the number of peaks (lower limit of
-  ## target interval of penalty values).
-  error.list <- list()
+  ## Compute the label error for one penalty parameter.
   getError <- function(penalty.str){
     stopifnot(is.character(penalty.str))
+    stopifnot(length(penalty.str) == 1)
     result <- problem.PeakSegFPOP(problem.dir, penalty.str)
     penalty.peaks <- result$segments[status=="peak",]
     penalty.error <- PeakErrorChrom(penalty.peaks, problem.labels)
-    error.list[[penalty.str]] <<- with(penalty.error, data.table(
+    with(penalty.error, data.table(
       result$loss,
       fn=sum(fn),
       fp=sum(fp)))
-    do.call(rbind, error.list)[order(penalty),]
   }
-
-  error.dt <- getError("0")
-  error.dt <- getError("Inf")
+  
+  error.list <- list(
+    "0"=getError("0"),
+    "Inf"=getError("Inf"))
   min.fn <- error.list[["0"]]$fn
   max.fp <- error.list[["0"]]$fp
   max.fn <- error.list[["Inf"]]$fn
 
+  ## Compute the target interval given the errors computed in dt.
+  getTarget <- function(dt){
+    peaks.tab <- table(dt$peaks)
+    error.sorted <- dt[order(peaks), ][c(TRUE, diff(peaks) != 0),]
+    path <- error.sorted[, exactModelSelection(total.cost, peaks, peaks)]
+    setkey(error.sorted, peaks)
+    path$errors <- error.sorted[J(path$peaks), errors]
+    indices <- with(path, largestContinuousMinimum(
+      errors, max.log.lambda-min.log.lambda))
+    direction.list <- list(start=1, end=-1)
+    result <- list(models=path)
+    for(side in names(direction.list)){
+      direction <- direction.list[[side]]
+      index <- indices[[side]]
+      model <- path[index,]
+      index.outside <- index - direction
+      neighboring.peaks <- model$peaks + direction
+      found.neighbor <- neighboring.peaks %in% path$peaks
+      multiple.penalties <- if(index.outside %in% seq_along(path$peaks)){
+        model.outside <- path[index.outside,]
+        peaks.num <- c(model.outside$peaks, model$peaks)
+        peaks.str <- paste(peaks.num)
+        peaks.counts <- peaks.tab[peaks.str]
+        any(1 < peaks.counts)
+      }else{
+        FALSE
+      }
+      done <- found.neighbor | multiple.penalties
+      result[[side]] <- data.table(model, found.neighbor, multiple.penalties, done)
+    }
+    result
+  }
+
   ## mx+b = lossInf => x = (lossInf-b)/m
   lossInf <- error.list[["Inf"]]$total.cost
   next.pen <- with(error.list[["0"]], (lossInf-total.cost)/peaks)
-  next.side <- "upper"
   while(!is.null(next.pen)){
-    if(interactive()){
+    next.str <- paste(next.pen)
+    error.list[next.str] <- mclapply(next.str, getError)
+    error.dt <- do.call(rbind, error.list)[order(-penalty),]
+    error.dt[, n.infeasible := cumsum(status=="infeasible")]
+    error.dt[, errors := ifelse(n.infeasible==0, fp+fn, Inf)]
+    print(error.dt[,.(penalty, peaks, status, fp, fn, errors)])
+    target.list <- getTarget(error.dt)
+    upper <- with(target.list$end, if((!done) && is.finite(max.lambda))max.lambda)
+    lower <- with(target.list$start, if(!done)min.lambda)
+    next.pen <- c(upper, lower)
+    if(interactive() && is.numeric(next.pen)){
       gg <- ggplot()+
         geom_abline(aes(slope=peaks, intercept=total.cost),
                     data=error.dt)+
         geom_vline(aes(xintercept=penalty),
+                   color="red",
                    data=data.table(penalty=next.pen))+
         geom_point(aes(penalty, mean.pen.cost*bases),
                    data=error.dt)
       print(gg)
-    }
-    next.str <- paste(next.pen)
-    error.dt <- getError(next.str)
-    error.dt[, errors := ifelse(status=="feasible", fp, Inf)+fn]
-    print(error.dt[,.(penalty, peaks, status, fp, fn, errors)])
-    peaks.tab <- table(error.dt$peaks)
-    check <- function(is.vec){
-      stopifnot(is.logical(is.vec))
-      stopifnot(nrow(error.dt) == length(is.vec))
-      i.vec <- which(is.vec)
-      if(length(i.vec)==0)return(NULL)
-      two.i <- if(1 %in% i.vec){
-        m <- max(i.vec)
-        c(m, m+1)
-      }else{
-        m <- min(i.vec)
-        c(m-1, m)
-      }
-      if(any(!two.i %in% seq_along(error.dt$peaks)))return(NULL)
-      two.error <- error.dt[two.i,]
-      adjacent.models <- diff(two.error$peaks) == -1
-      two.lambda <- any(1 < peaks.tab[paste(two.error$peaks)])
-      data.table(
-        penalty=(two.error[1, total.cost]-two.error[2, total.cost])/
-          (two.error[2, peaks]-two.error[1, peaks]),
-        found=two.lambda||adjacent.models)
-    }
-    feasible <- check(error.dt$status=="infeasible")
-    is.fn <- error.dt$fn == min.fn
-    is.fn[error.dt$status=="infeasible"] <- TRUE
-    fp <- check(error.dt$fp==0)
-    fn <- check(is.fn)
-    min.errors <- min(error.dt$errors)
-    min.errors.i.vec <- which(error.dt$errors==min.errors)
-    min.errors.first <- min(min.errors.i.vec)
-    min.errors.last <- max(min.errors.i.vec)
-    before.min.error <- check(seq_along(error.dt$errors) < min.errors.first)
-    after.min.error <- check(min.errors.last < seq_along(error.dt$errors))
-    lower.candidates <- rbind(feasible, fp, before.min.error)[order(penalty),]
-    lower <- lower.candidates[.N,]
-    i.after.lower <- which(lower$penalty < error.dt$penalty)[1]
-    fn.diff <- error.dt[i.after.lower + c(-1, 0), diff(fn)]
-    if(0 < fn.diff){
-      next.side <- "lower"
-    }
-    upper <- if(!is.null(after.min.error)){
-      after.min.error
-    }else{
-      fn
-    }
-    next.pen <- if(is.null(upper)){
-      ## Do not search for the upper limit when there are no
-      ## positive labels.
-      if(!lower$found){
-        lower$penalty
-      }
-    }else{
-      if((!lower$found) && (!upper$found)){
-        ## Neither the upper limit nor the lower limit have been
-        ## found, so we can search for one or the other. One search
-        ## strategy is to always search for the upper limit until it
-        ## is found, and then search for the lower limit. That could
-        ## be bad if we have an error profile as follows,
-        ## H3K4me3_TDH_immune/McGill0322/problems/chr3:93504854-194041961
-
-        ##  1:     0.0000 2495509 infeasible 23  0    Inf
-        ##  2:    46.2596  297639 infeasible 23  0    Inf
-        ##  3:   347.5916   65093 infeasible 20  0    Inf
-        ##  4:  1132.9245    9402 infeasible 14  0    Inf
-        ##  5:  4317.8561    1460 infeasible  4  2    Inf
-        ##  6: 18045.5544     384 infeasible  0  3    Inf
-        ##  7: 20763.5231     345 infeasible  0  3    Inf
-        ##  8: 20877.9948     344 infeasible  0  3    Inf
-        ##  9: 20904.2069     343   feasible  0  3      3
-        ## 10: 20990.6296     342   feasible  0  3      3
-        ## 11: 21165.0400     340   feasible  0  3      3
-        ## 12: 21669.8758     337   feasible  0  3      3
-        ## 13: 22530.0711     331   feasible  0  3      3
-        ## 14: 23795.3361     314   feasible  0  3      3
-        ## 15: 29561.2146     247   feasible  0  3      3
-        ## 16: 30935.5267     230   feasible  0  2      2
-        ## 17: 32698.7993     215   feasible  0  4      4
-        ## 18: 36089.5234     181   feasible  0  4      4
-        ## 19: 45600.3192     126   feasible  0  5      5
-        ## 20:        Inf       0   feasible  0 11     11
-
-        ## Using the old/bad search method, after finding the upper
-        ## limit between 3 and Inf errors, the lower limit search
-        ## discovered a model with only 2 errors, so had to re-start
-        ## the upper limit search. Using the new search method below,
-        ## we alternate between looking for the upper and lower
-        ## limits.
-        if(next.side == "upper"){
-          next.side <- "lower"
-          upper$penalty
-        }else{
-          next.side <- "upper"
-          lower$penalty
-        }
-      }else if(!lower$found){
-        lower$penalty
-      }else if(!upper$found){
-        upper$penalty
-      }
+      cat("Next =", paste(next.pen, collapse=", "), "\n")
     }
   }#while(!is.null(pen))
 
   write.table(
     error.dt,
     file.path(problem.dir, "target_models.tsv"),
+    sep="\t",
     quote=FALSE,
     row.names=FALSE,
     col.names=TRUE)
 
-  error.sorted <- error.dt[order(peaks), ][c(TRUE, diff(peaks) != 0),]
-
-  ## Oracle model complexity?
-
-  ## error.sorted[, `:=`(complexity={
-  ##   in.sqrt <- 1.1 + log(bases / segments)
-  ##   in.square <- 1 + 4 * sqrt(in.sqrt)
-  ##   in.square * in.square * segments
-  ## })]
-
-  path <- error.sorted[, exactModelSelection(total.cost, peaks, peaks)]
-  setkey(error.sorted, peaks)
-  path$errors <- error.sorted[J(path$peaks), errors]
-  indices <- with(path, largestContinuousMinimum(
-    errors, max.log.lambda-min.log.lambda))
-  target <- with(path, data.table(
-    min.log.lambda=min.log.lambda[indices$start],
-    max.log.lambda=max.log.lambda[indices$end]))
-  write.table(
-    target,
-    file.path(problem.dir, "target.tsv"),
-    quote=FALSE,
-    col.names=FALSE,
-    row.names=FALSE)
+  target.vec <- with(target.list, c(start$min.log.lambda, end$max.log.lambda))
+  write(target.vec, file.path(problem.dir, "target.tsv"), sep="\t")
+  
   list(
-    target=as.numeric(unlist(target)),
+    target=target.vec,
     models=error.dt,
-    selected=path)
+    selected=target.list$path)
 ### List of info related to target interval computation: target is the
 ### interval of log(penalty) values that achieve minimum incorrect
 ### labels (numeric vector of length 2), models is a data.table with
