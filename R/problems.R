@@ -191,13 +191,6 @@ problem.target <- function
       fp=sum(fp)))
   }
   
-  error.list <- list(
-    "0"=getError("0"),
-    "Inf"=getError("Inf"))
-  min.fn <- error.list[["0"]]$fn
-  max.fp <- error.list[["0"]]$fp
-  max.fn <- error.list[["Inf"]]$fn
-
   ## Compute the target interval given the errors computed in dt.
   getTarget <- function(dt){
     peaks.tab <- table(dt$peaks)
@@ -226,14 +219,14 @@ problem.target <- function
         FALSE
       }
       done <- found.neighbor | multiple.penalties
-      result[[side]] <- data.table(model, found.neighbor, multiple.penalties, done)
+      result[[side]] <- data.table(
+        model, found.neighbor, multiple.penalties, done)
     }
     result
   }
 
-  ## mx+b = lossInf => x = (lossInf-b)/m
-  lossInf <- error.list[["Inf"]]$total.cost
-  next.pen <- with(error.list[["0"]], (lossInf-total.cost)/peaks)
+  error.list <- list()
+  next.pen <- c(0, Inf)
   while(!is.null(next.pen)){
     next.str <- paste(next.pen)
     error.list[next.str] <- mclapply(next.str, getError)
@@ -242,7 +235,9 @@ problem.target <- function
     error.dt[, errors := ifelse(n.infeasible==0, fp+fn, Inf)]
     print(error.dt[,.(penalty, peaks, status, fp, fn, errors)])
     target.list <- getTarget(error.dt)
-    upper <- with(target.list$end, if((!done) && is.finite(max.lambda))max.lambda)
+    upper <- with(target.list$end, {
+      if((!done) && is.finite(max.lambda))max.lambda
+    })
     lower <- with(target.list$start, if(!done)min.lambda)
     next.pen <- c(upper, lower)
     if(interactive() && is.numeric(next.pen)){
