@@ -100,6 +100,7 @@ problem.PeakSegFPOP <- function
       row.names=FALSE, col.names=FALSE,
       quote=FALSE, sep="\t")
     unlink(penalty.db)
+    penalty.segs <- fread(penalty_segments.bed)
   }
   timing <- fread(penalty_timing.tsv)
   setnames(timing, c("penalty", "megabytes", "seconds"))
@@ -108,7 +109,6 @@ problem.PeakSegFPOP <- function
     "penalty", "segments", "peaks", "bases",
     "mean.pen.cost", "total.cost", "status",
     "mean.intervals", "max.intervals"))
-  penalty.segs <- fread(penalty_segments.bed)
   setnames(penalty.segs, c("chrom","chromStart", "chromEnd", "status", "mean"))
   list(
     segments=penalty.segs,
@@ -241,6 +241,7 @@ problem.target <- function
   error.list <- list()
   next.pen <- c(0, Inf)
   while(length(next.pen)){
+    cat("Next =", paste(next.pen, collapse=", "), "\n")
     next.str <- paste(next.pen)
     error.list[next.str] <- mclapply(next.str, getError)
     error.dt <- do.call(rbind, error.list)[order(-penalty),]
@@ -270,7 +271,6 @@ problem.target <- function
                    data=error.dt)
       print(gg)
     }
-    cat("Next =", paste(next.pen, collapse=", "), "\n")
   }#while(!is.null(pen))
 
   write.table(
