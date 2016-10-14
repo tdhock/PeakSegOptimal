@@ -285,8 +285,7 @@ problem.target <- function
   
   list(
     target=target.vec,
-    models=error.dt,
-    selected=target.list$path)
+    models=error.dt)
 ### List of info related to target interval computation: target is the
 ### interval of log(penalty) values that achieve minimum incorrect
 ### labels (numeric vector of length 2), models is a data.table with
@@ -417,7 +416,10 @@ problem.predict <- function
     result <- problem.PeakSegFPOP(problem.dir, pen.str)
     if(result$loss$status=="infeasible"){
       t.info <- problem.target(problem.dir)
-      biggest.feasible <- t.info$models[which.min(errors),]
+      models.in.target <- with(t.info, {
+        models[target[1] <= log(penalty) & log(penalty) <= target[2],]
+      })
+      biggest.feasible <- models.in.target[which.max(peaks),]
       pen.str <- paste(biggest.feasible$penalty)
     }
   }
