@@ -201,9 +201,9 @@ problem.target <- function
     path <- error.sorted[, exactModelSelection(total.cost, peaks, peaks)]
     path.dt <- data.table(path)
     setkey(path.dt, peaks)
-    join.dt <- error.sorted[path.dt]
+    join.dt <- error.sorted[path.dt][order(penalty),]
     direction.list <- list(start=1, end=-1)
-    side.vec.list <- list(fn="start", fp="end", errors=c("start", "end"))
+    side.vec.list <- list(fn="end", fp="start", errors=c("start", "end"))
     result <- list(models=path, candidates=list())
     for(error.col in c("fp", "fn", "errors")){
       incorrect.or.Inf <- ifelse(
@@ -227,7 +227,7 @@ problem.target <- function
         }else{
           FALSE
         }
-        next.pen <- ifelse(side=="start", model$max.lambda, model$min.lambda)
+        next.pen <- ifelse(side=="start", model$min.lambda, model$max.lambda)
         already.computed <- paste(next.pen) %in% names(error.list)
         done <- found.neighbor | multiple.penalties | already.computed
         result$candidates[[paste(error.col, side)]] <- data.table(
@@ -247,8 +247,8 @@ problem.target <- function
     print(error.dt[,.(penalty, peaks, status, fp, fn)])
     target.list <- getTarget(error.dt)
     target.vec <- c(
-      target.list$candidates[["errors end"]]$min.log.lambda,
-      target.list$candidates[["errors start"]]$max.log.lambda)
+      target.list$candidates[["errors start"]]$min.log.lambda,
+      target.list$candidates[["errors end"]]$max.log.lambda)
     is.error <- grepl("error", names(target.list$candidates))
     error.candidates <- do.call(rbind, target.list$candidates[is.error])
     other.candidates <- do.call(rbind, target.list$candidates[!is.error])
@@ -269,8 +269,8 @@ problem.target <- function
         geom_point(aes(penalty, mean.pen.cost*bases),
                    data=error.dt)
       print(gg)
-      cat("Next =", paste(next.pen, collapse=", "), "\n")
     }
+    cat("Next =", paste(next.pen, collapse=", "), "\n")
   }#while(!is.null(pen))
 
   write.table(
