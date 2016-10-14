@@ -195,52 +195,71 @@ problem.target <- function
   getTarget <- function(dt){
     peaks.tab <- table(dt$peaks)
     error.sorted <- dt[order(peaks), ][c(TRUE, diff(peaks) != 0),]
-    path <- error.sorted[, exactModelSelection(total.cost, peaks, peaks)]
+    error.sorted[, n.infeasible := cumsum(status=="infeasible")]
+    error.sorted[, errors := fp + fn]
     setkey(error.sorted, peaks)
-    path$errors <- error.sorted[J(path$peaks), errors]
-    indices <- with(path, largestContinuousMinimum(
-      errors, max.log.lambda-min.log.lambda))
+    path <- error.sorted[, exactModelSelection(total.cost, peaks, peaks)]
+    path.dt <- data.table(path)
+    setkey(path.dt, peaks)
+    join.dt <- error.sorted[path.dt]
     direction.list <- list(start=1, end=-1)
-    result <- list(models=path)
-    for(side in names(direction.list)){
-      direction <- direction.list[[side]]
-      index <- indices[[side]]
-      model <- path[index,]
-      index.outside <- index - direction
-      neighboring.peaks <- model$peaks + direction
-      found.neighbor <- neighboring.peaks %in% path$peaks
-      multiple.penalties <- if(index.outside %in% seq_along(path$peaks)){
-        model.outside <- path[index.outside,]
-        peaks.num <- c(model.outside$peaks, model$peaks)
-        peaks.str <- paste(peaks.num)
-        peaks.counts <- peaks.tab[peaks.str]
-        any(1 < peaks.counts)
-      }else{
-        FALSE
+    side.vec.list <- list(fn="start", fp="end", errors=c("start", "end"))
+    result <- list(models=path, candidates=list())
+    for(error.col in c("fp", "fn", "errors")){
+      incorrect.or.Inf <- ifelse(
+        join.dt$n.infeasible==0, join.dt[[error.col]], Inf)
+      indices <- join.dt[, largestContinuousMinimum(
+        incorrect.or.Inf, max.log.lambda-min.log.lambda)]
+      side.vec <- side.vec.list[[error.col]]
+      for(side in side.vec){
+        direction <- direction.list[[side]]
+        index <- indices[[side]]
+        model <- join.dt[index,]
+        index.outside <- index - direction
+        neighboring.peaks <- model$peaks + direction
+        found.neighbor <- neighboring.peaks %in% join.dt$peaks
+        multiple.penalties <- if(index.outside %in% seq_along(join.dt$peaks)){
+          model.outside <- join.dt[index.outside,]
+          peaks.num <- c(model.outside$peaks, model$peaks)
+          peaks.str <- paste(peaks.num)
+          peaks.counts <- peaks.tab[peaks.str]
+          any(1 < peaks.counts)
+        }else{
+          FALSE
+        }
+        next.pen <- ifelse(side=="start", model$max.lambda, model$min.lambda)
+        already.computed <- paste(next.pen) %in% names(error.list)
+        done <- found.neighbor | multiple.penalties | already.computed
+        result$candidates[[paste(error.col, side)]] <- data.table(
+          model, found.neighbor, multiple.penalties, already.computed,
+          done, next.pen)
       }
-      done <- found.neighbor | multiple.penalties
-      result[[side]] <- data.table(
-        model, found.neighbor, multiple.penalties, done)
     }
     result
   }
 
   error.list <- list()
   next.pen <- c(0, Inf)
-  while(!is.null(next.pen)){
+  while(length(next.pen)){
     next.str <- paste(next.pen)
     error.list[next.str] <- mclapply(next.str, getError)
     error.dt <- do.call(rbind, error.list)[order(-penalty),]
-    error.dt[, n.infeasible := cumsum(status=="infeasible")]
-    error.dt[, errors := ifelse(n.infeasible==0, fp+fn, Inf)]
-    print(error.dt[,.(penalty, peaks, status, fp, fn, errors)])
+    print(error.dt[,.(penalty, peaks, status, fp, fn)])
     target.list <- getTarget(error.dt)
-    upper <- with(target.list$end, {
-      if((!done) && is.finite(max.lambda))max.lambda
-    })
-    lower <- with(target.list$start, if(!done)min.lambda)
-    next.pen <- c(upper, lower)
-    if(interactive() && is.numeric(next.pen)){
+    target.vec <- c(
+      target.list$candidates[["errors end"]]$min.log.lambda,
+      target.list$candidates[["errors start"]]$max.log.lambda)
+    is.error <- grepl("error", names(target.list$candidates))
+    error.candidates <- do.call(rbind, target.list$candidates[is.error])
+    other.candidates <- do.call(rbind, target.list$candidates[!is.error])
+    other.in.target <- other.candidates[done==FALSE &
+        target.vec[1] < log(next.pen) & log(next.pen) < target.vec[2],]
+    next.pen <- if(nrow(other.in.target)){
+      other.in.target[, unique(next.pen)]
+    }else{
+      error.candidates[done==FALSE, unique(next.pen)]
+    }
+    if(interactive() && length(next.pen)){
       gg <- ggplot()+
         geom_abline(aes(slope=peaks, intercept=total.cost),
                     data=error.dt)+
@@ -262,7 +281,6 @@ problem.target <- function
     row.names=FALSE,
     col.names=TRUE)
 
-  target.vec <- with(target.list, c(start$min.log.lambda, end$max.log.lambda))
   write(target.vec, file.path(problem.dir, "target.tsv"), sep="\t")
   
   list(
