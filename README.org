@@ -1,7 +1,6 @@
 An R package for computing constrained optimal segmentation models
 
-| [[file:tests/testthat][tests]]    | [[https://travis-ci.org/tdhock/coseg][https://travis-ci.org/tdhock/coseg.png?branch=master]]                           |                                                                  |
-| [[https://github.com/jimhester/covr][coverage]] | [[https://coveralls.io/github/tdhock/coseg?branch=master][https://coveralls.io/repos/tdhock/coseg/badge.svg?branch=master&service=github]] | [[https://codecov.io/gh/tdhock/coseg][https://codecov.io/gh/tdhock/coseg/branch/master/graph/badge.svg]] |
+[[https://travis-ci.org/tdhock/coseg][https://travis-ci.org/tdhock/coseg.png?branch=master]] 
 
 ** Installation
 
@@ -20,16 +19,16 @@ Poisson loss and the PeakSeg constraint.
 There are two R functions that solve the Segment Neighborhood problem
 (best models with at most 1,...,S segments). The constraints are first
 segment mean <= second segment mean >= third segment mean, etc. For S
-segments and N data points, complexity is O(S*N) memory and O(S*N log
-N) time.
+segments and N data points, complexity is O(S N log N) memory and
+O(S N log N) time.
 - PeakSegPDPA is a direct interface to the C++ code. Returns matrices
   for the optimal cost and number of intervals stored by the algorithm
   at each step. Input parameter is the maximum number of segments S,
   and outputs are the optimal models from 1 to S segments.
 - PeakSegPDPAchrom is a more user-friendly interface, which takes a
-  data.frame with columns chrom, chromStart, chromEnd as input, and
-  returns data.frames as output. Input parameter is the maximum number
-  of peaks P (implying S = P*2+1 segments), and outputs are the
+  data.frame with columns chrom, chromStart, chromEnd, count as input,
+  and returns data.frames as output. Input parameter is the maximum
+  number of peaks P (implying S = P*2+1 segments), and outputs are the
   optimal models from 0 to P peaks.
 
 *** PeakSeg Optimal Partitioning problem
@@ -39,14 +38,14 @@ There are two R functions that solve the Optimal Partitioning problem
 non-negative penalty constant (bigger for fewer peaks, smaller for
 more peaks), and output is the model that minimizes the penalized cost
 using the specified penalty constant. For N data points, complexity is
-O(N) memory and O(N log N) time. The first segment mean is constrained
+O(N log N) memory and time. The first segment mean is constrained
 to be down (mu_1 <= mu_2), as is the last (mu_{N-1} >= mu_N).
 - PeakSegFPOP is a direct interface to the C++ code. Returns matrices
   for the optimal cost and number of intervals stored by the algorithm
   at each step.
 - PeakSegFPOPchrom is a more user-friendly interface, which takes a
-  data.frame with columns chrom, chromStart, chromEnd as input, and
-  returns data.frames as output.
+  data.frame with columns chrom, chromStart, chromEnd, count as input,
+  and returns data.frames as output.
 
 *** Note about inequality constraints
 
@@ -92,6 +91,15 @@ cost. For example,
 
 But that model is not optimal, for the same reason (exercise for the
 reader).
+
+*** problem.* functions
+
+If you want to use the [[file:R/problems.R][problem.* functions]] to perform optimal
+segmentation and peak calling on the whole genome, please read the
+[[https://github.com/tdhock/PeakSegFPOP][PeakSegFPOP tutorial]]. R is limited by memory, so it is better to use
+the PeakSegFPOP command line program to compute optimal peak models
+for large bedGraph files, since it stores the optimal cost in a
+temporary file on disk (rather than in memory).
 
 ** Related work
 

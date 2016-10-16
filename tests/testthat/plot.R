@@ -30,12 +30,14 @@ gdata <- function(txt){
   mat <- str_match_all_named(txt, pattern)[[1]]
   funs.list <- list()
   vlines.list <- list()
+  coef.list <- list()
   for(row.i in 1:nrow(mat)){
     r <- mat[row.i,]
     df <- read.table(text=r[["table"]], header=TRUE)
     dt <- data.table(df)
     l <- getLines(dt)
     fun <- r[["fun"]]
+    coef.list[[fun]] <- dt
     funs.list[[row.i]] <- data.table(fun, l)
     if(1 < nrow(dt)){
       vlines.list[[row.i]] <- data.table(fun, dt[-1,])
@@ -43,27 +45,39 @@ gdata <- function(txt){
   }
   list(
     funs=do.call(rbind, funs.list),
-    vlines=do.call(rbind, vlines.list))
+    vlines=do.call(rbind, vlines.list),
+    coefs=coef.list)
 }
 
 C12.221minless <- gdata("
-=prev cost
+=min more(prev up cost)
     Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
-1.20481927710843379764e-02 -5.18072289156626508699e-01 -6.68495245036515512993e+01        2.639057        3.335874        3.761200 81
-7.10843373493975971833e-01 -2.05421686746987894878e+01 -1.96898571312930741328e+01        3.335874        3.374668        3.601868 23
-1.20481927710843379764e-02 -5.18072289156626508699e-01 -6.68495245036515512993e+01        3.374668        3.761200        3.761200 81
-=min less/more(prev cost)
+0.00000000000000000000e+00 0.00000000000000000000e+00 -1.50579293620309506707e+00            -inf        1.098612        1.098612 13374
+1.47372169993798088653e-04 -4.42116509981394238855e-04 -1.50574933808218780484e+00        1.098612        4.127134             inf 13374
+=prev down cost
     Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
-1.20481927710843379764e-02 -5.18072289156626508699e-01 -6.68495245036515512993e+01        2.639057        3.335874             inf 81
-7.10843373493975971833e-01 -2.05421686746987894878e+01 -1.96898571312930741328e+01        3.335874        3.363783             inf 23
-0.00000000000000000000e+00 0.00000000000000000000e+00 -6.82470851145374695079e+01        3.363783        3.382081        3.363783 23
-1.20481927710843379764e-02 -5.18072289156626508699e-01 -6.68495245036515512993e+01        3.382081        3.761200             inf 81
-0.00000000000000000000e+00 0.00000000000000000000e+00 inf        3.761200        3.761200        3.363783 23
+1.47372169993798088653e-04 -4.42116509981394238855e-04 -1.50582645029657946623e+00            -inf        0.000000        0.000000 13373
+2.94744339987596177307e-04 -5.89488679975192354614e-04 -1.50597382246657351956e+00        0.000000        4.127134             inf 13373
+=new down cost model
+    Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
+0.00000000000000000000e+00 0.00000000000000000000e+00 -1.50579293620309506707e+00            -inf        0.000000        1.098612 13374
+2.94744339987596177307e-04 -5.89488679975192354614e-04 -1.50597382246657351956e+00        0.000000        1.098612             inf 13373
+1.47372169993798088653e-04 -4.42116509981394238855e-04 -1.50574933808218780484e+00        1.098612        4.127134             inf 13374
 ")
+xi <- 0.549306
 ggplot()+
   geom_vline(aes(xintercept=min_log_mean, color=fun),
              data=C12.221minless$vlines)+
+  geom_vline(xintercept=xi, linetype="dashed")+
   geom_line(aes(log.mean, cost, color=fun),
             size=2,
             data=C12.221minless$funs)
 
+ggplot()+
+  coord_cartesian(ylim=c(-1.506, -1.5055), xlim=c(-0.5, 1.5))+
+  geom_vline(aes(xintercept=min_log_mean, color=fun),
+             data=C12.221minless$vlines)+
+  geom_vline(xintercept=xi, linetype="dashed")+
+  geom_line(aes(log.mean, cost, color=fun),
+            size=2,
+            data=C12.221minless$funs)

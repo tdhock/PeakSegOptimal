@@ -60,6 +60,11 @@ void PeakSegPDPALog
       if(status){
 	printf("BAD MIN LESS/MORE CHECK status=%d changes=%d data_i=%d\n",
 	       status, total_changes, data_i);
+	if(total_changes % 2){
+	  min_prev_cost.set_to_min_less_of(prev_cost_model, true);
+	}else{
+	  min_prev_cost.set_to_min_more_of(prev_cost_model, true);
+	}
 	printf("=prev cost\n");
 	prev_cost_model->print();
 	printf("=min less/more(prev cost)\n");
@@ -82,6 +87,8 @@ void PeakSegPDPALog
 	status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
 	if(status){
 	  printf("DP changes=%d data_i=%d BAD CHECK status=%d\n", total_changes, data_i, status);
+	  new_cost_model->set_to_min_env_of
+	    (&min_prev_cost, &cost_model, true);
 	  printf("=prev cost model\n");
 	  prev_cost_model->print();
 	  printf("=min prev cost\n");
