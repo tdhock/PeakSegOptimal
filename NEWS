@@ -3,7 +3,7 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
-2016.10.xx
+2016.10.16
 
 Many fixes for min-less/more/env bugs which were encountered while
 running the PeakSegFPOP command line program on large data sets (test
