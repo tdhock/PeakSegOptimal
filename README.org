@@ -9,16 +9,6 @@ install.packages("devtools")
 devtools::install_github("tdhock/coseg")
 #+END_SRC
 
-If you want to use the [[file:R/problems.R][problem.* functions]] to perform optimal
-segmentation and peak calling on the whole genome (TODO:tutorial), you
-should also install
-- the [[https://github.com/tdhock/PeakSegFPOP][PeakSegFPOP limited memory command line program]], which can
-  compute optimal peak models for large bedGraph files by storing the
-  optimal cost in a temporary file on disk (R is limited by memory).
-- the [[http://bedtools.readthedocs.io/en/latest/content/tools/intersect.html][intersectBed]] command line program for limited memory computation
-  of aligned read coverage in subsets of the genome.
-- standard command line utilities including =cat= and =tail=.
-
 ** PeakSeg solvers
 
 Linear time exact C++ solver for the optimal change points using the
@@ -101,6 +91,15 @@ cost. For example,
 
 But that model is not optimal, for the same reason (exercise for the
 reader).
+
+*** problem.* functions
+
+If you want to use the [[file:R/problems.R][problem.* functions]] to perform optimal
+segmentation and peak calling on the whole genome, please read the
+[[https://github.com/tdhock/PeakSegFPOP][PeakSegFPOP tutorial]]. R is limited by memory, so it is better to use
+the PeakSegFPOP command line program to compute optimal peak models
+for large bedGraph files, since it stores the optimal cost in a
+temporary file on disk (rather than in memory).
 
 ** Related work
 
