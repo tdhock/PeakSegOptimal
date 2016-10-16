@@ -1,7 +1,4 @@
 useDynLib(coseg)
 exportPattern("^[[:alpha:]]+")
-import(data.table)
-import(parallel)
-import(PeakError)
 importFrom("stats", "quantile", "sd")
 importFrom("utils", "write.table")
