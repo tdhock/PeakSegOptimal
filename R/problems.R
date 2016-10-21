@@ -64,7 +64,9 @@ problem.coverage <- function
     }
     min.above.zero <- prob.cov[0 < coverage, min(coverage)]
     prob.cov[, count := coverage/min.above.zero]
-    if(prob.cov[, 0 < sum(as.integer(count) != count)]){
+    not.int <- prob.cov[1e-10 < abs(as.integer(count)-count),]
+    if(nrow(not.int)){
+      print(not.int)
       stop("non-integer data in ", prob.cov.bedGraph)
     }
     u.pos <- prob.cov[, sort(unique(c(chromStart, chromEnd)))]
