@@ -263,7 +263,7 @@ problem.target <- function
   while(length(next.pen)){
     cat("Next =", paste(next.pen, collapse=", "), "\n")
     next.str <- paste(next.pen)
-    error.list[next.str] <- mclapply(next.str, getError)
+    error.list[next.str] <- mclapply.or.stop(next.str, getError)
     error.dt <- do.call(rbind, error.list)[order(-penalty),]
     print(error.dt[,.(penalty, peaks, status, fp, fn)])
     target.list <- getTarget(error.dt)
