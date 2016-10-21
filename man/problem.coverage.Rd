@@ -12,9 +12,9 @@ contains one line that indicates the genomic coordinates of a
 particular segmentation problem.}
 }
 
-\value{Nothing. If necessary, the intersectBed command line program is
-used to create problemID/coverage.bedGraph, but it is not read
-into memory.}
+\value{Nothing. If necessary, the intersectBed or bigWigToBedGraph
+command line program is used to create
+problemID/coverage.bedGraph, but it is not read into memory.}
 
 \author{Toby Dylan Hocking}
 
