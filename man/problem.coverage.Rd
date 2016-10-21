@@ -13,8 +13,11 @@ particular segmentation problem.}
 }
 
 \value{Nothing. If necessary, the intersectBed or bigWigToBedGraph
-command line program is used to create
-problemID/coverage.bedGraph, but it is not read into memory.}
+command line program is used to create problemID/coverage.bedGraph
+and then we (1) stop if there are any negative data, (2) stop if
+the data are not integers, or can not be normalized by the
+smallest non-zero value to obtain integers, and (3) add lines with
+zero counts for missing data.}
 
 \author{Toby Dylan Hocking}
 
