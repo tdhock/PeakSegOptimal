@@ -408,7 +408,7 @@ problem.predict <- function
     last.before <- first.after - 1
     smaller.peaks <- loss.ord[last.before, peaks]
     bigger.peaks <- loss.ord[first.after, peaks]
-    if(smaller.peaks + 1 == bigger.peaks){
+    if(any(is.after) && 0 < last.before && bigger.peaks - smaller.peaks <= 1){
       loss.unique <- loss.ord[c(TRUE, diff(peaks) != 0), ]
       exact <- loss.unique[, exactModelSelection(total.cost, peaks, peaks)]
       selected <- subset(
