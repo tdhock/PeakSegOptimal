@@ -63,10 +63,11 @@ problem.coverage <- function
       stop("negative coverage in ", prob.cov.bedGraph)
     }
     min.above.zero <- prob.cov[0 < coverage, min(coverage)]
-    prob.cov[, count := coverage/min.above.zero]
-    prob.cov[, count.str := paste(count)]
-    prob.cov[, count.int.str := paste(round(count))]
-    not.int <- prob.cov[count.int.str != count.str, ]
+    prob.cov[, count.num := coverage/min.above.zero]
+    prob.cov[, count.num.str := paste(count.num)]
+    prob.cov[, count.int := as.integer(round(count))]
+    prob.cov[, count.int.str := paste(count.int)]
+    not.int <- prob.cov[count.int.str != count.num.str, ]
     if(nrow(not.int)){
       print(not.int)
       stop("non-integer data in ", prob.cov.bedGraph)
@@ -76,9 +77,9 @@ problem.coverage <- function
       chrom=prob.cov$chrom[1],
       chromStart=u.pos[-length(u.pos)],
       chromEnd=u.pos[-1],
-      count=0)
+      count=0L)
     setkey(zero.cov, chromStart)
-    zero.cov[J(prob.cov$chromStart), count := prob.cov$count]
+    zero.cov[J(prob.cov$chromStart), count := prob.cov$count.int]
     fwrite(
       zero.cov,
       prob.cov.bedGraph,
