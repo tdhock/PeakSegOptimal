@@ -397,7 +397,7 @@ problem.predict <- function
     data.table()
   })
 
-  ## TODO: If we have already computed the target interval and the
+  ## If we have already computed the target interval and the
   ## prediction is outside, then we should choose the minimal error
   ## model which is closest to the predicted penalty.
   target.vec <- tryCatch({
@@ -453,7 +453,7 @@ problem.predict <- function
     }
   }
 
-  ## TODO: If we have not already computed the target interval, then we
+  ## If we have not already computed the target interval, then we
   ## can run PeakSegFPOP at the predicted penalty value. If the
   ## resulting model is feasible then we are done. Otherwise, we need to
   ## compute the target interval to find the biggest feasible model,
