@@ -388,15 +388,14 @@ problem.predict <- function
     ".\n"))
 
   loss.glob <- file.path(problem.dir, "*_loss.tsv")
-  loss.file.vec <- Sys.glob(loss.glob)
-  loss.ord <- if(length(loss.file.vec)){
+  loss.ord <- tryCatch({
     loss <- fread(paste("cat", loss.glob))
     setnames(loss, c("penalty", "segments", "peaks", "bases", "mean.pen.cost", "total.cost", "status", "mean.intervals", "max.intervals"))
     loss[, log.penalty := log(penalty)]
     loss[order(-penalty),]
-  }else{
+  }, error=function(e){
     data.table()
-  }
+  })
 
   ## TODO: If we have already computed the target interval and the
   ## prediction is outside, then we should choose the minimal error
