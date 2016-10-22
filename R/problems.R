@@ -358,7 +358,12 @@ problem.predict <- function
   
   load(model.RData)
 
-  problem.coverage(problem.dir)
+  cov.result <- try(problem.coverage(problem.dir))
+  if(inherits(cov.result, "try-error")){
+    cat("Could not compute coverage in", problem.dir,
+        "so not predicting peaks.\n")
+    return(NULL)
+  }
 
   features.tsv <- file.path(problem.dir, "features.tsv")
   is.computed <- if(file.exists(features.tsv)){
