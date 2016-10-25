@@ -63,8 +63,11 @@ problem.coverage <- function
       stop("negative coverage in ", prob.cov.bedGraph)
     }
     min.above.zero <- prob.cov[0 < coverage, min(coverage)]
-    prob.cov[, count := coverage/min.above.zero]
-    not.int <- prob.cov[paste(as.integer(count)) != paste(count), ]
+    prob.cov[, count.num := coverage/min.above.zero]
+    prob.cov[, count.num.str := paste(count.num)]
+    prob.cov[, count.int := as.integer(round(count.num))]
+    prob.cov[, count.int.str := paste(count.int)]
+    not.int <- prob.cov[count.int.str != count.num.str, ]
     if(nrow(not.int)){
       print(not.int)
       stop("non-integer data in ", prob.cov.bedGraph)
@@ -74,9 +77,9 @@ problem.coverage <- function
       chrom=prob.cov$chrom[1],
       chromStart=u.pos[-length(u.pos)],
       chromEnd=u.pos[-1],
-      count=0)
+      count=0L)
     setkey(zero.cov, chromStart)
-    zero.cov[J(prob.cov$chromStart), count := prob.cov$count]
+    zero.cov[J(prob.cov$chromStart), count := prob.cov$count.int]
     fwrite(
       zero.cov,
       prob.cov.bedGraph,
@@ -212,6 +215,7 @@ problem.target <- function
  ){
   stopifnot(is.character(problem.dir))
   stopifnot(length(problem.dir)==1)
+  c.info <- problem.coverage(problem.dir)
   ## Check if problem/labels.bed exists.
   problem.labels <- tryCatch({
     prob.lab.bed <- file.path(problem.dir, "labels.bed")
@@ -225,7 +229,6 @@ problem.target <- function
       chromEnd=integer(),
       annotation=character())
   })
-
   ## Compute the label error for one penalty parameter.
   getError <- function(penalty.str){
     stopifnot(is.character(penalty.str))
@@ -237,8 +240,7 @@ problem.target <- function
       result$loss,
       fn=sum(fn),
       fp=sum(fp)))
-  }
-  
+  }  
   ## Compute the target interval given the errors computed in dt.
   getTarget <- function(dt){
     peaks.tab <- table(dt$peaks)
@@ -246,7 +248,9 @@ problem.target <- function
     error.sorted[, n.infeasible := cumsum(status=="infeasible")]
     error.sorted[, errors := fp + fn]
     setkey(error.sorted, peaks)
-    path <- error.sorted[, exactModelSelection(total.cost, peaks, peaks)]
+    ##error.sorted[, model.complexity := oracleModelComplexity(bases, segments)]
+    path <- error.sorted[, exactModelSelection(
+      total.cost, peaks, peaks)]
     path.dt <- data.table(path)
     setkey(path.dt, peaks)
     join.dt <- error.sorted[path.dt][order(penalty),]
@@ -275,6 +279,11 @@ problem.target <- function
         }else{
           FALSE
         }
+        ## cost + lambda * model.complexity =
+        ## cost + penalty * peaks =>
+        ## penalty = lambda * model.complexity / peaks.
+        ## lambda is output by exactModelSelection,
+        ## penalty is input by PeakSegFPOP.
         next.pen <- ifelse(side=="start", model$min.lambda, model$max.lambda)
         already.computed <- paste(next.pen) %in% names(error.list)
         done <- found.neighbor | multiple.penalties | already.computed
@@ -285,7 +294,6 @@ problem.target <- function
     }
     result
   }
-
   error.list <- list()
   next.pen <- c(0, Inf)
   while(length(next.pen)){
@@ -320,7 +328,6 @@ problem.target <- function
       print(gg)
     }
   }#while(!is.null(pen))
-
   write.table(
     error.dt,
     file.path(problem.dir, "target_models.tsv"),
@@ -328,9 +335,7 @@ problem.target <- function
     quote=FALSE,
     row.names=FALSE,
     col.names=TRUE)
-
   write(target.vec, file.path(problem.dir, "target.tsv"), sep="\t")
-  
   list(
     target=target.vec,
     models=error.dt)
@@ -353,11 +358,13 @@ problem.predict <- function
   stopifnot(length(problem.dir)==1)
   stopifnot(is.character(model.RData))
   stopifnot(length(model.RData)==1)
-  
   load(model.RData)
-
-  problem.coverage(problem.dir)
-
+  cov.result <- try(problem.coverage(problem.dir))
+  if(inherits(cov.result, "try-error")){
+    cat("Could not compute coverage in", problem.dir,
+        "so not predicting peaks.\n")
+    return(NULL)
+  }
   features.tsv <- file.path(problem.dir, "features.tsv")
   is.computed <- if(file.exists(features.tsv)){
     TRUE
@@ -370,12 +377,10 @@ problem.predict <- function
       FALSE
     })
   }
-
   if(!is.computed){
     cat("Unable to compute", features.tsv, "so not predicting.\n")
     return(NULL)
   }
-
   features <- fread(features.tsv)
   feature.mat <- as.matrix(features)
   pred.penalty <- as.numeric(exp(model$predict(feature.mat)))
@@ -386,19 +391,18 @@ problem.predict <- function
     " based on ", n.features,
     " feature", ifelse(n.features==1, "", "s"),
     ".\n"))
-
   loss.glob <- file.path(problem.dir, "*_loss.tsv")
-  loss.file.vec <- Sys.glob(loss.glob)
-  loss.ord <- if(length(loss.file.vec)){
+  loss.ord <- tryCatch({
     loss <- fread(paste("cat", loss.glob))
-    setnames(loss, c("penalty", "segments", "peaks", "bases", "mean.pen.cost", "total.cost", "status", "mean.intervals", "max.intervals"))
+    setnames(loss, c(
+      "penalty", "segments", "peaks", "bases", "mean.pen.cost",
+      "total.cost", "status", "mean.intervals", "max.intervals"))
     loss[, log.penalty := log(penalty)]
     loss[order(-penalty),]
-  }else{
+  }, error=function(e){
     data.table()
-  }
-
-  ## TODO: If we have already computed the target interval and the
+  })
+  ## If we have already computed the target interval and the
   ## prediction is outside, then we should choose the minimal error
   ## model which is closest to the predicted penalty.
   target.vec <- tryCatch({
@@ -423,11 +427,9 @@ problem.predict <- function
         pred.penalty, log(pred.penalty)))
     }
   }  
-
   ## This will be NULL until we find or compute a model that can be used
   ## for predicted peaks.
   pen.str <- NULL
-
   ## If two neighboring penalties have already been computed, then we do
   ## not have to re-run PeakSegFPOP.
   if(is.null(pen.str) && 2 <= nrow(loss.ord)){
@@ -438,7 +440,9 @@ problem.predict <- function
     bigger.peaks <- loss.ord[first.after, peaks]
     if(any(is.after) && 0 < last.before && bigger.peaks - smaller.peaks <= 1){
       loss.unique <- loss.ord[c(TRUE, diff(peaks) != 0), ]
-      exact <- loss.unique[, exactModelSelection(total.cost, peaks, peaks)]
+      ##loss.unique[, model.complexity := oracleModelComplexity(bases, segments)]
+      exact <- loss.unique[, exactModelSelection(
+        total.cost, peaks, peaks)]
       selected <- subset(
         exact, min.lambda < pred.penalty & pred.penalty < max.lambda)
       same.peaks <- loss.ord[peaks==selected$peaks, ]
@@ -453,8 +457,7 @@ problem.predict <- function
       pen.str <- paste(pen.num)
     }
   }
-
-  ## TODO: If we have not already computed the target interval, then we
+  ## If we have not already computed the target interval, then we
   ## can run PeakSegFPOP at the predicted penalty value. If the
   ## resulting model is feasible then we are done. Otherwise, we need to
   ## compute the target interval to find the biggest feasible model,
@@ -471,7 +474,6 @@ problem.predict <- function
       pen.str <- paste(biggest.feasible$penalty)
     }
   }
-
   ## compute peaks.
   prob.cov.bedGraph <- file.path(problem.dir, "coverage.bedGraph")
   pre <- paste0(prob.cov.bedGraph, "_penalty=", pen.str)
@@ -486,7 +488,6 @@ problem.predict <- function
     " peak", ifelse(nrow(peaks)==1, "", "s"),
     " based on ", penalty_segments.bed,
     ".\n", sep="")
-
   write.table(
     peaks,
     peaks.bed,
@@ -494,7 +495,6 @@ problem.predict <- function
     sep="\t",
     col.names=FALSE,
     row.names=FALSE)
-
   peaks
 ### data.table of peak predictions.
 }
