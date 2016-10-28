@@ -11,7 +11,7 @@ problem.predict.allSamples <- function
   mclapply.or.stop(problem.vec, function(problem.dir){
     problem.predict(problem.dir, model.RData)
   })
-### Nothing.
+### List of data tables (predicted peaks).
 }
 
 problem.coverage <- function

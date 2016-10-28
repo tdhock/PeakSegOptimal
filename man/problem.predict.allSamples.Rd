@@ -8,7 +8,7 @@
   \item{problem.name}{name of problem to predict.}
 }
 
-\value{Nothing.}
+\value{List of data tables (predicted peaks).}
 
 \author{Toby Dylan Hocking}
 
