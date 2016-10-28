@@ -1,3 +1,19 @@
+problem.predict.allSamples <- function
+### Predict for all samples in parallel.
+(set.dir,
+### project directory.
+ problem.name
+### name of problem to predict.
+ ){
+  model.RData <- file.path(set.dir, "model.RData")
+  problem.vec <- Sys.glob(file.path(
+    set.dir, "samples", "*", "*", "problems", problem.name))
+  mclapply.or.stop(problem.vec, function(problem.dir){
+    problem.predict(problem.dir, model.RData)
+  })
+### Nothing.
+}
+
 problem.coverage <- function
 ### Ensure that coverage.bedGraph has been correctly computed for a
 ### particular genomic segmentation problem.
