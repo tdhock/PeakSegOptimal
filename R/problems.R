@@ -352,6 +352,8 @@ problem.target <- function
     row.names=FALSE,
     col.names=TRUE)
   write(target.vec, file.path(problem.dir, "target.tsv"), sep="\t")
+  ## Also compute feature vector here so train is faster later.
+  problem.features(problem.dir)
   list(
     target=target.vec,
     models=error.dt)
