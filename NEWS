@@ -3,6 +3,19 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2016.11.01
+
+no longer printf when more than NEWTON_STEPS in root finding C++ code.
+
+New functions oracleModelComplexity, PPN.cores, mclapply.or.stop,
+problem.predict.allSamples
+
+simplify arguments of problem.* functions.
+
+more robust checking of penalty_segments.bed in problem.PeakSegFPOP
+
+problem.coverage uses coverage.bigwig if it is present
+
 2016.10.16
 
 Many fixes for min-less/more/env bugs which were encountered while
