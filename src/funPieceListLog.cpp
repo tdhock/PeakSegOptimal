@@ -105,9 +105,9 @@ double PoissonLossPieceLog::get_larger_root(double equals){
        closest_negative_mean = candidate_root;
      }
      if(NEWTON_STEPS <= ++step){
-       printf("larger root MAXSTEPS with equals=%e\n", equals);
-       print();
-       printf("step=%d mean=%e cost=%e\n", step, candidate_root, candidate_cost);
+       // printf("larger root MAXSTEPS with equals=%e\n", equals);
+       // print();
+       // printf("step=%d mean=%e cost=%e\n", step, candidate_root, candidate_cost);
        return log((closest_positive_mean + closest_negative_mean)/2);
      }
      deriv = PoissonDeriv(candidate_root);
@@ -179,9 +179,9 @@ double PoissonLossPieceLog::get_smaller_root(double equals){
        closest_negative_log_mean = candidate_root;
      }
      if(NEWTON_STEPS <= ++step){
-       printf("smaller root MAXSTEPS equals=%e\n", equals);
-       print();
-       printf("step=%d log_mean=%e cost=%e\n", step, candidate_root, candidate_cost);
+       // printf("smaller root MAXSTEPS equals=%e\n", equals);
+       // print();
+       // printf("step=%d log_mean=%e cost=%e\n", step, candidate_root, candidate_cost);
        return (closest_positive_log_mean + closest_negative_log_mean)/2;
      }
      deriv = getDeriv(candidate_root);
