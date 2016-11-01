@@ -130,13 +130,16 @@ problem.PeakSegFPOP <- function
   penalty_loss.tsv <- paste0(pre, "_loss.tsv")
   penalty_timing.tsv <- paste0(pre, "_timing.tsv")
   already.computed <- tryCatch({
-    penalty.segs <- fread(penalty_segments.bed)
+    first.line <- fread(paste("head -1", penalty_segments.bed))
+    setnames(first.line, c("chrom", "chromStart", "chromEnd", "status", "mean"))
+    last.line <- fread(paste("tail -1", penalty_segments.bed))
+    setnames(last.line, c("chrom", "chromStart", "chromEnd", "status", "mean"))
     penalty.loss <- fread(penalty_loss.tsv)
     setnames(penalty.loss, c(
       "penalty", "segments", "peaks", "bases",
       "mean.pen.cost", "total.cost", "status",
       "mean.intervals", "max.intervals"))
-    if(penalty.loss$segments == nrow(penalty.segs)){
+    if(first.line$chromEnd-last.line$chromStart == penalty.loss$bases){
       TRUE
     }else{
       FALSE
@@ -144,7 +147,10 @@ problem.PeakSegFPOP <- function
   }, error=function(e){
     FALSE
   })
-  if(!already.computed){
+  if(already.computed){
+    timing <- fread(penalty_timing.tsv)
+    setnames(timing, c("penalty", "megabytes", "seconds"))
+  }else{
     penalty.db <- paste0(pre, ".db")
     fpop.cmd <- paste(
       "PeakSegFPOP", prob.cov.bedGraph, penalty.str, penalty.db)
@@ -167,15 +173,13 @@ problem.PeakSegFPOP <- function
       row.names=FALSE, col.names=FALSE,
       quote=FALSE, sep="\t")
     unlink(penalty.db)
-    penalty.segs <- fread(penalty_segments.bed)
+    penalty.loss <- fread(penalty_loss.tsv)
+    setnames(penalty.loss, c(
+      "penalty", "segments", "peaks", "bases",
+      "mean.pen.cost", "total.cost", "status",
+      "mean.intervals", "max.intervals"))
   }
-  timing <- fread(penalty_timing.tsv)
-  setnames(timing, c("penalty", "megabytes", "seconds"))
-  penalty.loss <- fread(penalty_loss.tsv)
-  setnames(penalty.loss, c(
-    "penalty", "segments", "peaks", "bases",
-    "mean.pen.cost", "total.cost", "status",
-    "mean.intervals", "max.intervals"))
+  penalty.segs <- fread(penalty_segments.bed)
   setnames(penalty.segs, c("chrom","chromStart", "chromEnd", "status", "mean"))
   list(
     segments=penalty.segs,
