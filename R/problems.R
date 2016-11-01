@@ -5,6 +5,7 @@ problem.predict.allSamples <- function
  ){
   probs.dir <- dirname(prob.dir)
   set.dir <- dirname(probs.dir)
+  problem.name <- basename(prob.dir)
   problem.vec <- Sys.glob(file.path(
     set.dir, "samples", "*", "*", "problems", problem.name))
   mclapply.or.stop(problem.vec, problem.predict)
