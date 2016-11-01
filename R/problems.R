@@ -1,16 +1,13 @@
 problem.predict.allSamples <- function
 ### Predict for all samples in parallel.
-(set.dir,
-### project directory.
- problem.name
-### name of problem to predict.
+(prob.dir
+### project/problems/problemID directory.
  ){
-  model.RData <- file.path(set.dir, "model.RData")
+  probs.dir <- dirname(prob.dir)
+  set.dir <- dirname(probs.dir)
   problem.vec <- Sys.glob(file.path(
     set.dir, "samples", "*", "*", "problems", problem.name))
-  mclapply.or.stop(problem.vec, function(problem.dir){
-    problem.predict(problem.dir, model.RData)
-  })
+  mclapply.or.stop(problem.vec, problem.predict)
 ### List of data tables (predicted peaks).
 }
 
@@ -371,16 +368,13 @@ problem.target <- function
 
 problem.predict <- function
 ### Predict peaks for a genomic segmentation problem.
-(problem.dir,
+(problem.dir
 ### Problem directory.
- model.RData
-### Model file created via train_model.R
  ){
   stopifnot(is.character(problem.dir))
   stopifnot(length(problem.dir)==1)
-  stopifnot(is.character(model.RData))
-  stopifnot(length(model.RData)==1)
-  load(model.RData)
+  problems.dir <- dirname(problem.dir)
+  data.dir <- dirname(problems.dir)
   cov.result <- try(problem.coverage(problem.dir))
   if(inherits(cov.result, "try-error")){
     cat("Could not compute coverage in", problem.dir,
@@ -405,6 +399,8 @@ problem.predict <- function
   }
   features <- fread(features.tsv)
   feature.mat <- as.matrix(features)
+  model.RData <- file.path(data.dir, "model.RData")
+  load(model.RData)
   pred.penalty <- as.numeric(exp(model$predict(feature.mat)))
   n.features <- length(model$pred.feature.names)
   cat(paste0(
