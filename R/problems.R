@@ -370,12 +370,15 @@ problem.target <- function
 problem.predict <- function
 ### Predict peaks for a genomic segmentation problem.
 (problem.dir
-### Problem directory.
+### project/samples/groupID/sampleID/problems/problemID.
  ){
   stopifnot(is.character(problem.dir))
   stopifnot(length(problem.dir)==1)
   problems.dir <- dirname(problem.dir)
-  data.dir <- dirname(problems.dir)
+  sample.dir <- dirname(problems.dir)
+  group.dir <- dirname(sample.dir)
+  samples.dir <- dirname(group.dir)
+  data.dir <- dirname(samples.dir)
   cov.result <- try(problem.coverage(problem.dir))
   if(inherits(cov.result, "try-error")){
     cat("Could not compute coverage in", problem.dir,
