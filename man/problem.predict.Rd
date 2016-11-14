@@ -4,7 +4,7 @@
 \description{Predict peaks for a genomic segmentation problem.}
 \usage{problem.predict(problem.dir)}
 \arguments{
-  \item{problem.dir}{Problem directory.}
+  \item{problem.dir}{project/samples/groupID/sampleID/problems/problemID.}
 }
 
 \value{data.table of peak predictions.}
