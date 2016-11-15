@@ -453,9 +453,11 @@ problem.predict <- function
   ## for predicted peaks.
   pen.str <- NULL
   ## check if the same penalty has already been computed.
-  same.models <- loss.ord[paste(pred.penalty)==paste(penalty),]
-  if(nrow(same.models)){
-    pen.str <- paste(pred.penalty)
+  if(nrow(loss.ord)){
+    same.models <- loss.ord[paste(pred.penalty)==paste(penalty),]
+    if(nrow(same.models)){
+      pen.str <- paste(pred.penalty)
+    }
   }
   ## If two neighboring penalties have already been computed, then we do
   ## not have to re-run PeakSegFPOP.
