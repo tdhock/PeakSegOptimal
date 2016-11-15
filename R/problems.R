@@ -454,8 +454,8 @@ problem.predict <- function
   pen.str <- NULL
   ## check if the same penalty has already been computed.
   if(nrow(loss.ord)){
-    same.models <- loss.ord[paste(pred.penalty)==paste(penalty),]
-    if(nrow(same.models)){
+    is.same <- paste(loss.ord$penalty)==paste(pred.penalty)
+    if(any(is.same)){
       pen.str <- paste(pred.penalty)
     }
   }
