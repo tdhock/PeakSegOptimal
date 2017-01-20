@@ -263,7 +263,6 @@ problem.target <- function
   getTarget <- function(dt){
     peaks.tab <- table(dt$peaks)
     error.sorted <- dt[order(peaks), ][c(TRUE, diff(peaks) != 0),]
-    error.sorted[, n.infeasible := cumsum(status=="infeasible")]
     error.sorted[, errors := fp + fn]
     setkey(error.sorted, peaks)
     ##error.sorted[, model.complexity := oracleModelComplexity(bases, segments)]
@@ -484,22 +483,11 @@ problem.predict <- function
       pen.str <- paste(pen.num)
     }
   }
-  ## If we have not already computed the target interval, then we
-  ## can run PeakSegFPOP at the predicted penalty value. If the
-  ## resulting model is feasible then we are done. Otherwise, we need to
-  ## compute the target interval to find the biggest feasible model,
-  ## which we return.
   if(is.null(pen.str)){
+    ## This model has not already been computed, so run PeakSegFPOP at
+    ## the predicted penalty value.
     pen.str <- paste(pred.penalty)
     result <- problem.PeakSegFPOP(problem.dir, pen.str)
-    if(result$loss$status=="infeasible"){
-      t.info <- problem.target(problem.dir)
-      models.in.target <- with(t.info, {
-        models[target[1] <= log(penalty) & log(penalty) <= target[2],]
-      })
-      biggest.feasible <- models.in.target[which.max(peaks),]
-      pen.str <- paste(biggest.feasible$penalty)
-    }
   }
   ## compute peaks.
   prob.cov.bedGraph <- file.path(problem.dir, "coverage.bedGraph")
