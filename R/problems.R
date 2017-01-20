@@ -275,8 +275,10 @@ problem.target <- function
     side.vec.list <- list(fn="end", fp="start", errors=c("start", "end"))
     result <- list(models=path, candidates=list())
     for(error.col in c("fp", "fn", "errors")){
-      indices <- join.dt[, largestContinuousMinimum(
-        join.dt[[error.col]], max.log.lambda-min.log.lambda)]
+      indices <- largestContinuousMinimum(
+        join.dt[[error.col]],
+        join.dt[, max.log.lambda-min.log.lambda]
+        )
       side.vec <- side.vec.list[[error.col]]
       for(side in side.vec){
         direction <- direction.list[[side]]
@@ -327,7 +329,21 @@ problem.target <- function
     other.in.target <- other.candidates[done==FALSE &
         target.vec[1] < log(next.pen) & log(next.pen) < target.vec[2],]
     next.pen <- if(nrow(other.in.target)){
-      other.in.target[, unique(next.pen)]
+      ## Inside the minimum error interval, we have found a spot where
+      ## the fn or fp reaches a minimum. This means that we should try
+      ## exploring a few penalty values between the fp/fn limits.
+      pen.vec <- other.candidates[done==FALSE, sort(unique(next.pen))]
+      if(length(pen.vec)==1){
+        ## There is only one unique value, so explore it. This is
+        ## possible for an error profile of 3 2 1 1 2 3............
+        ## (fp = 3 2 1 0 0 0, fn = 0 0 0 1 2 3) in which case we just
+        ## want to explore between the ones.
+        pen.vec
+      }else{
+        ## Rather than simply evaluating the penalties at the borders,
+        ## we try a grid of penalties on the log scale.
+        exp(seq(log(pen.vec[1]), log(pen.vec[2]), l=4))
+      }
     }else{
       error.candidates[done==FALSE, unique(next.pen)]
     }
