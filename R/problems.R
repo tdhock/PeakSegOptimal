@@ -276,10 +276,8 @@ problem.target <- function
     side.vec.list <- list(fn="end", fp="start", errors=c("start", "end"))
     result <- list(models=path, candidates=list())
     for(error.col in c("fp", "fn", "errors")){
-      incorrect.or.Inf <- ifelse(
-        join.dt$n.infeasible==0, join.dt[[error.col]], Inf)
       indices <- join.dt[, largestContinuousMinimum(
-        incorrect.or.Inf, max.log.lambda-min.log.lambda)]
+        join.dt[[error.col]], max.log.lambda-min.log.lambda)]
       side.vec <- side.vec.list[[error.col]]
       for(side in side.vec){
         direction <- direction.list[[side]]
