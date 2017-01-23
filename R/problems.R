@@ -437,31 +437,6 @@ problem.predict <- function
   }, error=function(e){
     data.table()
   })
-  ## If we have already computed the target interval and the
-  ## prediction is outside, then we should choose the minimal error
-  ## model which is closest to the predicted penalty.
-  target.vec <- tryCatch({
-    suppressWarnings(scan(file.path(problem.dir, "target.tsv"), quiet=TRUE))
-  }, error=function(e){
-    NULL
-  })
-  if(nrow(loss.ord) && length(target.vec)==2){
-    cat(sprintf(
-      "Target interval %f < log(penalty) < %f\n",
-      target.vec[1], target.vec[2]))
-    if(log(pred.penalty) < target.vec[1]){
-      pred.penalty <- loss.ord[target.vec[1] < log.penalty, penalty[.N]]
-      cat(sprintf(
-        "Closest inside target penalty=%f log(penalty)=%f\n",
-        pred.penalty, log(pred.penalty)))
-    }
-    if(target.vec[2] < log(pred.penalty)){
-      pred.penalty <- loss.ord[log.penalty < target.vec[2], penalty[1]]
-      cat(sprintf(
-        "Closest inside target penalty=%f log(penalty)=%f\n",
-        pred.penalty, log(pred.penalty)))
-    }
-  }  
   ## This will be NULL until we find or compute a model that can be used
   ## for predicted peaks.
   pen.str <- NULL
