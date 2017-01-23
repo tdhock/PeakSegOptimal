@@ -426,74 +426,30 @@ problem.predict <- function
     " based on ", n.features,
     " feature", ifelse(n.features==1, "", "s"),
     ".\n"))
-  loss.glob <- file.path(problem.dir, "*_loss.tsv")
-  loss.ord <- tryCatch({
-    loss <- fread(paste("cat", loss.glob))
-    setnames(loss, c(
-      "penalty", "segments", "peaks", "bases", "mean.pen.cost",
-      "total.cost", "status", "mean.intervals", "max.intervals"))
-    loss[, log.penalty := log(penalty)]
-    loss[order(-penalty),]
-  }, error=function(e){
-    data.table()
-  })
-  ## This will be NULL until we find or compute a model that can be used
-  ## for predicted peaks.
-  pen.str <- NULL
-  ## check if the same penalty has already been computed.
-  if(nrow(loss.ord)){
-    is.same <- paste(loss.ord$penalty)==paste(pred.penalty)
-    if(any(is.same)){
-      pen.str <- paste(pred.penalty)
-    }
-  }
-  ## If two neighboring penalties have already been computed, then we do
-  ## not have to re-run PeakSegFPOP.
-  if(is.null(pen.str) && 2 <= nrow(loss.ord)){
-    is.after <- loss.ord[, penalty < pred.penalty]
-    first.after <- which(is.after)[1]
-    last.before <- first.after - 1
-    smaller.peaks <- loss.ord[last.before, peaks]
-    bigger.peaks <- loss.ord[first.after, peaks]
-    if(any(is.after) && 0 < last.before && bigger.peaks - smaller.peaks <= 1){
-      loss.unique <- loss.ord[c(TRUE, diff(peaks) != 0), ]
-      ##loss.unique[, model.complexity := oracleModelComplexity(bases, segments)]
-      exact <- loss.unique[, exactModelSelection(
-        total.cost, peaks, peaks)]
-      selected <- subset(
-        exact, min.lambda < pred.penalty & pred.penalty < max.lambda)
-      same.peaks <- loss.ord[peaks==selected$peaks, ]
-      pen.num <- same.peaks$penalty[1]
-      cat(
-        "Based on previous computations, penalty of ",
-        pred.penalty, " and ", 
-        pen.num, " both recover ",
-        selected$peaks, " peak",
-        ifelse(selected$peaks==1, "", "s"), ".\n",
-        sep="")
-      pen.str <- paste(pen.num)
-    }
-  }
-  if(is.null(pen.str)){
-    ## This model has not already been computed, so run PeakSegFPOP at
-    ## the predicted penalty value.
+  ## Run PeakSegFPOP at the predicted penalty value, or lower values,
+  ## until we find a model where the biggest peak is smaller than the
+  ## upper limit of the size model.
+  small.enough <- FALSE
+  while(!small.enough){
     pen.str <- paste(pred.penalty)
     result <- problem.PeakSegFPOP(problem.dir, pen.str)
-  }
-  ## compute peaks.
-  prob.cov.bedGraph <- file.path(problem.dir, "coverage.bedGraph")
-  pre <- paste0(prob.cov.bedGraph, "_penalty=", pen.str)
-  penalty_segments.bed <- paste0(pre, "_segments.bed")
-  penalty.segs <- fread(penalty_segments.bed)
-  setnames(penalty.segs, c("chrom","chromStart", "chromEnd", "status", "mean"))
-  peaks <- penalty.segs[status=="peak", ]
+    peaks <- result$segments[status=="peak", ]
+    max.bases <- peaks[, max(chromEnd-chromStart)]
+    cat(paste0(
+      "penalty=", pen.str,
+      " biggest peak has ", format(max.bases, big.mark=",", scientific=FALSE),
+      " bases, upper limit = ", format(as.integer(size.model$upper.bases), big.mark=",", scientific=FALSE),
+      "\n"))
+    small.enough <- max.bases < size.model$upper.bases
+    pred.penalty <- pred.penalty/2
+  }  
+  ## save peaks.
   peaks.bed <- file.path(problem.dir, "peaks.bed")
   cat(
     "Writing ", peaks.bed,
     " with ", nrow(peaks),
     " peak", ifelse(nrow(peaks)==1, "", "s"),
-    " based on ", penalty_segments.bed,
-    ".\n", sep="")
+      ".\n", sep="")
   write.table(
     peaks,
     peaks.bed,
