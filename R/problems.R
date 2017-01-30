@@ -426,23 +426,12 @@ problem.predict <- function
     " based on ", n.features,
     " feature", ifelse(n.features==1, "", "s"),
     ".\n"))
-  ## Run PeakSegFPOP at the predicted penalty value, or lower values,
-  ## until we find a model where the biggest peak is smaller than the
-  ## upper limit of the size model.
-  small.enough <- FALSE
-  while(!small.enough){
-    pen.str <- paste(pred.penalty)
-    result <- problem.PeakSegFPOP(problem.dir, pen.str)
-    peaks <- result$segments[status=="peak", ]
-    max.bases <- peaks[, max(chromEnd-chromStart)]
-    cat(paste0(
-      "penalty=", pen.str,
-      " biggest peak has ", format(max.bases, big.mark=",", scientific=FALSE),
-      " bases, upper limit = ", format(as.integer(size.model$upper.bases), big.mark=",", scientific=FALSE),
-      "\n"))
-    small.enough <- max.bases < size.model$upper.bases
-    pred.penalty <- pred.penalty/2
-  }  
+  pen.str <- paste(pred.penalty)
+  result <- problem.PeakSegFPOP(problem.dir, pen.str)
+  all.peaks <- result$segments[status=="peak", ]
+  bases.vec <- all.peaks[, chromEnd-chromStart]
+  in.range <- model[, lower.bases < bases.vec & bases.vec < upper.bases]
+  peaks <- all.peaks[in.range, ]
   ## save peaks.
   peaks.bed <- file.path(problem.dir, "peaks.bed")
   cat(
