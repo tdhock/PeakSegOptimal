@@ -430,7 +430,7 @@ problem.predict <- function
   result <- problem.PeakSegFPOP(problem.dir, pen.str)
   all.peaks <- result$segments[status=="peak", ]
   bases.vec <- all.peaks[, chromEnd-chromStart]
-  in.range <- model[, lower.bases < bases.vec & bases.vec < upper.bases]
+  in.range <- size.model[, lower.bases < bases.vec & bases.vec < upper.bases]
   peaks <- all.peaks[in.range, ]
   ## save peaks.
   peaks.bed <- file.path(problem.dir, "peaks.bed")
