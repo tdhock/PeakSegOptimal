@@ -7,6 +7,7 @@
 
 #define NEWTON_EPSILON 1e-12
 #define NEWTON_STEPS 100
+#define PREV_NOT_SET (-3)
 
 #define ABS(x) ((x)<0 ? -(x) : (x))
 
@@ -248,7 +249,6 @@ double PoissonLossPieceLog::getDeriv(double log_mean){
 
 void PiecewisePoissonLossLog::set_to_min_less_of
 (PiecewisePoissonLossLog *input, int verbose){
-  int prev_data_i = -2;
   piece_list.clear();
   PoissonLossPieceListLog::iterator it = input->piece_list.begin();
   PoissonLossPieceListLog::iterator next_it;
@@ -264,6 +264,9 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	printf("Searching for min in\n");
 	it->print();
       }
+      double next_left_cost;
+      next_it = it;
+      next_it++;
       if(it->Log==0){
 	// degenerate linear function. since the Linear coef is never
 	// negative, we know that this function must be increasing or
@@ -275,18 +278,24 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	// numerically constant (e.g. Linear=156 between -inf and
 	// -44). So now we check to see if the cost on the left and
 	// right of the interval are equal.
-	if(right_cost - left_cost < NEWTON_EPSILON){
-	  if(verbose){
-	    printf("Constant interval\n");
-	    it->print();
-	  }
-	  // store this numerically constant interval.
-	  piece_list.emplace_back
-	    (it->Linear, it->Log, it->Constant,
-	     prev_min_log_mean, it->max_log_mean,
-	     it->data_i, INFINITY); // equality constraint active on convex piece.
-	  prev_min_log_mean = it->max_log_mean;
+	double right_left_diff = right_cost - left_cost;
+	if(verbose)printf("right_cost-left_cost=%e\n", right_left_diff);
+	bool right_left_equal = right_left_diff < NEWTON_EPSILON;
+	bool next_cost_more_than_left;
+	if(next_it == input->piece_list.end()){
+	  next_cost_more_than_left = true;
 	}else{
+	  next_left_cost = next_it->getCost(next_it->min_log_mean);
+	  double next_left_diff = next_left_cost-left_cost;
+	  if(verbose)printf("next_left_cost-left_cost=%e\n", next_left_diff);
+	  next_cost_more_than_left = NEWTON_EPSILON < next_left_diff;
+	}
+	// next_cost_more_than_left is true if the cost on the left of
+	// the next piece is numerically greater than the cost on the
+	// left of this interval => this is a sufficient condition for
+	// finding a minimum on the left and starting a constant
+	// interval.
+	if(next_cost_more_than_left){
 	  // don't store this interval, but store its min cost as a
 	  // constant.
 	  prev_min_cost = left_cost;
@@ -295,27 +304,35 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	    printf("Increasing interval left_cost=%e(stored) right_cost=%e diff=%e\n", left_cost, right_cost, right_cost-left_cost);
 	    it->print();
 	  }
-	  prev_data_i = it->data_i;
+	}else{
+	  if(verbose){
+	    printf("Numerically constant convex piece\n");
+	    it->print();
+	  }
+	  // store this numerically constant interval.
+	  piece_list.emplace_back
+	    (it->Linear, it->Log, it->Constant,
+	     prev_min_log_mean, it->max_log_mean,
+	     PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
+	  prev_min_log_mean = it->max_log_mean;
 	}
       }else{//not degenerate linear
 	double mu = it->argmin();
 	double mu_cost = it->getCost(mu);
+	bool next_ok;
+	if(next_it == input->piece_list.end()){
+	  next_ok = true;
+	}else{
+	  next_left_cost = next_it->getCost(next_it->min_log_mean);
+	  next_ok = NEWTON_EPSILON < next_left_cost-mu_cost;
+	}
 	// Compute the cost at the next interval (interval to the
 	// left), to check if the cost at the minimum is less than the
 	// cost on the edge of the next function piece. This is
 	// necessary because sometimes there are numerical issues.
-	bool next_ok;
-	next_it = it;
-	next_it++;
-	double next_cost = next_it->getCost(next_it->min_log_mean);
-	if(next_it == input->piece_list.end()){
-	  next_ok = true;
-	}else{
-	  next_ok = NEWTON_EPSILON < next_cost-mu_cost;
-	}
-	if(verbose){
+ 	if(verbose){
 	  printf("min cost=%f at log_mean=%f\n", mu_cost, mu);
-	  printf("next-mu=%e right-mu=%e\n", next_cost-mu, right_cost-mu);
+	  printf("next-mu=%e right-mu=%e\n", next_left_cost-mu, right_cost-mu);
 	}
 	bool cost_ok = NEWTON_EPSILON < right_cost-mu_cost && next_ok;
 	if(mu <= it->min_log_mean && cost_ok){
@@ -326,7 +343,6 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	     value in this interval. */
 	  if(verbose)printf("min before interval\n");
 	  prev_min_cost = it->getCost(it->min_log_mean);
-	  prev_data_i = it->data_i;
 	  prev_best_log_mean = it->min_log_mean;
 	}else if(mu < it->max_log_mean && cost_ok){
 	  // Minimum in this interval, so add a convex piece up to the
@@ -336,18 +352,17 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	  if(verbose){
 	    printf("min in this interval at log_mean=%f cost=%f\n", mu, mu_cost);
 	    printf("right_cost=%f right-constant=%e\n", right_cost, right_cost-mu_cost);
-	    printf("next_cost=%f next-constant=%e\n", next_cost, next_cost-mu_cost);
+	    printf("next_left_cost=%f next-constant=%e\n", next_left_cost, next_left_cost-mu_cost);
 	  }
 	  if(prev_min_log_mean < mu){
 	    piece_list.emplace_back
 	      (it->Linear, it->Log, it->Constant, prev_min_log_mean, mu,
-	       it->data_i, INFINITY); // equality constraint active on convex piece.
+	       PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
 	  }
 	  prev_min_log_mean = mu;
 	  prev_best_log_mean = mu;
 	  prev_min_cost = mu_cost;
 	  if(verbose)printf("prev_min_cost=%f\n", prev_min_cost);
-	  prev_data_i = it->data_i;
 	}else{
 	  // Minimum after this interval, so this function is
 	  // decreasing on this entire interval, and so we can just
@@ -355,7 +370,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	  if(verbose)printf("min after interval\n");
 	  piece_list.emplace_back
 	    (it->Linear, it->Log, it->Constant, prev_min_log_mean, it->max_log_mean,
-	     it->data_i, INFINITY); // equality constraint active on convex piece.
+	     PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
 	  prev_min_log_mean = it->max_log_mean;
 	}//if(non-degenerate mu in interval
       }//if(degenerate linear cost.
@@ -393,7 +408,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	    // can store it immediately.
 	    piece_list.emplace_back
 	      (0, 0, prev_min_cost,
-	       prev_min_log_mean, mu, prev_data_i,
+	       prev_min_log_mean, mu, PREV_NOT_SET,
 	       prev_best_log_mean);// equality constraint inactive.
 	    prev_min_cost = INFINITY;
 	    prev_min_log_mean = mu;
@@ -406,7 +421,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	  piece_list.emplace_back
 	    (0, 0, prev_min_cost,
 	     prev_min_log_mean, it->max_log_mean, 
-	     prev_data_i,
+	     PREV_NOT_SET,
 	     prev_best_log_mean);
 	  prev_min_cost = INFINITY;
 	  prev_min_log_mean = it->max_log_mean;
@@ -419,19 +434,18 @@ void PiecewisePoissonLossLog::set_to_min_less_of
       print();
     }
   }//while(it
-  if(prev_data_i != -2 && prev_min_cost < INFINITY){
+  if(prev_min_cost < INFINITY){
     // ending on a constant piece.
     it--;
     piece_list.emplace_back
       (0, 0, prev_min_cost,
-       prev_min_log_mean, it->max_log_mean, prev_data_i,
+       prev_min_log_mean, it->max_log_mean, PREV_NOT_SET,
        prev_best_log_mean);//equality constraint inactive on constant piece.
   }
 }
 
 void PiecewisePoissonLossLog::set_to_min_more_of
 (PiecewisePoissonLossLog *input, int verbose){
-  int prev_data_i = -2;
   piece_list.clear();
   PoissonLossPieceListLog::iterator it = input->piece_list.end();
   PoissonLossPieceListLog::iterator prev_it;
@@ -457,7 +471,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	//should just store this interval.
 	piece_list.emplace_front
 	  (it->Linear, it->Log, it->Constant, it->min_log_mean, prev_max_log_mean,
-	   it->data_i, INFINITY); // equality constraint active on convex piece.
+	   PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
 	prev_max_log_mean = it->min_log_mean;
       }else{
 	double mu = it->argmin();
@@ -482,7 +496,6 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	  if(verbose)printf("min after this interval\n");
 	  prev_min_cost = it->getCost(it->max_log_mean);
 	  prev_best_log_mean = it->max_log_mean;
-	  prev_data_i = it->data_i;
 	}else if(it->min_log_mean < mu && NEWTON_EPSILON < this_cost_left-mu_cost && prev_ok){
 	  // Minimum in this interval, so add a convex piece up to the
 	  // min, and keep track of the min cost to create a constant
@@ -492,12 +505,11 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	  if(mu < prev_max_log_mean){ 
 	    piece_list.emplace_front
 	      (it->Linear, it->Log, it->Constant, mu, prev_max_log_mean, 
-	       it->data_i, INFINITY); // equality constraint active on convex piece.
+	       PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
 	  }
 	  prev_max_log_mean = mu;
 	  prev_best_log_mean = mu;
 	  prev_min_cost = mu_cost;
-	  prev_data_i = it->data_i;
 	}else{
 	  // Minimum before this interval, so this function is
 	  // increasing on this entire interval, and so we can just
@@ -505,7 +517,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	  if(verbose)printf("min before this interval\n");
 	  piece_list.emplace_front
 	    (it->Linear, it->Log, it->Constant, it->min_log_mean, prev_max_log_mean,
-	     it->data_i, INFINITY); // equality constraint active on convex piece.
+	     PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
 	  prev_max_log_mean = it->min_log_mean;
 	}
       }//if(degenerate linear)else
@@ -546,7 +558,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	piece_list.emplace_front
 	  (0, 0, prev_min_cost,
 	   mu, prev_max_log_mean,
-	   prev_data_i,
+	   PREV_NOT_SET,
 	   prev_best_log_mean);// equality constraint inactive on constant piece.
 	prev_min_cost = INFINITY;
 	prev_max_log_mean = mu;
@@ -557,7 +569,7 @@ void PiecewisePoissonLossLog::set_to_min_more_of
 	piece_list.emplace_front
 	  (0, 0, prev_min_cost,
 	   it->min_log_mean, prev_max_log_mean,
-	   prev_data_i,
+	   PREV_NOT_SET,
 	   prev_best_log_mean);// equality constraint inactive on constant piece.
 	prev_min_cost = INFINITY;
 	prev_max_log_mean = it->min_log_mean;
@@ -568,12 +580,12 @@ void PiecewisePoissonLossLog::set_to_min_more_of
       print();
     }
   }//while(it
-  if(prev_data_i != -2 && prev_min_cost < INFINITY){
+  if(prev_min_cost < INFINITY){
     // ending on a constant piece.
     piece_list.emplace_front
       (0, 0, prev_min_cost,
        it->min_log_mean, prev_max_log_mean,
-       prev_data_i,
+       PREV_NOT_SET,
        prev_best_log_mean);//equality constraint inactive on constant piece.
   }
 }

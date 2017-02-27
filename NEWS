@@ -3,6 +3,27 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2017.02.27
+
+PREV_NOT_SET in min-less since set_prev_seg_end is always called after.
+
+clarify docs, example shows how to recover solution in terms of (M,C)
+variables.
+
+mass.spec test case and bugfix.
+
+problem.target now considers infeasible models (before, we assigned
+infeasible models infinite cost).
+
+problem.predict now allows predicting infeasible models (before, we
+took the closest model inside the target interval). Now the target
+interval is not used at all during prediction.
+
+since model training now includes fitting a Gaussian model to the
+log(bases) values of all peaks which are perfectly predicted in the
+training data, we use that model during prediction to filter all peaks
+outside of the 95% confidence interval.
+
 2016.11.01
 
 no longer printf when more than NEWTON_STEPS in root finding C++ code.

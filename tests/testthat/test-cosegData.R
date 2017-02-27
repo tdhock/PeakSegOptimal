@@ -2,6 +2,12 @@ library(testthat)
 context("cosegData")
 library(coseg)
 
+data(mass.spec, package="cosegData")
+test_that("mass spec data and penalty=0 do not crash", {
+  df <- mass.spec[[1]]
+  fit <- PeakSegFPOPchrom(df, 0)
+})
+
 obj.name <- data(
   H3K4me3_XJ_immune_samples_tcell_McGill0027_chr17_396626_21566608,
   package="cosegData")
