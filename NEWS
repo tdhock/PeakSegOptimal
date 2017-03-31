@@ -3,6 +3,10 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2017.03.31
+
+Import data.table >= 1.9.8 (from CRAN not GitHub).
+
 2017.02.27
 
 PREV_NOT_SET in min-less since set_prev_seg_end is always called after.
