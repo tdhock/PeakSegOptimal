@@ -345,7 +345,12 @@ PeakSegPDPAInf <- structure(function
   not.equal <- cost[PeakSegPDPA != PeakSegPDPAInf]
   stopifnot(nrow(not.equal)==0)
 
-  ## TODO debug then see if there is any difference in the number of
-  ## intervals.
+  intervals[, increase := PeakSegPDPAInf-PeakSegPDPA]
+  table(intervals$increase)
+  quantile(intervals$increase)
+  ic[, list(
+    mean=mean(intervals),
+    max=max(intervals)
+    ), by=list(fun.name)]
   
 })
