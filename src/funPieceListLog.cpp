@@ -222,6 +222,13 @@ double PoissonLossPieceLog::getCost(double log_mean){
   // x = log(m),
   // g(x) = Linear*e^x + Log*x + Constant.
   double linear_term, log_term;
+  if(log_mean == INFINITY){
+    if(0 < Linear){
+      return INFINITY;
+    }else{
+      return -INFINITY;
+    }
+  }
   if(log_mean == -INFINITY){
     linear_term = 0.0;
   }else{
@@ -258,6 +265,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
   while(it != input->piece_list.end()){
     double left_cost = it->getCost(it->min_log_mean);
     double right_cost = it->getCost(it->max_log_mean);
+    if(verbose)printf("left_cost=%f right_cost=%f\n", left_cost, right_cost);
     if(prev_min_cost == INFINITY){
       // Look for min achieved in this interval.
       if(verbose){
@@ -326,13 +334,13 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	  next_left_cost = next_it->getCost(next_it->min_log_mean);
 	  next_ok = NEWTON_EPSILON < next_left_cost-mu_cost;
 	}
-	// Compute the cost at the next interval (interval to the
-	// left), to check if the cost at the minimum is less than the
-	// cost on the edge of the next function piece. This is
-	// necessary because sometimes there are numerical issues.
+	// Compute the cost at the next interval, to check if the cost
+	// at the minimum is less than the cost on the edge of the
+	// next function piece. This is necessary because sometimes
+	// there are numerical issues.
  	if(verbose){
 	  printf("min cost=%f at log_mean=%f\n", mu_cost, mu);
-	  printf("next-mu=%e right-mu=%e\n", next_left_cost-mu, right_cost-mu);
+	  printf("next_left_cost-mu_cost=%e right_cost-mu_cost=%e\n", next_left_cost-mu_cost, right_cost-mu_cost);
 	}
 	bool cost_ok = NEWTON_EPSILON < right_cost-mu_cost && next_ok;
 	if(mu <= it->min_log_mean && cost_ok){
