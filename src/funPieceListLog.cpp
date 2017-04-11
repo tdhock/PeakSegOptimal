@@ -698,14 +698,14 @@ int PiecewisePoissonLossLog::check_min_of
 	printf("prev->max_log_mean != it->min_log_mean min\n");
 	return 3;
       }
-      // double cost_prev = pit->getCost(pit->max_log_mean);
-      // double cost_here = it->getCost(it->min_log_mean);
-      // if(0.1 < ABS(cost_prev - cost_here)){
-      // 	printf("discontinuity detected at %f, %f != %f\n", pit->max_log_mean, cost_prev, cost_here);
-      // 	pit->print();
-      // 	it->print();
-      // 	return 4;
-      // }
+      double cost_prev = pit->getCost(pit->max_log_mean);
+      double cost_here = it->getCost(it->min_log_mean);
+      if(0.01 < ABS(cost_prev - cost_here)){
+      	printf("discontinuity detected at %f, %f != %f\n", pit->max_log_mean, cost_prev, cost_here);
+      	pit->print();
+      	it->print();
+      	return 4;
+      }
     }
     if(it->max_log_mean <= it->min_log_mean){
       printf("max_log_mean<=min_log_mean=%15.10f min\n", it->min_log_mean);
@@ -876,7 +876,7 @@ void PiecewisePoissonLossLog::push_min_pieces
       if(verbose)printf("it2 and it1 end at same max_log_mean.\n");
       if(next1==fun1->piece_list.end() &&
 	 next2==fun2->piece_list.end()){
-	if(verbose)printf("at the end so next can't be the same.\n");
+	if(verbose)printf("at the end so they can't be equal after this interval.\n");
 	same_at_right = false;
       }else{
 	if(verbose){
@@ -1157,10 +1157,17 @@ void PiecewisePoissonLossLog::push_min_pieces
 	     cost_diff_left, cost_diff_mid, cost_diff_right);
     }
     double cost_diff;
-    if(ABS(cost_diff_mid) < NEWTON_EPSILON){
-      cost_diff = cost_diff_right;
+    if(first_max_log_mean == INFINITY){
+      // if we are at the last interval and the right limit is
+      // infinity, then it should be fine to compare the cost at any
+      // point in the interval.
+      cost_diff = diff_piece.getCost(last_min_log_mean+1);
     }else{
-      cost_diff = cost_diff_mid;
+      if(ABS(cost_diff_mid) < NEWTON_EPSILON){
+	cost_diff = cost_diff_right;
+      }else{
+	cost_diff = cost_diff_mid;
+      }
     }
     if(cost_diff < 0){
       push_piece(it1, last_min_log_mean, first_max_log_mean);
