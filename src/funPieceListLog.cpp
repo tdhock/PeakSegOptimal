@@ -663,10 +663,6 @@ void PoissonLossPieceLog::print(){
 	 prev_log_mean, data_i);
 }
 
-bool PoissonLossPieceLog::equality_constraint_active(){
-  return prev_log_mean == INFINITY;
-}
-
 void PiecewisePoissonLossLog::Minimize
 (double *best_cost,
  double *best_log_mean,
@@ -706,14 +702,14 @@ int PiecewisePoissonLossLog::check_min_of
 	printf("prev->max_log_mean != it->min_log_mean min\n");
 	return 3;
       }
-      double cost_prev = pit->getCost(pit->max_log_mean);
-      double cost_here = it->getCost(it->min_log_mean);
-      if(0.01 < ABS(cost_prev - cost_here)){
-      	printf("discontinuity detected at %f, %f != %f\n", pit->max_log_mean, cost_prev, cost_here);
-      	pit->print();
-      	it->print();
-      	return 4;
-      }
+      // double cost_prev = pit->getCost(pit->max_log_mean);
+      // double cost_here = it->getCost(it->min_log_mean);
+      // if(0.01 < ABS(cost_prev - cost_here)){
+      // 	printf("discontinuity detected at %f, %f != %f\n", pit->max_log_mean, cost_prev, cost_here);
+      // 	pit->print();
+      // 	it->print();
+      // 	return 4;
+      // }
     }
     if(it->max_log_mean <= it->min_log_mean){
       printf("max_log_mean<=min_log_mean=%15.10f min\n", it->min_log_mean);
