@@ -1,7 +1,7 @@
 Package: coseg
 Maintainer: Toby Dylan Hocking <toby.hocking@r-project.org>
 Author: Toby Dylan Hocking
-Version: 2017.03.31
+Version: 2017.04.17
 License: GPL-3
 Title: Constrained Optimal Segmentation
 Description: Computes optimal segmentations subject to constraints

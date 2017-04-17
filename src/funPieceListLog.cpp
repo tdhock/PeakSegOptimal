@@ -222,6 +222,13 @@ double PoissonLossPieceLog::getCost(double log_mean){
   // x = log(m),
   // g(x) = Linear*e^x + Log*x + Constant.
   double linear_term, log_term;
+  if(log_mean == INFINITY){
+    if(0 < Linear){
+      return INFINITY;
+    }else{
+      return -INFINITY;
+    }
+  }
   if(log_mean == -INFINITY){
     linear_term = 0.0;
   }else{
@@ -258,6 +265,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
   while(it != input->piece_list.end()){
     double left_cost = it->getCost(it->min_log_mean);
     double right_cost = it->getCost(it->max_log_mean);
+    if(verbose)printf("left_cost=%f right_cost=%f\n", left_cost, right_cost);
     if(prev_min_cost == INFINITY){
       // Look for min achieved in this interval.
       if(verbose){
@@ -326,13 +334,13 @@ void PiecewisePoissonLossLog::set_to_min_less_of
 	  next_left_cost = next_it->getCost(next_it->min_log_mean);
 	  next_ok = NEWTON_EPSILON < next_left_cost-mu_cost;
 	}
-	// Compute the cost at the next interval (interval to the
-	// left), to check if the cost at the minimum is less than the
-	// cost on the edge of the next function piece. This is
-	// necessary because sometimes there are numerical issues.
+	// Compute the cost at the next interval, to check if the cost
+	// at the minimum is less than the cost on the edge of the
+	// next function piece. This is necessary because sometimes
+	// there are numerical issues.
  	if(verbose){
 	  printf("min cost=%f at log_mean=%f\n", mu_cost, mu);
-	  printf("next-mu=%e right-mu=%e\n", next_left_cost-mu, right_cost-mu);
+	  printf("next_left_cost-mu_cost=%e right_cost-mu_cost=%e\n", next_left_cost-mu_cost, right_cost-mu_cost);
 	}
 	bool cost_ok = NEWTON_EPSILON < right_cost-mu_cost && next_ok;
 	if(mu <= it->min_log_mean && cost_ok){
@@ -655,10 +663,6 @@ void PoissonLossPieceLog::print(){
 	 prev_log_mean, data_i);
 }
 
-bool PoissonLossPieceLog::equality_constraint_active(){
-  return prev_log_mean == INFINITY;
-}
-
 void PiecewisePoissonLossLog::Minimize
 (double *best_cost,
  double *best_log_mean,
@@ -700,7 +704,7 @@ int PiecewisePoissonLossLog::check_min_of
       }
       // double cost_prev = pit->getCost(pit->max_log_mean);
       // double cost_here = it->getCost(it->min_log_mean);
-      // if(0.1 < ABS(cost_prev - cost_here)){
+      // if(0.01 < ABS(cost_prev - cost_here)){
       // 	printf("discontinuity detected at %f, %f != %f\n", pit->max_log_mean, cost_prev, cost_here);
       // 	pit->print();
       // 	it->print();
@@ -876,7 +880,7 @@ void PiecewisePoissonLossLog::push_min_pieces
       if(verbose)printf("it2 and it1 end at same max_log_mean.\n");
       if(next1==fun1->piece_list.end() &&
 	 next2==fun2->piece_list.end()){
-	if(verbose)printf("at the end so next can't be the same.\n");
+	if(verbose)printf("at the end so they can't be equal after this interval.\n");
 	same_at_right = false;
       }else{
 	if(verbose){
@@ -1157,10 +1161,17 @@ void PiecewisePoissonLossLog::push_min_pieces
 	     cost_diff_left, cost_diff_mid, cost_diff_right);
     }
     double cost_diff;
-    if(ABS(cost_diff_mid) < NEWTON_EPSILON){
-      cost_diff = cost_diff_right;
+    if(first_max_log_mean == INFINITY){
+      // if we are at the last interval and the right limit is
+      // infinity, then it should be fine to compare the cost at any
+      // point in the interval.
+      cost_diff = diff_piece.getCost(last_min_log_mean+1);
     }else{
-      cost_diff = cost_diff_mid;
+      if(ABS(cost_diff_mid) < NEWTON_EPSILON){
+	cost_diff = cost_diff_right;
+      }else{
+	cost_diff = cost_diff_mid;
+      }
     }
     if(cost_diff < 0){
       push_piece(it1, last_min_log_mean, first_max_log_mean);

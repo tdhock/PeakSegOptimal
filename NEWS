@@ -3,6 +3,12 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2017.04.17
+
+PeakSegPDPAInf which always uses Inf as upper limit of intervals,
+instead of max(data). This results in more intervals and is thus
+slower than PeakSegPDPA by a constant factor. 
+
 2017.03.31
 
 Import data.table >= 1.9.8 (from CRAN not GitHub).

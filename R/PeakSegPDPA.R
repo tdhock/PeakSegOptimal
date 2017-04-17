@@ -261,3 +261,96 @@ PeakSegPDPAchrom <- structure(function
   gg.loss
   
 })
+
+PeakSegPDPAInf <- structure(function
+### Find the optimal change-points using the Poisson loss and the
+### PeakSeg constraint. This function is an interface to the C++ code
+### which always uses -Inf for the first interval's lower limit and
+### Inf for the last interval's upper limit -- it is for testing the
+### number of intervals between the two implementations.
+(count.vec,
+### integer vector of count data.
+ weight.vec=rep(1, length(count.vec)),
+### numeric vector (same length as count.vec) of positive weights.
+ max.segments=NULL
+### integer of length 1: maximum number of segments (must be >= 2).
+){
+  n.data <- length(count.vec)
+  stopifnot(is.integer(count.vec))
+  stopifnot(0 <= count.vec)
+  stopifnot(is.numeric(weight.vec))
+  stopifnot(n.data==length(weight.vec))
+  stopifnot(0 < weight.vec)
+  stopifnot(is.integer(max.segments))
+  stopifnot(length(max.segments)==1)
+  stopifnot(2 <= max.segments && max.segments <= n.data)
+  cost.mat <- double(n.data*max.segments)
+  ends.mat <- integer(max.segments*max.segments)
+  mean.mat <- double(max.segments*max.segments)
+  intervals.mat <- integer(n.data*max.segments)
+  result.list <- .C(
+    "PeakSegPDPAInf_interface",
+    count.vec=as.integer(count.vec),
+    weight.vec=as.numeric(weight.vec),
+    n.data=as.integer(n.data),
+    max.segments=as.integer(max.segments),
+    cost.mat=as.double(cost.mat),
+    ends.mat=as.integer(ends.mat),
+    mean.mat=as.double(mean.mat),
+    intervals.mat=as.integer(intervals.mat),
+    PACKAGE="coseg")
+  result.list$cost.mat <- matrix(
+    result.list$cost.mat*cumsum(weight.vec), max.segments, n.data, byrow=TRUE)
+  result.list$ends.mat <- matrix(
+    result.list$ends.mat+1L, max.segments, max.segments, byrow=TRUE)
+  result.list$mean.mat <- matrix(
+    result.list$mean.mat, max.segments, max.segments, byrow=TRUE)
+  result.list$intervals.mat <- matrix(
+    result.list$intervals.mat, max.segments, n.data, byrow=TRUE)
+  result.list
+### List of model parameters. count.vec, weight.vec, n.data,
+### max.segments (input parameters), cost.mat (optimal Poisson loss),
+### ends.mat (optimal position of segment ends, 1-indexed), mean.mat
+### (optimal segment means), intervals.mat (number of intervals stored
+### by the functional pruning algorithm). To recover the solution in
+### terms of (M,C) variables, see the example.
+}, ex=function(){
+
+  ## Use the algo to compute the solution list.
+  library(coseg)
+  data("H3K4me3_XJ_immune_chunk1", envir=environment())
+  by.sample <-
+    split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
+  n.data.vec <- sapply(by.sample, nrow)
+  one <- by.sample[[1]]
+  count.vec <- one$coverage
+  weight.vec <- with(one, chromEnd-chromStart)
+  max.segments <- 19L
+
+  library(data.table)
+  ic.list <- list()
+  for(fun.name in c("PeakSegPDPA", "PeakSegPDPAInf")){
+    fun <- get(fun.name)
+    fit <- fun(count.vec, weight.vec, max.segments)
+    ic.list[[fun.name]] <- data.table(
+      fun.name,
+      segments=as.numeric(row(fit$intervals.mat)),
+      data=as.numeric(col(fit$intervals.mat)),
+      cost=as.numeric(fit$cost.mat),
+      intervals=as.numeric(fit$intervals.mat))
+  }
+  ic <- do.call(rbind, ic.list)[0 < intervals]
+  intervals <- dcast(ic, data + segments ~ fun.name, value.var="intervals")
+  cost <- dcast(ic, data + segments ~ fun.name, value.var="cost")
+  not.equal <- cost[PeakSegPDPA != PeakSegPDPAInf]
+  stopifnot(nrow(not.equal)==0)
+
+  intervals[, increase := PeakSegPDPAInf-PeakSegPDPA]
+  table(intervals$increase)
+  quantile(intervals$increase)
+  ic[, list(
+    mean=mean(intervals),
+    max=max(intervals)
+    ), by=list(fun.name)]
+  
+})

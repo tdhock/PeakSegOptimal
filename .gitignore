@@ -2,3 +2,4 @@
 .Rhistory
 *.o
 *.so
+symbols.rds
