@@ -1,4 +1,4 @@
-PeakSegFPOP <- structure(function
+UnConstrainedFPOP<- structure(function
 ### Find the optimal change-points using the Poisson loss and the
 ### PeakSeg constraint. For N data points, the functional pruning
 ### algorithm is O(N log N) time and memory. It recovers the exact
