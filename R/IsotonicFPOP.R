@@ -1,6 +1,6 @@
 IsotonicFPOP <- structure(function
                       (count.vec,
-                          ### integer vector of length >= 3: non-negative count data to segment.
+                          ### double vector of length >= 3: real data to segment.
                           weight.vec=rep(1, length(count.vec)),
                           ### numeric vector (same length as count.vec) of positive weights.
                           penalty=NULL
@@ -20,10 +20,18 @@ IsotonicFPOP <- structure(function
                            ends.vec <- integer(n.data)
                            mean.vec <- double(n.data)
                            intervals.mat <- integer(n.data)
+                           
+                           # cat(paste0("n.data = \t", n.data, "\n"))
+                           # cat(paste0("count.vec = \t", count.vec, "\n"))
+                           # cat(paste0("weight.vec = \t", weight.vec, "\n"))
+                           # cat(paste0("penalty = \t", penalty, "\n"))
+                           # cat(paste0("cost.mat = \t", cost.mat, "\n"))
+                           # cat(paste0("ends.vec = \t", ends.vec, "\n"))
+                           # cat(paste0("intervals.mat = \t", intervals.mat, "\n"))
+                           
                            result.list <- .C(
                              "IsotonicFPOP_interface",
                              count.vec=as.numeric(count.vec),
-                             weight.vec=as.numeric(weight.vec),
                              n.data=as.integer(n.data),
                              penalty=as.numeric(penalty),
                              cost.mat=as.double(cost.mat),
@@ -34,9 +42,9 @@ IsotonicFPOP <- structure(function
                            ## 1-indexed segment ends!
                            result.list$ends.vec <- result.list$ends.vec+1L
                            result.list$cost.mat <- matrix(
-                             result.list$cost.mat*cumsum(weight.vec), 2, n.data, byrow=TRUE)
+                             result.list$cost.mat*cumsum(weight.vec), 1, n.data, byrow=TRUE)
                            result.list$intervals.mat <- matrix(
-                             result.list$intervals.mat, 2, n.data, byrow=TRUE)
+                             result.list$intervals.mat, 1, n.data, byrow=TRUE)
                            result.list
                            ### List of model parameters. count.vec, weight.vec, n.data, penalty
                            ### (input parameters), cost.mat (optimal Poisson loss), ends.vec

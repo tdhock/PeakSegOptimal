@@ -1233,7 +1233,7 @@ bool SquareLossPiece::has_two_roots(double equals){
   // are there two solutions to the equation 
   // Square * u ^ 2 + 
   // Linear * u + Constant = equals ? 
-  double delta = pow(Linear, 2.0) + 4 * Square * (Constant - equals);
+  double delta = Linear * Linear - 4 * Square * (Constant - equals);
   
   if (delta < 0){
     throw "No real valued solution to au^2 + bu + c = d";
@@ -1246,17 +1246,17 @@ bool SquareLossPiece::has_two_roots(double equals){
 }
 
 double SquareLossPiece::SquareLoss(double mean){
-  return Square * pow(mean, 2) + Linear * mean + Constant;
+  return Square * mean * mean + Linear * mean + Constant;
 }
 
 double SquareLossPiece::get_larger_root(double equals){
-  double delta = pow(Linear, 2.0) + 4 * Square * (Constant - equals);
-  return (-Linear + pow(delta, 0.5)) / (2 * Square);
+  double delta = Linear * Linear - 4 * Square * (Constant - equals);
+  return (-Linear + sqrt(delta)) / (2 * Square);
 }
 
 double SquareLossPiece::get_smaller_root(double equals){
-  double delta = pow(Linear, 2.0) + 4 * Square * (Constant - equals);
-  return (-Linear - pow(delta, 0.5)) / (2 * Square);
+  double delta = Linear * Linear - 4 * Square * (Constant - equals);
+  return (-Linear - sqrt(delta)) / (2 * Square);
 }
 
 // May not need these in square loss....are they just 
@@ -1272,11 +1272,11 @@ double SquareLossPiece::argmin_mean(){
 
 /// what does this function do differently than argmin_mean()
 double SquareLossPiece::argmin(){
- return argmin_mean();
+  return argmin_mean();
 }
 
 double SquareLossPiece::getCost(double mean){
-    return Square * pow(mean, 2) + Linear * mean + Constant;
+  return Square * mean * mean + Linear * mean + Constant;
 }
 
 void PiecewiseSquareLoss::set_to_min_less_of
@@ -1304,61 +1304,61 @@ void PiecewiseSquareLoss::set_to_min_less_of
       double mu_cost = it->getCost(mu);
       bool next_ok;
       if(next_it == input->piece_list.end()){
-          next_ok = true;
+        next_ok = true;
       }else{
-          next_left_cost = next_it->getCost(next_it->min_mean);
-          next_ok = NEWTON_EPSILON < next_left_cost-mu_cost; // probably can remove this? 
+        next_left_cost = next_it->getCost(next_it->min_mean);
+        next_ok = NEWTON_EPSILON < next_left_cost-mu_cost; // probably can remove this? 
       }
-        // SWJ: this is probably unnecessary since 
-        //      min is solved exactly...ie no numerical problem?
-        // Compute the cost at the next interval, to check if the cost
-        // at the minimum is less than the cost on the edge of the
-        // next function piece. This is necessary because sometimes
-        // there are numerical issues.
+      // SWJ: this is probably unnecessary since 
+      //      min is solved exactly...ie no numerical problem?
+      // Compute the cost at the next interval, to check if the cost
+      // at the minimum is less than the cost on the edge of the
+      // next function piece. This is necessary because sometimes
+      // there are numerical issues.
+      if(verbose){
+        printf("min cost=%f at log_mean=%f\n", mu_cost, mu);
+        printf("next_left_cost-mu_cost=%e right_cost-mu_cost=%e\n", next_left_cost-mu_cost, right_cost-mu_cost);
+      }
+      bool cost_ok = NEWTON_EPSILON < right_cost-mu_cost && next_ok;
+      if(mu <= it->min_mean && cost_ok){
+        /* The minimum is achieved on the left or before this
+        interval, so this function is always increasing in this
+        interval. We don't need to store it, but we do need to keep
+        track of the minimum cost, which occurs at the min mean
+        value in this interval. */
+        if(verbose)printf("min before interval\n");
+        prev_min_cost = it->getCost(it->min_mean);
+        prev_best_mean = it->min_mean;
+      }else if(mu < it->max_mean && cost_ok){
+        // Minimum in this interval, so add a convex piece up to the
+        // min, and keep track of the min cost to create a constant
+        // piece later. NB it is possible that prev_min_log_mean==mu in
+        // which case we do not need to store the convex piece.
         if(verbose){
-          printf("min cost=%f at log_mean=%f\n", mu_cost, mu);
-          printf("next_left_cost-mu_cost=%e right_cost-mu_cost=%e\n", next_left_cost-mu_cost, right_cost-mu_cost);
+          printf("min in this interval at log_mean=%f cost=%f\n", mu, mu_cost);
+          printf("right_cost=%f right-constant=%e\n", right_cost, right_cost-mu_cost);
+          printf("next_left_cost=%f next-constant=%e\n", next_left_cost, next_left_cost-mu_cost);
         }
-        bool cost_ok = NEWTON_EPSILON < right_cost-mu_cost && next_ok;
-        if(mu <= it->min_mean && cost_ok){
-          /* The minimum is achieved on the left or before this
-          interval, so this function is always increasing in this
-          interval. We don't need to store it, but we do need to keep
-          track of the minimum cost, which occurs at the min mean
-          value in this interval. */
-          if(verbose)printf("min before interval\n");
-          prev_min_cost = it->getCost(it->min_mean);
-          prev_best_mean = it->min_mean;
-        }else if(mu < it->max_mean && cost_ok){
-          // Minimum in this interval, so add a convex piece up to the
-          // min, and keep track of the min cost to create a constant
-          // piece later. NB it is possible that prev_min_log_mean==mu in
-          // which case we do not need to store the convex piece.
-          if(verbose){
-            printf("min in this interval at log_mean=%f cost=%f\n", mu, mu_cost);
-            printf("right_cost=%f right-constant=%e\n", right_cost, right_cost-mu_cost);
-            printf("next_left_cost=%f next-constant=%e\n", next_left_cost, next_left_cost-mu_cost);
-          }
-          if(prev_min_mean < mu){
-            piece_list.emplace_back
-            (it->Square, it->Linear, it->Constant, prev_min_mean, mu,
-             PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
-          }
-          prev_min_mean = mu;
-          prev_best_mean = mu;
-          prev_min_cost = mu_cost;
-          if(verbose)printf("prev_min_cost=%f\n", prev_min_cost);
-        }else{
-          // Minimum after this interval, so this function is
-          // decreasing on this entire interval, and so we can just
-          // store it as is.
-          if(verbose)printf("min after interval\n");
+        if(prev_min_mean < mu){
           piece_list.emplace_back
-            (it->Square, it->Linear, it->Constant, prev_min_mean, it->max_mean,
-             PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
-          prev_min_mean = it->max_mean;
-        }//if(non-degenerate mu in interval
-      } else{//prev_min_cost is finite
+          (it->Square, it->Linear, it->Constant, prev_min_mean, mu,
+           PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
+        }
+        prev_min_mean = mu;
+        prev_best_mean = mu;
+        prev_min_cost = mu_cost;
+        if(verbose)printf("prev_min_cost=%f\n", prev_min_cost);
+      }else{
+        // Minimum after this interval, so this function is
+        // decreasing on this entire interval, and so we can just
+        // store it as is.
+        if(verbose)printf("min after interval\n");
+        piece_list.emplace_back
+          (it->Square, it->Linear, it->Constant, prev_min_mean, it->max_mean,
+           PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
+        prev_min_mean = it->max_mean;
+      }//if(non-degenerate mu in interval
+    } else{//prev_min_cost is finite
       // Look for a function with prev_min_cost in its interval.
       if(verbose){
         printf("Searching for intersection with %f\n", prev_min_cost);
@@ -1367,41 +1367,41 @@ void PiecewiseSquareLoss::set_to_min_less_of
                left_cost-prev_min_cost, right_cost-prev_min_cost);
         it->print();
       }
-        // SWJ: Update this comment....still should look for 2 possible roots
-        // Theoretically there can be zero, one, or two intersection
-        // points between the constant function prev_min_log_mean and a
-        // non-degenerate Poisson loss function piece. 
-        if(it->has_two_roots(prev_min_cost)){
-          // There are two mean values where the Poisson loss piece
-          // intersects the constant function prev_min_log_mean, but we
-          // are only concerned with the first mean value (the
-          // lesser of the two).
-          double mu = it->get_smaller_root(prev_min_cost);
-          if(it->min_mean < mu && mu < it->max_mean){
-            // The smaller intersection point occurs within the
-            // interval, so the constant interval ends here, and we
-            // can store it immediately.
-            piece_list.emplace_back
-            (0, 0, prev_min_cost,
-             prev_min_mean, mu, PREV_NOT_SET,
-             prev_best_mean);// equality constraint inactive.
-            prev_min_cost = INFINITY;
-            prev_min_mean = mu;
-            it--;
-          }//if(mu in interval)
-        }//if(has two roots
-        if(right_cost <= prev_min_cost + NEWTON_EPSILON &&
-           prev_min_cost < INFINITY){
-          //ends exactly/numerically on the right.
-          if(verbose)printf("constant numerically equal on right\n");
+      // SWJ: Update this comment....still should look for 2 possible roots
+      // Theoretically there can be zero, one, or two intersection
+      // points between the constant function prev_min_log_mean and a
+      // non-degenerate Poisson loss function piece. 
+      if(it->has_two_roots(prev_min_cost)){
+        // There are two mean values where the Poisson loss piece
+        // intersects the constant function prev_min_log_mean, but we
+        // are only concerned with the first mean value (the
+        // lesser of the two).
+        double mu = it->get_smaller_root(prev_min_cost);
+        if(it->min_mean < mu && mu < it->max_mean){
+          // The smaller intersection point occurs within the
+          // interval, so the constant interval ends here, and we
+          // can store it immediately.
           piece_list.emplace_back
-            (0, 0, prev_min_cost,
-             prev_min_mean, it->max_mean, 
-             PREV_NOT_SET,
-             prev_best_mean);
+          (0, 0, prev_min_cost,
+           prev_min_mean, mu, PREV_NOT_SET,
+           prev_best_mean);// equality constraint inactive.
           prev_min_cost = INFINITY;
-          prev_min_mean = it->max_mean;
-        }
+          prev_min_mean = mu;
+          it--;
+        }//if(mu in interval)
+      }//if(has two roots
+      if(right_cost <= prev_min_cost + NEWTON_EPSILON &&
+         prev_min_cost < INFINITY){
+        //ends exactly/numerically on the right.
+        if(verbose)printf("constant numerically equal on right\n");
+        piece_list.emplace_back
+          (0, 0, prev_min_cost,
+           prev_min_mean, it->max_mean, 
+           PREV_NOT_SET,
+           prev_best_mean);
+        prev_min_cost = INFINITY;
+        prev_min_mean = it->max_mean;
+      }
     }//if(prev_min_cost is finite
     it++;
     if(verbose){
