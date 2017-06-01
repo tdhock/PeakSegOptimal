@@ -32,7 +32,7 @@ void IsotonicFPOP
   std::vector<PiecewiseSquareLoss> cost_model_mat(data_count);
   PiecewiseSquareLoss *cost, *cost_prev;
   PiecewiseSquareLoss min_prev_cost;
-  int verbose=1;
+  int verbose=0;
   for(int data_i=0; data_i<data_count; data_i++){
     cost = &cost_model_mat[data_i];
     // Alg 3, ln 4
@@ -53,7 +53,6 @@ void IsotonicFPOP
     cost_prev = cost;
   }
   // Decoding the cost_model_vec, and writing to the output matrices.
-  printf("start decoding\n");
   double best_cost, best_mean, prev_mean;
   int prev_seg_end=data_count;
   for(int i=0; i<data_count; i++){

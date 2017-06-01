@@ -3,7 +3,6 @@
 #include "IsotonicFPOP.h"
 
 extern "C" {
-
  void IsotonicFPOP_interface
   (double *data_ptr,
    int *data_count, double *penalty,
@@ -13,6 +12,5 @@ extern "C" {
                   *data_count, *penalty,
                   cost_mat, end_vec, mean_vec, intervals_mat);
  }
-  
 }
     
