@@ -1234,11 +1234,7 @@ bool SquareLossPiece::has_two_roots(double equals){
   // Square * u ^ 2 + 
   // Linear * u + Constant = equals ? 
   double delta = Linear * Linear - 4 * Square * (Constant - equals);
-  
-  if (delta < 0){
-    throw "No real valued solution to au^2 + bu + c = d";
-  } 
-  else if (delta > 0) {
+  if (delta > 0) {
     return true;
   } else {
     return false;
@@ -1316,7 +1312,7 @@ void PiecewiseSquareLoss::set_to_min_less_of
       // next function piece. This is necessary because sometimes
       // there are numerical issues.
       if(verbose){
-        printf("min cost=%f at log_mean=%f\n", mu_cost, mu);
+        printf("min cost=%f at mean=%f\n", mu_cost, mu);
         printf("next_left_cost-mu_cost=%e right_cost-mu_cost=%e\n", next_left_cost-mu_cost, right_cost-mu_cost);
       }
       bool cost_ok = NEWTON_EPSILON < right_cost-mu_cost && next_ok;
@@ -1335,7 +1331,7 @@ void PiecewiseSquareLoss::set_to_min_less_of
         // piece later. NB it is possible that prev_min_log_mean==mu in
         // which case we do not need to store the convex piece.
         if(verbose){
-          printf("min in this interval at log_mean=%f cost=%f\n", mu, mu_cost);
+          printf("min in this interval at mean=%f cost=%f\n", mu, mu_cost);
           printf("right_cost=%f right-constant=%e\n", right_cost, right_cost-mu_cost);
           printf("next_left_cost=%f next-constant=%e\n", next_left_cost, next_left_cost-mu_cost);
         }
