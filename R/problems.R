@@ -415,10 +415,22 @@ problem.predict <- function
     return(NULL)
   }
   features <- fread(features.tsv)
+  stopifnot(nrow(features)==1)
   feature.mat <- as.matrix(features)
   model.RData <- file.path(data.dir, "model.RData")
   load(model.RData)
+  if(length(feature.mat)==length(model$train.mean.vec)){
+    is.bad <- !is.finite(feature.mat)
+    feature.mat[is.bad] <- model$train.mean.vec[is.bad]
+  }else{
+    stop(
+      "feature.mat has ", length(feature.mat),
+      " columns but ", length(model$train.mean.vec),
+      " features were used to train the model")
+  }
   pred.penalty <- as.numeric(exp(model$predict(feature.mat)))
+  stopifnot(length(pred.penalty)==1)
+  stopifnot(is.finite(log.penalty))
   n.features <- length(model$pred.feature.names)
   cat(paste0(
     "Predicting penalty=", pred.penalty,
