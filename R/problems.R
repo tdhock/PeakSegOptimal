@@ -430,7 +430,7 @@ problem.predict <- function
   }
   pred.penalty <- as.numeric(exp(model$predict(feature.mat)))
   stopifnot(length(pred.penalty)==1)
-  stopifnot(is.finite(log.penalty))
+  stopifnot(is.finite(pred.penalty))
   n.features <- length(model$pred.feature.names)
   cat(paste0(
     "Predicting penalty=", pred.penalty,
