@@ -1247,12 +1247,20 @@ double SquareLossPiece::SquareLoss(double mean){
 
 double SquareLossPiece::get_larger_root(double equals){
   double delta = Linear * Linear - 4 * Square * (Constant - equals);
-  return (-Linear + sqrt(delta)) / (2 * Square);
+  if (Square > 0) {
+    return (-Linear + sqrt(delta)) / (2 * Square);  
+  } else {
+    return (-Linear - sqrt(delta)) / (2 * Square);
+  }
 }
 
 double SquareLossPiece::get_smaller_root(double equals){
   double delta = Linear * Linear - 4 * Square * (Constant - equals);
-  return (-Linear - sqrt(delta)) / (2 * Square);
+  if (Square < 0) {
+    return (-Linear + sqrt(delta)) / (2 * Square);  
+  } else {
+    return (-Linear - sqrt(delta)) / (2 * Square);
+  }
 }
 
 // May not need these in square loss....are they just 
@@ -1305,12 +1313,6 @@ void PiecewiseSquareLoss::set_to_min_less_of
         next_left_cost = next_it->getCost(next_it->min_mean);
         next_ok = NEWTON_EPSILON < next_left_cost-mu_cost; // probably can remove this? 
       }
-      // SWJ: this is probably unnecessary since 
-      //      min is solved exactly...ie no numerical problem?
-      // Compute the cost at the next interval, to check if the cost
-      // at the minimum is less than the cost on the edge of the
-      // next function piece. This is necessary because sometimes
-      // there are numerical issues.
       if(verbose){
         printf("min cost=%f at mean=%f\n", mu_cost, mu);
         printf("next_left_cost-mu_cost=%e right_cost-mu_cost=%e\n", next_left_cost-mu_cost, right_cost-mu_cost);
@@ -1413,6 +1415,79 @@ void PiecewiseSquareLoss::set_to_min_less_of
        prev_min_mean, it->max_mean, PREV_NOT_SET,
        prev_best_mean);//equality constraint inactive on constant piece.
   }
+}
+
+void PiecewiseSquareLoss::set_to_unconstrained_min_of
+  (PiecewiseSquareLoss *input, int verbose) {
+  piece_list.clear();
+  SquareLossPieceList::iterator it = input->piece_list.begin();
+  double prev_min_cost = INFINITY;
+  double left_most = INFINITY; 
+  double right_most = -INFINITY;
+  double right_mean, left_mean, prev_best_mean, mu_cost, mu;
+  while(it != input->piece_list.end()){
+    
+    if (verbose) {
+      printf("start new iter of set to unconstrained min of--------------\n");
+      printf("Searching for min cost in \n");
+      printf("%10s %10s %15s %15s %15s %15s %s\n",
+             "Square", "Linear", "Constant",
+             "min_mean", "max_mean",
+             "prev_mean", "data_i");
+      it -> print();
+    }
+    
+    // boundary costs
+    left_mean = it -> min_mean;
+    
+    if (left_mean < left_most) { 
+      left_most = left_mean;
+    }
+    
+    right_mean = it -> max_mean;
+    
+    if (right_mean > right_most) {
+      right_most = right_mean;
+    }
+    
+    // determine argmin of this segment
+    mu = it->argmin();
+    // argmin occurs in interval
+    if (mu >= left_mean && mu <= right_mean) {
+      mu_cost = it->getCost(mu);  
+    } else {
+      double left_cost = it -> getCost(left_mean);
+      double right_cost = it -> getCost(right_mean);
+      if (left_cost < right_cost) {
+        mu_cost = left_cost;
+        mu = left_mean;
+      } else {
+        mu_cost = right_cost;
+        mu = right_mean;
+      }
+    }
+    
+    if (mu_cost < prev_min_cost) {
+      prev_min_cost = mu_cost;
+      prev_best_mean = mu; 
+    }
+    it++;
+  } // end loop over components 
+  
+  
+  // return constant function 
+  piece_list.emplace_back
+    (0, 0, prev_min_cost,
+     left_most, right_most, PREV_NOT_SET,
+     prev_best_mean);
+
+  if (verbose) {
+    printf("interval [%f, %f]\n", left_most, right_most);
+    printf("Minimum cost %f \n", prev_min_cost); 
+    printf("------------------------------------------\n");
+  }
+  
+  
 }
 
 void PiecewiseSquareLoss::add(double Square, double Linear, double Constant){
@@ -1832,7 +1907,7 @@ void PiecewiseSquareLoss::push_min_pieces
        larger_mean, larger_mean);
     bool smaller_inside =
       last_min_mean < smaller_mean &&
-      0 < smaller_mean &&
+      // 0 < smaller_mean && // breaks for negative data
       smaller_mean < first_max_mean;
     if(larger_inside){
       if(smaller_inside && smaller_mean < larger_mean){

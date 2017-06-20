@@ -7,10 +7,10 @@ extern "C" {
   (double *data_ptr,
    int *data_count, double *penalty,
    double *cost_mat, int *end_vec,
-   double *mean_vec, int *intervals_mat){
+   double *mean_vec, int *intervals_mat, bool *constraint){
     IsotonicFPOP(data_ptr,
                   *data_count, *penalty,
-                  cost_mat, end_vec, mean_vec, intervals_mat);
+                  cost_mat, end_vec, mean_vec, intervals_mat, constraint);
  }
 }
     

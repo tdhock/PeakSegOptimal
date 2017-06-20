@@ -5,4 +5,5 @@ void IsotonicFPOP
   double *cost_mat,
   int *end_vec,
   double *mean_vec,
-  int *intervals_mat);
+  int *intervals_mat, 
+  bool *constraint);

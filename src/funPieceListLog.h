@@ -100,6 +100,7 @@ class PiecewiseSquareLoss {
 public:
   SquareLossPieceList piece_list;
   void set_to_min_less_of(PiecewiseSquareLoss *, int);
+  void set_to_unconstrained_min_of(PiecewiseSquareLoss *, int);
   void set_to_min_env_of
     (PiecewiseSquareLoss *, PiecewiseSquareLoss *, int);
   int check_min_of(PiecewiseSquareLoss *, PiecewiseSquareLoss *);

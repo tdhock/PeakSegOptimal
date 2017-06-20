@@ -3,8 +3,10 @@ IsotonicFPOP <- structure(function
                           ### double vector of length >= 3: real data to segment.
                           weight.vec=NULL,
                           ### numeric vector (same length as count.vec) of positive weights.
-                          penalty=NULL
+                          penalty=NULL,
                           ### non-negative numeric scalar: penalty
+                          constraint=TRUE
+                          ## positivity constraint?
                          ){
                            
                           if (!is.null(weight.vec)) {
@@ -23,6 +25,7 @@ IsotonicFPOP <- structure(function
                            ends.vec <- integer(n.data)
                            mean.vec <- double(n.data)
                            intervals.mat <- integer(n.data)
+                           constraint <- constraint
                            
                            result.list <- .C(
                              "IsotonicFPOP_interface",
@@ -33,6 +36,7 @@ IsotonicFPOP <- structure(function
                              ends.vec=as.integer(ends.vec),
                              mean.vec=as.double(mean.vec),
                              intervals.mat=as.integer(intervals.mat),
+                             constraint = constraint,
                              PACKAGE="coseg")
                            
                            ## 1-indexed segment ends!
