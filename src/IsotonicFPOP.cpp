@@ -61,9 +61,6 @@ void IsotonicFPOP
       cost->add
         (1.0,
          -2 * data_vec[data_i], data_vec[data_i] * data_vec[data_i]);
-      
-      // printf("new cost*\n");
-      // cost -> print();
     }
     cost_prev = cost;
   }
