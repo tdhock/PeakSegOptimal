@@ -185,7 +185,7 @@ PeakSegFPOPchrom <- structure(function
     split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
   one.sample <- by.sample[[sample.id]]
 
-  penalty.constant <- 1100
+  penalty.constant <- 3000
   fpop.fit <- PeakSegFPOPchrom(one.sample, penalty.constant)
   fpop.breaks <- subset(fpop.fit$segments, 1 < first)
   library(ggplot2)
@@ -212,16 +212,20 @@ PeakSegFPOPchrom <- structure(function
   ggplot()+
     geom_abline(aes(slope=peaks, intercept=PoissonLoss, color=peaks),
                 data=pdpa.fit$loss)+
-    geom_text(aes(0, PoissonLoss, label=peaks),
+    geom_label(aes(0, PoissonLoss, color=peaks,
+                   label=paste0("s=", peaks, " ")),
               hjust=1,
+              vjust=0,
               data=pdpa.fit$loss)+
     geom_point(aes(penalty.constant, penalized.loss, fill=algorithm),
                shape=21,
                data=fpop.fit$loss)+
-    geom_point(aes(min.lambda, min.lambda*model.complexity + PoissonLoss,
+    geom_point(aes(min.lambda, min.lambda*peaks + PoissonLoss,
                    fill=algorithm),
                shape=21,
-               data=models)
+               data=models)+
+    xlab("penalty = lambda")+
+    ylab("penalized loss = PoissonLoss_s + lambda * s")
   
 })
 
