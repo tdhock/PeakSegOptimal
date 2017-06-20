@@ -693,7 +693,7 @@ void PiecewisePoissonLossLog::Minimize
 int PiecewisePoissonLossLog::check_min_of
 (PiecewisePoissonLossLog *prev, PiecewisePoissonLossLog *model){
   PoissonLossPieceListLog::iterator it;
-  int verbose = 0;
+  int verbose = 1;
   for(it = piece_list.begin(); it != piece_list.end(); it++){
     if(it != piece_list.begin()){
       PoissonLossPieceListLog::iterator pit = it;
@@ -1204,5 +1204,842 @@ void PiecewisePoissonLossLog::push_piece
       (it->Linear, it->Log, it->Constant,
        min_log_mean, max_log_mean,
        it->data_i, it->prev_log_mean);
+  }
+}
+
+
+
+/*
+ * Square loss methods
+ * 
+ * @author Sean Jewell 27 April 2017
+ */
+
+SquareLossPiece::SquareLossPiece
+  (double a, double b, double c, double m, double M, int i, double prev){
+  Square = a;
+  Linear = b;
+  Constant = c;
+  min_mean = m;
+  max_mean = M;
+  data_i = i;
+  prev_mean = prev;
+}
+
+SquareLossPiece::SquareLossPiece(){
+}
+
+bool SquareLossPiece::has_two_roots(double equals){
+  // are there two solutions to the equation 
+  // Square * u ^ 2 + 
+  // Linear * u + Constant = equals ? 
+  double delta = Linear * Linear - 4 * Square * (Constant - equals);
+  if (delta > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+double SquareLossPiece::SquareLoss(double mean){
+  return Square * mean * mean + Linear * mean + Constant;
+}
+
+double SquareLossPiece::get_larger_root(double equals){
+  double delta = Linear * Linear - 4 * Square * (Constant - equals);
+  if (Square > 0) {
+    return (-Linear + sqrt(delta)) / (2 * Square);  
+  } else {
+    return (-Linear - sqrt(delta)) / (2 * Square);
+  }
+}
+
+double SquareLossPiece::get_smaller_root(double equals){
+  double delta = Linear * Linear - 4 * Square * (Constant - equals);
+  if (Square < 0) {
+    return (-Linear + sqrt(delta)) / (2 * Square);  
+  } else {
+    return (-Linear - sqrt(delta)) / (2 * Square);
+  }
+}
+
+// May not need these in square loss....are they just 
+// maybe do need this??? 
+// at very least need to remove this from function declaration
+
+double SquareLossPiece::argmin_mean(){
+  // f(u) = Square * u ^ 2 + Linear * u + Constant,
+  // f'(u)= 2 * Square * u + Linear = 0 means
+  // u = -Linear / (2 * Square)
+  return - Linear / (2 * Square);
+}
+
+/// what does this function do differently than argmin_mean()
+double SquareLossPiece::argmin(){
+  return argmin_mean();
+}
+
+double SquareLossPiece::getCost(double mean){
+  return Square * mean * mean + Linear * mean + Constant;
+}
+
+void PiecewiseSquareLoss::set_to_min_less_of
+  (PiecewiseSquareLoss *input, int verbose){
+  piece_list.clear();
+  SquareLossPieceList::iterator it = input->piece_list.begin();
+  SquareLossPieceList::iterator next_it;
+  double prev_min_cost = INFINITY;
+  double prev_min_mean = it->min_mean;
+  double prev_best_mean;
+  while(it != input->piece_list.end()){
+    double left_cost = it->getCost(it->min_mean);
+    double right_cost = it->getCost(it->max_mean);
+    if(verbose)printf("left_cost=%f right_cost=%f\n", left_cost, right_cost);
+    if(prev_min_cost == INFINITY){
+      // Look for min achieved in this interval.
+      if(verbose){
+        printf("Searching for min in\n");
+        it->print();
+      }
+      double next_left_cost;
+      next_it = it;
+      next_it++;
+      double mu = it->argmin();
+      double mu_cost = it->getCost(mu);
+      bool next_ok;
+      if(next_it == input->piece_list.end()){
+        next_ok = true;
+      }else{
+        next_left_cost = next_it->getCost(next_it->min_mean);
+        next_ok = NEWTON_EPSILON < next_left_cost-mu_cost; // probably can remove this? 
+      }
+      if(verbose){
+        printf("min cost=%f at mean=%f\n", mu_cost, mu);
+        printf("next_left_cost-mu_cost=%e right_cost-mu_cost=%e\n", next_left_cost-mu_cost, right_cost-mu_cost);
+      }
+      bool cost_ok = NEWTON_EPSILON < right_cost-mu_cost && next_ok;
+      if(mu <= it->min_mean && cost_ok){
+        /* The minimum is achieved on the left or before this
+        interval, so this function is always increasing in this
+        interval. We don't need to store it, but we do need to keep
+        track of the minimum cost, which occurs at the min mean
+        value in this interval. */
+        if(verbose)printf("min before interval\n");
+        prev_min_cost = it->getCost(it->min_mean);
+        prev_best_mean = it->min_mean;
+      }else if(mu < it->max_mean && cost_ok){
+        // Minimum in this interval, so add a convex piece up to the
+        // min, and keep track of the min cost to create a constant
+        // piece later. NB it is possible that prev_min_log_mean==mu in
+        // which case we do not need to store the convex piece.
+        if(verbose){
+          printf("min in this interval at mean=%f cost=%f\n", mu, mu_cost);
+          printf("right_cost=%f right-constant=%e\n", right_cost, right_cost-mu_cost);
+          printf("next_left_cost=%f next-constant=%e\n", next_left_cost, next_left_cost-mu_cost);
+        }
+        if(prev_min_mean < mu){
+          piece_list.emplace_back
+          (it->Square, it->Linear, it->Constant, prev_min_mean, mu,
+           PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
+        }
+        prev_min_mean = mu;
+        prev_best_mean = mu;
+        prev_min_cost = mu_cost;
+        if(verbose)printf("prev_min_cost=%f\n", prev_min_cost);
+      }else{
+        // Minimum after this interval, so this function is
+        // decreasing on this entire interval, and so we can just
+        // store it as is.
+        if(verbose)printf("min after interval\n");
+        piece_list.emplace_back
+          (it->Square, it->Linear, it->Constant, prev_min_mean, it->max_mean,
+           PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
+        prev_min_mean = it->max_mean;
+      }//if(non-degenerate mu in interval
+    } else{//prev_min_cost is finite
+      // Look for a function with prev_min_cost in its interval.
+      if(verbose){
+        printf("Searching for intersection with %f\n", prev_min_cost);
+        printf("cost at limits=[%f,%f] cost-constant=[%e,%e]\n",
+               left_cost, right_cost,
+               left_cost-prev_min_cost, right_cost-prev_min_cost);
+        it->print();
+      }
+      // SWJ: Update this comment....still should look for 2 possible roots
+      // Theoretically there can be zero, one, or two intersection
+      // points between the constant function prev_min_log_mean and a
+      // non-degenerate Poisson loss function piece. 
+      if(it->has_two_roots(prev_min_cost)){
+        // There are two mean values where the Poisson loss piece
+        // intersects the constant function prev_min_log_mean, but we
+        // are only concerned with the first mean value (the
+        // lesser of the two).
+        double mu = it->get_smaller_root(prev_min_cost);
+        if(it->min_mean < mu && mu < it->max_mean){
+          // The smaller intersection point occurs within the
+          // interval, so the constant interval ends here, and we
+          // can store it immediately.
+          piece_list.emplace_back
+          (0, 0, prev_min_cost,
+           prev_min_mean, mu, PREV_NOT_SET,
+           prev_best_mean);// equality constraint inactive.
+          prev_min_cost = INFINITY;
+          prev_min_mean = mu;
+          it--;
+        }//if(mu in interval)
+      }//if(has two roots
+      if(right_cost <= prev_min_cost + NEWTON_EPSILON &&
+         prev_min_cost < INFINITY){
+        //ends exactly/numerically on the right.
+        if(verbose)printf("constant numerically equal on right\n");
+        piece_list.emplace_back
+          (0, 0, prev_min_cost,
+           prev_min_mean, it->max_mean, 
+           PREV_NOT_SET,
+           prev_best_mean);
+        prev_min_cost = INFINITY;
+        prev_min_mean = it->max_mean;
+      }
+    }//if(prev_min_cost is finite
+    it++;
+    if(verbose){
+      printf("current min-less-------------------\n");
+      print();
+    }
+  }//while(it
+  if(prev_min_cost < INFINITY){
+    // ending on a constant piece.
+    it--;
+    piece_list.emplace_back
+      (0, 0, prev_min_cost,
+       prev_min_mean, it->max_mean, PREV_NOT_SET,
+       prev_best_mean);//equality constraint inactive on constant piece.
+  }
+}
+
+void PiecewiseSquareLoss::set_to_unconstrained_min_of
+  (PiecewiseSquareLoss *input, int verbose) {
+  piece_list.clear();
+  SquareLossPieceList::iterator it = input->piece_list.begin();
+  double prev_min_cost = INFINITY;
+  double left_most = INFINITY; 
+  double right_most = -INFINITY;
+  double right_mean, left_mean, prev_best_mean, mu_cost, mu;
+  while(it != input->piece_list.end()){
+    
+    if (verbose) {
+      printf("start new iter of set to unconstrained min of--------------\n");
+      printf("Searching for min cost in \n");
+      printf("%10s %10s %15s %15s %15s %15s %s\n",
+             "Square", "Linear", "Constant",
+             "min_mean", "max_mean",
+             "prev_mean", "data_i");
+      it -> print();
+    }
+    
+    // boundary costs
+    left_mean = it -> min_mean;
+    
+    if (left_mean < left_most) { 
+      left_most = left_mean;
+    }
+    
+    right_mean = it -> max_mean;
+    
+    if (right_mean > right_most) {
+      right_most = right_mean;
+    }
+    
+    // determine argmin of this segment
+    mu = it->argmin();
+    // argmin occurs in interval
+    if (mu >= left_mean && mu <= right_mean) {
+      mu_cost = it->getCost(mu);  
+    } else {
+      double left_cost = it -> getCost(left_mean);
+      double right_cost = it -> getCost(right_mean);
+      if (left_cost < right_cost) {
+        mu_cost = left_cost;
+        mu = left_mean;
+      } else {
+        mu_cost = right_cost;
+        mu = right_mean;
+      }
+    }
+    
+    if (mu_cost < prev_min_cost) {
+      prev_min_cost = mu_cost;
+      prev_best_mean = mu; 
+    }
+    it++;
+  } // end loop over components 
+  
+  
+  // return constant function 
+  piece_list.emplace_back
+    (0, 0, prev_min_cost,
+     left_most, right_most, PREV_NOT_SET,
+     prev_best_mean);
+
+  if (verbose) {
+    printf("interval [%f, %f]\n", left_most, right_most);
+    printf("Minimum cost %f \n", prev_min_cost); 
+    printf("------------------------------------------\n");
+  }
+  
+  
+}
+
+void PiecewiseSquareLoss::add(double Square, double Linear, double Constant){
+  SquareLossPieceList::iterator it;
+  for(it=piece_list.begin(); it != piece_list.end(); it++){
+    it->Square += Square;
+    it->Linear += Linear;
+    it->Constant += Constant;
+  }
+}
+
+void PiecewiseSquareLoss::multiply(double x){
+  SquareLossPieceList::iterator it;
+  for(it=piece_list.begin(); it != piece_list.end(); it++){
+    it->Square *= x;
+    it->Linear *= x;
+    it->Constant *= x;
+  }
+}
+
+void PiecewiseSquareLoss::set_prev_seg_end(int prev_seg_end){
+  SquareLossPieceList::iterator it;
+  for(it=piece_list.begin(); it != piece_list.end(); it++){
+    it->data_i = prev_seg_end;
+  }
+}
+
+void PiecewiseSquareLoss::findMean
+  (double mean, int *seg_end, double *prev_mean){
+  SquareLossPieceList::iterator it;
+  for(it=piece_list.begin(); it != piece_list.end(); it++){
+    if(it->min_mean <= mean && mean <= it->max_mean){
+      *seg_end = it->data_i;
+      *prev_mean = it->prev_mean;
+      return;
+    }
+  }
+}
+
+double PiecewiseSquareLoss::findCost(double mean){
+  SquareLossPieceList::iterator it;
+  for(it=piece_list.begin(); it != piece_list.end(); it++){
+    if(it->min_mean <= mean && mean <= it->max_mean){
+      int verbose = 0;
+      return it->getCost(mean);
+    }
+  }
+}
+
+void PiecewiseSquareLoss::print(){
+  SquareLossPieceList::iterator it;
+  printf("%10s %10s %15s %15s %15s %15s %s\n",
+         "Square", "Linear", "Constant",
+         "min_mean", "max_mean",
+         "prev_mean", "data_i");
+  for(it=piece_list.begin(); it != piece_list.end(); it++){
+    it->print();
+  }
+}
+
+void SquareLossPiece::print(){
+  printf("%.20e %.20e %.20e %15f %15f %15f %d\n",
+         Square, Linear, Constant,
+         min_mean, max_mean,
+         prev_mean, data_i);
+}
+
+void PiecewiseSquareLoss::Minimize
+  (double *best_cost,
+   double *best_mean,
+   int *data_i,
+   double *prev_mean){
+  double candidate_cost, candidate_mean;
+  int verbose=false;
+  SquareLossPieceList::iterator it;
+  *best_cost = INFINITY;
+  for(it=piece_list.begin(); it != piece_list.end(); it++){
+    candidate_mean = it->argmin();
+    if(candidate_mean < it->min_mean){
+      candidate_mean = it->min_mean;
+    }else if(it->max_mean < candidate_mean){
+      candidate_mean = it->max_mean;
+    }
+    candidate_cost = it->getCost(candidate_mean);
+    if(candidate_cost < *best_cost){
+      *best_cost = candidate_cost;
+      *best_mean = candidate_mean;
+      *data_i = it->data_i;
+      *prev_mean = it->prev_mean;
+    }
+  }
+}
+
+// check that this function is the minimum on all pieces.
+int PiecewiseSquareLoss::check_min_of
+  (PiecewiseSquareLoss *prev, PiecewiseSquareLoss *model){
+  SquareLossPieceList::iterator it;
+  int verbose = 0;
+  for(it = piece_list.begin(); it != piece_list.end(); it++){
+    if(it != piece_list.begin()){
+      SquareLossPieceList::iterator pit = it;
+      pit--;
+      if(pit->max_mean != it->min_mean){
+        printf("prev->max_mean != it->min_mean min\n");
+        return 3;
+      }
+    }
+    if(it->max_mean <= it->min_mean){
+      printf("max_mean<=min_mean=%15.10f min\n", it->min_mean);
+      return 2;
+    }
+    double mid_mean = (it->min_mean + it->max_mean)/2;
+    if(-INFINITY < mid_mean){
+      double cost_min = it->getCost(mid_mean);
+      double cost_prev = prev->findCost(mid_mean);
+      if(cost_prev+1e-6 < cost_min){
+        printf("prev(%f)=%f\n", mid_mean, cost_prev);
+        prev->print();
+        printf("min(%f)=%f\n", mid_mean, cost_min);
+        print();
+        return 1;
+      }
+      double cost_model = model->findCost(mid_mean);
+      if(cost_model+1e-6 < cost_min){
+        printf("model(%f)=%f\n", mid_mean, cost_model);
+        model->print();
+        printf("min(%f)=%f\n", mid_mean, cost_min);
+        print();
+        return 1;
+      }
+    }
+  }
+  for(it = prev->piece_list.begin(); it != prev->piece_list.end(); it++){
+    if(it != prev->piece_list.begin()){
+      SquareLossPieceList::iterator pit = it;
+      pit--;
+      if(pit->max_mean != it->min_mean){
+        printf("prev->max_mean != it->min_mean prev\n");
+        return 3;
+      }
+    }
+    if(it->max_mean <= it->min_mean){
+      printf("max_mean<=min_mean=%15.10f prev\n", it->min_mean);
+      return 2;
+    }
+    double mid_mean = (it->min_mean + it->max_mean)/2;
+    if(-INFINITY < mid_mean){
+      double cost_prev = it->getCost(mid_mean);
+      double cost_min = findCost(mid_mean);
+      if(cost_prev+1e-6 < cost_min){
+        printf("prev(%f)=%f\n", mid_mean, cost_prev);
+        prev->print();
+        printf("min(%f)=%f\n", mid_mean, cost_min);
+        print();
+        return 1;
+      }
+    }
+  }
+  for(it = model->piece_list.begin(); it != model->piece_list.end(); it++){
+    if(it != model->piece_list.begin()){
+      SquareLossPieceList::iterator pit = it;
+      pit--;
+      if(pit->max_mean != it->min_mean){
+        printf("prev->max_mean != it->min_mean model\n");
+        return 3;
+      }
+    }
+    if(it->max_mean <= it->min_mean){
+      printf("max_mean<=min_mean=%15.10f model\n", it->min_mean);
+      return 2;
+    }
+    double mid_mean = (it->min_mean + it->max_mean)/2;
+    if(-INFINITY < mid_mean){
+      double cost_model = it->getCost(mid_mean);
+      double cost_min = findCost(mid_mean);
+      if(cost_model+1e-6 < cost_min){
+        printf("model(%f)=%f\n", mid_mean, cost_model);
+        model->print();
+        printf("min(%f)=%f\n", mid_mean, cost_min);
+        print();
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+void PiecewiseSquareLoss::set_to_min_env_of
+  (PiecewiseSquareLoss *fun1, PiecewiseSquareLoss *fun2, int verbose){
+  SquareLossPieceList::iterator
+  it1 = fun1->piece_list.begin(),
+    it2 = fun2->piece_list.begin();
+  if(verbose){
+    printf("computing min env of:\n");
+    printf("=min-less/more\n");
+    fun1->print();
+    printf("=cost model\n");
+    fun2->print();
+  }
+  piece_list.clear();
+  while(it1 != fun1->piece_list.end() &&
+        it2 != fun2->piece_list.end()){
+    push_min_pieces(fun1, fun2, it1, it2, verbose);
+    if(verbose){
+      print();
+      printf("------\n");
+    }
+    double last_max_mean = piece_list.back().max_mean;
+    if(it1->max_mean == last_max_mean){
+      it1++;
+    }
+    if(it2->max_mean == last_max_mean){
+      it2++;
+    }
+  }
+}
+
+bool sameFunsSquare
+  (SquareLossPieceList::iterator it1,
+   SquareLossPieceList::iterator it2){
+  return it1->Linear == it2->Linear &&
+    it1->Square == it2->Square &&
+    ABS(it1->Constant - it2->Constant) < NEWTON_EPSILON;
+}
+
+void PiecewiseSquareLoss::push_min_pieces
+  (PiecewiseSquareLoss *fun1,
+   PiecewiseSquareLoss *fun2,
+   SquareLossPieceList::iterator it1,
+   SquareLossPieceList::iterator it2,
+   int verbose){
+  bool same_at_left;
+  double last_min_mean;
+  SquareLossPieceList::iterator prev2 = it2;
+  prev2--;
+  SquareLossPieceList::iterator prev1 = it1;
+  prev1--;
+  if(it1->min_mean < it2->min_mean){
+    //it1 function piece starts to the left of it2.
+    same_at_left = sameFunsSquare(prev2, it1);
+    last_min_mean = it2->min_mean;
+  }else{
+    //it1 function piece DOES NOT start to the left of it2.
+    last_min_mean = it1->min_mean;
+    if(it2->min_mean < it1->min_mean){
+      //it2 function piece starts to the left of it1.
+      same_at_left = sameFunsSquare(prev1, it2);
+    }else{
+      //it1 and it2 start at the same min_mean value.
+      if(it1==fun1->piece_list.begin() &&
+         it2==fun2->piece_list.begin()){
+        same_at_left = false;
+      }else{
+        same_at_left = sameFunsSquare(prev1, prev2);
+      }
+    }
+  }
+  SquareLossPieceList::iterator next2 = it2;
+  next2++;
+  SquareLossPieceList::iterator next1 = it1;
+  next1++;
+  bool same_at_right;
+  double first_max_mean;
+  if(it1->max_mean < it2->max_mean){
+    if(verbose)printf("it2 function piece continues to the right of it1.\n");
+    same_at_right = sameFunsSquare(next1, it2);
+    first_max_mean = it1->max_mean;
+  }else{
+    first_max_mean = it2->max_mean;
+    if(it2->max_mean < it1->max_mean){
+      if(verbose)printf("it2 function piece ends before it1.\n");
+      same_at_right = sameFunsSquare(it1, next2);
+    }else{
+      if(verbose)printf("it2 and it1 end at same max_mean.\n");
+      if(next1==fun1->piece_list.end() &&
+         next2==fun2->piece_list.end()){
+        if(verbose)printf("at the end so they can't be equal after this interval.\n");
+        same_at_right = false;
+      }else{
+        if(verbose){
+          printf("comparing next function pieces.\n");
+          next1->print();
+          next2->print();
+        }
+        same_at_right = sameFunsSquare(next1, next2);
+      }
+    }
+  }
+  if(last_min_mean == first_max_mean){
+    // we should probably never get here, but if we do, no need to
+    // store this interval.
+    if(verbose){
+      printf("prev\n");
+      fun1->print();
+      printf("model\n");
+      fun2->print();
+      printf("interval size 0!-----------------\n");
+    }
+    return;
+  }
+  if(sameFunsSquare(it1, it2)){
+    // The functions are exactly equal over the entire interval so we
+    // can push either of them.
+    push_piece(it1, last_min_mean, first_max_mean);
+    if(verbose)printf("exactly equal over entire interval\n");
+    return;
+  }
+  SquareLossPiece diff_piece
+    (it1->Square - it2->Square,
+     it1->Linear - it2->Linear,
+     it1->Constant - it2->Constant,
+     last_min_mean, first_max_mean,
+     -5, false);
+  // Evaluate the middle in the original space, to avoid problems when
+  // first_max_log_mean is -Inf.
+  double mid_mean = (first_max_mean + last_min_mean) / 2;
+  double cost_diff_mid = diff_piece.getCost(mid_mean);
+  // Easy case of equality on both left and right.
+  if(same_at_left && same_at_right){
+    if(verbose)printf("Same on both the left and the right\n");
+    if(cost_diff_mid < 0){
+      push_piece(it1, last_min_mean, first_max_mean);
+    }else{
+      push_piece(it2, last_min_mean, first_max_mean);
+    }
+    return;
+  }
+  
+  double cost_diff_left = diff_piece.getCost(last_min_mean);
+  double cost_diff_right = diff_piece.getCost(first_max_mean);
+  bool two_roots = diff_piece.has_two_roots(0.0);
+  double smaller_mean, larger_mean;
+  if(two_roots){
+    smaller_mean = diff_piece.get_smaller_root(0.0);
+    larger_mean = diff_piece.get_larger_root(0.0);
+  }
+  if(same_at_right){
+    // they are equal on the right, but we don't know if there is
+    // another crossing point somewhere to the left.
+    if(two_roots){
+      // there could be a crossing point to the left.
+      double mean_at_crossing = smaller_mean;
+      double mean_between_zeros = (mean_at_crossing + first_max_mean)/2;
+      double cost_between_zeros = diff_piece.getCost(mean_between_zeros);
+      double mean_at_optimum = diff_piece.argmin();
+      if(verbose){
+        printf("cost_diff(left:%e)=%e\n", last_min_mean, cost_diff_left);
+        printf("cost_diff(cross:%e)=%e\n", mean_at_crossing, diff_piece.getCost(mean_at_crossing));
+        printf("cost_diff(between:%e)=%e\n", mean_between_zeros, cost_between_zeros);
+        printf("cost_diff(optimum:%e)=%e\n", mean_at_optimum, diff_piece.getCost(mean_at_optimum));
+        printf("cost_diff(right:%e)=%e\n", first_max_mean, cost_diff_right);
+      }
+      if(last_min_mean < mean_at_crossing &&
+         mean_at_crossing < mean_at_optimum &&
+         mean_at_optimum < first_max_mean){
+        //the cross point is in the interval.
+        if(cost_diff_left < 0){
+          push_piece(it1, last_min_mean, mean_at_crossing);
+          push_piece(it2, mean_at_crossing, first_max_mean);
+        }else{
+          push_piece(it2, last_min_mean, mean_at_crossing);
+          push_piece(it1, mean_at_crossing, first_max_mean);
+        }
+        if(verbose)printf("equal on the right with one crossing in interval\n");
+        return;
+      }
+    }//if(two_roots
+    // Test the cost at the midpoint, since the cost may be equal on
+    // both the left and the right.
+    if(cost_diff_mid < 0){
+      push_piece(it1, last_min_mean, first_max_mean);
+    }else{
+      push_piece(it2, last_min_mean, first_max_mean);
+    }
+    if(verbose)printf("equal on the right with no crossing in interval\n");
+    return;
+  }
+  if(same_at_left){
+    // equal on the left.
+    if(two_roots){
+      // There could be a crossing point to the right.
+      double mean_at_crossing = larger_mean;
+      double mean_at_optimum = diff_piece.argmin();
+      if(verbose)printf("larger_mean=%f\n", mean_at_crossing);
+      if(last_min_mean < mean_at_optimum &&
+         mean_at_optimum < mean_at_crossing &&
+         mean_at_crossing < first_max_mean){
+        // the crossing point is in this interval.
+        if(cost_diff_right < 0){
+          push_piece(it2, last_min_mean, mean_at_crossing);
+          push_piece(it1, mean_at_crossing, first_max_mean);
+        }else{
+          push_piece(it1, last_min_mean, mean_at_crossing);
+          push_piece(it2, mean_at_crossing, first_max_mean);
+        }
+        if(verbose)printf("equal on the left with crossing in interval\n");
+        return;
+      }
+    }//if(there may be crossing
+    if(cost_diff_mid < 0){
+      push_piece(it1, last_min_mean, first_max_mean);
+    }else{
+      push_piece(it2, last_min_mean, first_max_mean);
+    }
+    if(verbose)printf("equal on the left with no crossing in interval\n");
+    return;
+  }
+  // The only remaining case is that the curves are equal neither on
+  // the left nor on the right of the interval. However they may be
+  // equal inside the interval, so let's check for that.
+  double first_mean = INFINITY, second_mean = INFINITY;
+  if(two_roots){
+    bool larger_inside =
+      last_min_mean < larger_mean && larger_mean < first_max_mean;
+    if(verbose)printf("smaller_mean=%f %a\nlarger_mean=%f %a\n",
+       smaller_mean, smaller_mean,
+       larger_mean, larger_mean);
+    bool smaller_inside =
+      last_min_mean < smaller_mean &&
+      // 0 < smaller_mean && // breaks for negative data
+      smaller_mean < first_max_mean;
+    if(larger_inside){
+      if(smaller_inside && smaller_mean < larger_mean){
+        // both are in the interval.
+        first_mean = smaller_mean;
+        second_mean = larger_mean;
+        if(verbose){
+          diff_piece.print();
+          printf("%f and %f in [%f,%f]\n",
+                 smaller_mean, larger_mean,
+                 last_min_mean, first_max_mean);
+        }
+      }else{
+        // smaller mean is not in the interval, but the larger is.
+        first_mean = larger_mean;
+        if(verbose){
+          printf("%f in [%f,%f]\n",
+                 first_mean,
+                 last_min_mean, first_max_mean);
+        }
+      }
+    }else{
+      // larger mean is not in the interval
+      if(smaller_inside){
+        // smaller mean is in the interval, but not the larger.
+        first_mean = smaller_mean;
+        if(verbose){
+          printf("%f in [%f,%f]\n",
+                 first_mean,
+                 last_min_mean, first_max_mean);
+        }
+      }
+    }
+  }//if(two_roots
+  if(second_mean != INFINITY){
+    // two crossing points.
+    double before_mean = (last_min_mean + first_mean )/2;
+    double cost_diff_before = diff_piece.getCost(before_mean);
+    if(cost_diff_before < 0){
+      push_piece(it1, last_min_mean, first_mean);
+      push_piece(it2, first_mean, second_mean);
+      push_piece(it1, second_mean, first_max_mean);
+    }else{
+      push_piece(it2, last_min_mean, first_mean);
+      push_piece(it1, first_mean, second_mean);
+      push_piece(it2, second_mean, first_max_mean);
+    }
+    if(verbose)printf("not equal on the sides, 2 crossing points\n");
+  }else if(first_mean != INFINITY){
+    // "one" crossing point. actually sometimes we have last_min_log_mean
+    // < first_log_mean < first_max_log_mean but cost_diff_before and
+    // cost_diff_after have the same sign! In that case we need to
+    // just push one piece.
+    double before_mean = (last_min_mean + first_mean) / 2;
+    double cost_diff_before = diff_piece.getCost(before_mean);
+    if(verbose){
+      printf("cost_diff_before(%.55f)=%f\n", before_mean, cost_diff_before);
+    }
+    double after_mean = (first_max_mean + first_mean)/2;
+    double cost_diff_after = diff_piece.getCost(after_mean);
+    if(verbose)printf("cost_diff_after(%.55f)=%f\n", after_mean, cost_diff_after);
+    if(cost_diff_before < 0){
+      if(cost_diff_after < 0){
+        // f1-f2<0 meaning f1<f2 on the entire interval, so just push it1.
+        push_piece(it1, last_min_mean, first_max_mean);
+      }else{
+        push_piece(it1, last_min_mean, first_mean);
+        push_piece(it2, first_mean, first_max_mean);
+      }
+    }else{//f1(before)-f2(before)>=0 meaning f1(before)>=f2(before)
+      if(cost_diff_after < 0){
+        //f1(after)-f2(after)<0 meaning f1(after)<f2(after)
+        push_piece(it2, last_min_mean, first_mean);
+        push_piece(it1, first_mean, first_max_mean);
+      }else{
+        //f1(after)-f2(after)>=0 meaning f1(after)>=f2(after)
+        push_piece(it2, last_min_mean, first_max_mean);
+      }
+    }
+    if(verbose)printf("not equal on the sides, 1 crossing point\n");
+  }else{
+    // "zero" crossing points. actually there may be a crossing point
+    // in the interval that is numerically so close as to be identical
+    // with last_min_log_mean or first_max_log_mean.
+    if(verbose){
+      printf("not equal on the sides, zero crossing points\n");
+      printf("cost_diff left=%e mid=%e right=%e\n",
+             cost_diff_left, cost_diff_mid, cost_diff_right);
+    }
+    double cost_diff;
+    if(first_max_mean == INFINITY){
+      // if we are at the last interval and the right limit is
+      // infinity, then it should be fine to compare the cost at any
+      // point in the interval.
+      cost_diff = diff_piece.getCost(last_min_mean + 1); // WHY + 1
+    }else{
+      if(ABS(cost_diff_mid) < NEWTON_EPSILON){
+        cost_diff = cost_diff_right;
+      }else{
+        cost_diff = cost_diff_mid;
+      }
+    }
+    if(cost_diff < 0){
+      push_piece(it1, last_min_mean, first_max_mean);
+    }else{
+      push_piece(it2, last_min_mean, first_max_mean);
+    }
+  }
+}
+
+void PiecewiseSquareLoss::push_piece
+  (SquareLossPieceList::iterator it, double min_mean, double max_mean){
+  if(max_mean <= min_mean){
+    // why do we need this? TODO: figure out where this is called, and
+    // just do not call push_piece at all.
+    return;
+  }
+  SquareLossPieceList::iterator last=piece_list.end();
+  --last;
+  if(piece_list.size() &&
+  sameFunsSquare(last, it) &&
+  it->prev_mean == last->prev_mean &&
+  it->data_i == last->data_i){
+    //it is the same function as last, so just make last extend
+    //further to the right.
+    last->max_mean = max_mean;
+  }else{
+    //it is a different function than last, so push it on to the end
+    //of the list.
+    piece_list.emplace_back
+    (it->Square, it->Linear, it->Constant,
+     min_mean, max_mean,
+     it->data_i, it->prev_mean);
   }
 }
