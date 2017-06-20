@@ -48,7 +48,7 @@ void IsotonicFPOP
       cost->set_to_min_env_of(&min_prev_cost, cost_prev, verbose);
       cost->add
         (1.0,
-         -2 * data_vec[data_i], data_vec[0] * data_vec[0]);
+         -2 * data_vec[data_i], data_vec[data_i] * data_vec[data_i]);
     }
     cost_prev = cost;
   }
