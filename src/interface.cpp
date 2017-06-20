@@ -52,7 +52,7 @@ R_CMethodDef cMethods[] = {
 };
 
 extern "C" {
-  void R_init_coseg(DllInfo *info) {
+  void R_init_PeakSegOptimal(DllInfo *info) {
     R_registerRoutines(info, cMethods, NULL, NULL, NULL);
     //R_useDynamicSymbols call says the DLL is not to be searched for
     //entry points specified by character strings so .C etc calls will

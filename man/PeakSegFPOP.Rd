@@ -48,7 +48,7 @@ functional pruning algorithm). To recover the solution in terms of
 \examples{
 
 ## Use the algo to compute the solution list.
-library(coseg)
+library(PeakSegOptimal)
 data("H3K4me3_XJ_immune_chunk1", envir=environment())
 by.sample <-
   split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)

@@ -1,6 +1,6 @@
 library(testthat)
 context("PeakSegPDPAInf")
-library(coseg)
+library(PeakSegOptimal)
 data("H3K4me3_XJ_immune_chunk1", envir=environment())
 by.sample <-
   split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
@@ -21,10 +21,11 @@ for(fun.name in c("PeakSegPDPA", "PeakSegPDPAInf")){
     cost=as.numeric(fit$cost.mat),
     intervals=as.numeric(fit$intervals.mat))
 }
-ic <- do.call(rbind, ic.list)[0 < intervals]
+all.ic <- do.call(rbind, ic.list)
+ic <- subset(all.ic, 0 < intervals)
 intervals <- dcast(ic, data + segments ~ fun.name, value.var="intervals")
 cost <- dcast(ic, data + segments ~ fun.name, value.var="cost")
-not.equal <- cost[PeakSegPDPA != PeakSegPDPAInf]
+not.equal <- subset(cost, PeakSegPDPA != PeakSegPDPAInf)
 test_that("same cost for both PDPA algos", {
   expect_equal(nrow(not.equal), 0)
 })

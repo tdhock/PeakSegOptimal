@@ -55,7 +55,7 @@ PeakSegFPOP <- structure(function
     mean.vec=as.double(mean.vec),
     intervals.mat=as.integer(intervals.mat),
     ##label.vec=as.integer(label.vec),
-    PACKAGE="coseg")
+    PACKAGE="PeakSegOptimal")
   ## 1-indexed segment ends!
   result.list$ends.vec <- result.list$ends.vec+1L
   result.list$cost.mat <- matrix(
@@ -72,7 +72,7 @@ PeakSegFPOP <- structure(function
 }, ex=function(){
 
   ## Use the algo to compute the solution list.
-  library(coseg)
+  library(PeakSegOptimal)
   data("H3K4me3_XJ_immune_chunk1", envir=environment())
   by.sample <-
     split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
@@ -177,7 +177,7 @@ PeakSegFPOPchrom <- structure(function
 ### feasibilty of the computed model.
 }, ex=function(){
 
-  library(coseg)
+  library(PeakSegOptimal)
   data("H3K4me3_XJ_immune_chunk1", envir=environment())
   sample.id <- "McGill0106"
   H3K4me3_XJ_immune_chunk1$count <- H3K4me3_XJ_immune_chunk1$coverage

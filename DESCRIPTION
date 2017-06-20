@@ -1,14 +1,22 @@
-Package: coseg
+Package: PeakSegOptimal
 Maintainer: Toby Dylan Hocking <toby.hocking@r-project.org>
 Author: Toby Dylan Hocking
 Version: 2017.06.20
 License: GPL-3
-Title: Constrained Optimal Segmentation
-Description: Computes optimal segmentations subject to constraints
- on the directions of changes.
+Title: Optimal Segmentation Subject to Up-Down Constraints
+Description: Computes optimal changepoint models using the
+ Poisson likelihood for non-negative count data,
+ subject to the PeakSeg constraint:
+ the first change must be up, second change down, third change up, etc.
+ For more info about the models and algorithms,
+ read "A log-linear time algorithm for constrained changepoint detection"
+ <arXiv:1703.03352> by TD Hocking et al.
 Depends: R (>= 2.10)
 Imports: penaltyLearning
 Suggests: 
- PeakSegDP (>= 2016.08.06), cosegData,
- ggplot2, testthat
-Remotes: tdhock/PeakSegDP, tdhock/cosegData
+ PeakSegDP (>= 2016.08.06),
+ cosegData,
+ ggplot2, testthat, data.table (>= 1.9.8)
+Remotes:
+ tdhock/cosegData,
+ tdhock/PeakSegDP
