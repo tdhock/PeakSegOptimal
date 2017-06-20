@@ -1,7 +1,4 @@
 useDynLib(coseg)
 exportPattern("^[[:alpha:]]")
 importFrom("stats", "quantile", "sd")
-importFrom("utils", "write.table")
-import(data.table)
-import(PeakError)
-import(parallel)
+import(penaltyLearning)
