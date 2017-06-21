@@ -643,6 +643,7 @@ double PiecewisePoissonLossLog::findCost(double mean){
       return it->getCost(mean);
     }
   }
+  return INFINITY;//to avoid warning: control reaches end of non-void function
 }
 
 void PiecewisePoissonLossLog::print(){
