@@ -3,6 +3,14 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2017.06.20
+
+Register native routines.
+
+removed interval regression code, added dependency on penaltyLearning.
+
+removed problems.R, which is now in the PeakSegPipeline pkg.
+
 2017.04.17
 
 PeakSegPDPAInf which always uses Inf as upper limit of intervals,

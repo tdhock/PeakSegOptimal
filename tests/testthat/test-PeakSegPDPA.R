@@ -1,7 +1,7 @@
 library(testthat)
 context("PeakSegPDPA")
 library(PeakSegDP)
-library(coseg)
+library(PeakSegOptimal)
 data.vec <- as.integer(c(1, 10, 14, 13))
 fit <- PeakSegPDPA(data.vec, rep(1L, 4), 3L)
 test_that("first segment is OK", {

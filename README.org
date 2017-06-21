@@ -1,6 +1,10 @@
-An R package for computing constrained optimal segmentation models
+PeakSegOptimal: Optimal Segmentation Subject to Up-Down Constraints
 
 [[https://travis-ci.org/tdhock/coseg][https://travis-ci.org/tdhock/coseg.png?branch=master]] 
+
+NOTE: the name of the package has been changed to PeakSegOptimal, to
+avoid confusion with the [[https://cran.r-project.org/web/packages/CoSeg/index.html][CoSeg]] package on CRAN (which is completely
+unrelated to this package).
 
 ** Installation
 

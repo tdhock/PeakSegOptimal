@@ -1,6 +1,6 @@
 library(testthat)
 context("cosegData")
-library(coseg)
+library(PeakSegOptimal)
 
 data(mass.spec, package="cosegData")
 test_that("mass spec data and penalty=0 do not crash", {

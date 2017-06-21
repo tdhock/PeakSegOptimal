@@ -1,7 +1,7 @@
 library(testthat)
 context("simulation")
 ##R -d "valgrind --leak-check=full --show-reachable=yes" -f small_test.R > log.txt 2>&1
-require(coseg)
+require(PeakSegOptimal)
 ##require(Segmentor3IsBack)
 
 ### simulate
