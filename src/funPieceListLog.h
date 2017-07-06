@@ -9,7 +9,7 @@
 // files.
 
 class PoissonLossPieceLog {
- public:
+public:
   double Linear;
   double Log;
   double Constant;
@@ -35,7 +35,7 @@ class PoissonLossPieceLog {
 typedef std::list<PoissonLossPieceLog> PoissonLossPieceListLog;
 
 class PiecewisePoissonLossLog {
- public:
+public:
   PoissonLossPieceListLog piece_list;
   void set_to_min_less_of(PiecewisePoissonLossLog *, int);
   void set_to_min_more_of(PiecewisePoissonLossLog *, int);
@@ -62,12 +62,12 @@ class PiecewisePoissonLossLog {
 bool sameFuns(PoissonLossPieceListLog::iterator, PoissonLossPieceListLog::iterator);
 
 /* 
- * Implement the square loss based on PoissonLoss template
- * 
- * 
- * 
- * @author Sean Jewell 27 April 2017
- */
+* Implement the square loss based on PoissonLoss template
+* 
+* 
+* 
+* @author Sean Jewell 27 April 2017
+*/
 
 class SquareLossPiece {
 public:
