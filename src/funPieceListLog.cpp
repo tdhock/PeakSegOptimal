@@ -1417,6 +1417,23 @@ void PiecewiseSquareLoss::set_to_min_less_of
   }
 }
 
+void PiecewiseSquareLoss::set_to_scaled_of(PiecewiseSquareLoss *input, 
+                                           double gam, int verbose) {
+  piece_list.clear();
+  SquareLossPieceList::iterator it = input->piece_list.begin();
+  while(it != input->piece_list.end()){
+    piece_list.emplace_back
+    ( (it -> Square) / (gam * gam) , 
+      (it -> Linear) / gam, 
+      it -> Constant,
+     (it -> min_mean) * gam , (it -> max_mean) * gam, it -> data_i,
+     it -> prev_mean);
+  } //end while
+  
+}
+
+
+
 void PiecewiseSquareLoss::set_to_unconstrained_min_of
   (PiecewiseSquareLoss *input, int verbose) {
   piece_list.clear();
@@ -1486,8 +1503,6 @@ void PiecewiseSquareLoss::set_to_unconstrained_min_of
     printf("Minimum cost %f \n", prev_min_cost); 
     printf("------------------------------------------\n");
   }
-  
-  
 }
 
 void PiecewiseSquareLoss::add(double Square, double Linear, double Constant){
@@ -1508,6 +1523,8 @@ void PiecewiseSquareLoss::multiply(double x){
   }
 }
 
+    
+  
 void PiecewiseSquareLoss::set_prev_seg_end(int prev_seg_end){
   SquareLossPieceList::iterator it;
   for(it=piece_list.begin(); it != piece_list.end(); it++){

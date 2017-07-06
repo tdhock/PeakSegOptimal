@@ -101,6 +101,7 @@ public:
   SquareLossPieceList piece_list;
   void set_to_min_less_of(PiecewiseSquareLoss *, int);
   void set_to_unconstrained_min_of(PiecewiseSquareLoss *, int);
+  void set_to_scaled_of(PiecewiseSquareLoss *, double, int);
   void set_to_min_env_of
     (PiecewiseSquareLoss *, PiecewiseSquareLoss *, int);
   int check_min_of(PiecewiseSquareLoss *, PiecewiseSquareLoss *);
@@ -110,6 +111,7 @@ public:
   void push_piece(SquareLossPieceList::iterator, double, double);
   void add(double Square, double Linear, double Constant);
   void multiply(double);
+  void scale(double);
   void print();
   void set_prev_seg_end(int prev_seg_end);
   void findMean(double mean, int *seg_end, double *prev_mean);
