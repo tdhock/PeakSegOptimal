@@ -403,7 +403,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
       }else{// Log is not zero.
         // Theoretically there can be zero, one, or two intersection
         // points between the constant function prev_min_log_mean and a
-        // non-degenerate Poisson loss function piece. 
+        // non-degenerate Poisson loss function piece.
         if(it->has_two_roots(prev_min_cost)){
           // There are two mean values where the Poisson loss piece
           // intersects the constant function prev_min_log_mean, but we
@@ -428,7 +428,7 @@ void PiecewisePoissonLossLog::set_to_min_less_of
           if(verbose)printf("constant numerically equal on right\n");
           piece_list.emplace_back
             (0, 0, prev_min_cost,
-             prev_min_log_mean, it->max_log_mean, 
+             prev_min_log_mean, it->max_log_mean,
              PREV_NOT_SET,
              prev_best_log_mean);
           prev_min_cost = INFINITY;
@@ -510,9 +510,9 @@ void PiecewisePoissonLossLog::set_to_min_more_of
           // piece later. NB it is possible that mu==prev_max_log_mean, in
           // which case we do not need to save the convex piece.
           if(verbose)printf("min in this interval at mu=%f\n", mu);
-          if(mu < prev_max_log_mean){ 
+          if(mu < prev_max_log_mean){
             piece_list.emplace_front
-            (it->Linear, it->Log, it->Constant, mu, prev_max_log_mean, 
+            (it->Linear, it->Log, it->Constant, mu, prev_max_log_mean,
              PREV_NOT_SET, INFINITY); // equality constraint active on convex piece.
           }
           prev_max_log_mean = mu;
@@ -548,12 +548,12 @@ void PiecewisePoissonLossLog::set_to_min_more_of
       }else{// Log is not zero.
         // Theoretically there can be zero, one, or two intersection
         // points between the constant function prev_min_log_mean and a
-        // non-degenerate Poisson loss function piece. 
+        // non-degenerate Poisson loss function piece.
         if(it->has_two_roots(prev_min_cost)){
           // There are two mean values where the Poisson loss piece
           // intersects the constant function prev_min_log_mean, but we
           // are only concerned with the second mean value (the
-          // greater of the two). 
+          // greater of the two).
           mu = it->get_larger_root(prev_min_cost);
           if(verbose)printf("large root log_mean=%f\n", mu);
         }//if(there are two roots
@@ -1211,7 +1211,7 @@ void PiecewisePoissonLossLog::push_piece
 
 /*
 * Square loss methods
-* 
+*
 * @author Sean Jewell 27 April 2017
 */
 
@@ -1432,7 +1432,7 @@ void PiecewiseSquareLoss::set_to_scaled_of(PiecewiseSquareLoss *input,
     piece_list.emplace_back(Square, Linear, it -> Constant,
                             min_mean, max_mean,it -> data_i, it -> prev_mean);
     
-    it--;
+    it++;
   } //end while
   
 }
@@ -1557,9 +1557,11 @@ void PiecewiseSquareLoss::findMean
   (double mean, int *seg_end, double *prev_mean){
   SquareLossPieceList::iterator it;
   for(it=piece_list.begin(); it != piece_list.end(); it++){
+    //	  printf("looking for mean %f in interval [%f, %f]\n", mean, it -> min_mean, it -> max_mean);
     if(it->min_mean <= mean && mean <= it->max_mean){
       *seg_end = it->data_i;
       *prev_mean = it->prev_mean;
+      //      printf("peel off mean %f \n", &(it -> prev_mean));
       return;
     }
   }
@@ -1841,7 +1843,22 @@ void PiecewiseSquareLoss::push_min_pieces
      -5, false);
   // Evaluate the middle in the original space, to avoid problems when
   // first_max_log_mean is -Inf.
-  double mid_mean = (first_max_mean + last_min_mean) / 2;
+  // SWJ: need to be careful here in case either first_max_mean of last_min_mean
+  // is -Inf or Inf
+  // If either is Inf or -Inf then
+  
+  double mid_mean;
+  if (first_max_mean != INFINITY && last_min_mean != -INFINITY) {
+    mid_mean = (first_max_mean + last_min_mean) / 2;
+  } else if (first_max_mean != INFINITY && last_min_mean == -INFINITY) {
+    mid_mean = first_max_mean - 1;
+  } else if (first_max_mean == INFINITY && last_min_mean != -INFINITY) {
+    mid_mean = last_min_mean + 1;
+  } else  {
+    mid_mean = 0;
+  }
+  
+  
   double cost_diff_mid = diff_piece.getCost(mid_mean);
   // Easy case of equality on both left and right.
   if(same_at_left && same_at_right){
@@ -2034,7 +2051,14 @@ void PiecewiseSquareLoss::push_min_pieces
   }//if(two_roots
   if(second_mean != INFINITY){
     // two crossing points.
-    double before_mean = (last_min_mean + first_mean )/2;
+    // SWJ: Need to be careful for left-most limit as this could be -inf
+    double before_mean;
+    if (last_min_mean != -INFINITY) {
+      before_mean = (last_min_mean + first_mean )/2;
+    } else {
+      before_mean = first_mean - 1; // should be able to compare anywhere in the interval (-inf, first_mean] ?
+    }
+    
     double cost_diff_before = diff_piece.getCost(before_mean);
     if(cost_diff_before < 0){
       push_piece(it1, last_min_mean, first_mean);
@@ -2051,12 +2075,31 @@ void PiecewiseSquareLoss::push_min_pieces
     // < first_log_mean < first_max_log_mean but cost_diff_before and
     // cost_diff_after have the same sign! In that case we need to
     // just push one piece.
-    double before_mean = (last_min_mean + first_mean) / 2;
+    
+    // need to be careful here, too
+    // last_min_mean could be -Inf
+    double before_mean;
+    if (last_min_mean != -INFINITY) {
+      before_mean = (last_min_mean + first_mean) / 2;
+    } else {
+      before_mean = first_mean - 1;
+    }
+    
     double cost_diff_before = diff_piece.getCost(before_mean);
     if(verbose){
       printf("cost_diff_before(%.55f)=%f\n", before_mean, cost_diff_before);
     }
-    double after_mean = (first_max_mean + first_mean)/2;
+    
+    // SWJ: need to be careful as first_max_mean could be inf
+    double after_mean;
+    
+    if (first_max_mean != INFINITY) {
+      after_mean = (first_max_mean + first_mean)/2;
+    } else {
+      after_mean = first_mean + 1; // should be able to check anywhere in the interval (first_mean, inf)?
+    }
+    
+    
     double cost_diff_after = diff_piece.getCost(after_mean);
     if(verbose)printf("cost_diff_after(%.55f)=%f\n", after_mean, cost_diff_after);
     if(cost_diff_before < 0){
@@ -2122,8 +2165,6 @@ void PiecewiseSquareLoss::push_min_pieces
 void PiecewiseSquareLoss::push_piece
   (SquareLossPieceList::iterator it, double min_mean, double max_mean){
   if(max_mean <= min_mean){
-    // why do we need this? TODO: figure out where this is called, and
-    // just do not call push_piece at all.
     return;
   }
   SquareLossPieceList::iterator last=piece_list.end();
@@ -2133,7 +2174,7 @@ void PiecewiseSquareLoss::push_piece
   it->prev_mean == last->prev_mean &&
   it->data_i == last->data_i){
     //it is the same function as last, so just make last extend
-    //further to the right.
+    //farther to the right.
     last->max_mean = max_mean;
   }else{
     //it is a different function than last, so push it on to the end

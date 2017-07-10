@@ -19,11 +19,11 @@ void ARFPOP
    double *mean_vec,//data_count
    int *intervals_mat,//data_count
    bool *constraint){
-  double min_mean=0, max_mean=INFINITY;
+  double min_mean=-INFINITY, max_mean=INFINITY;
   
   std::vector<PiecewiseSquareLoss> cost_model_mat(data_count);
   PiecewiseSquareLoss *cost, *cost_prev;
-  PiecewiseSquareLoss min_prev_cost;
+  PiecewiseSquareLoss min_prev_cost, scaled_prev_cost, min_prev_cost_scaled;
   int verbose=0;
   for(int data_i=0; data_i<data_count; data_i++){
     cost = &cost_model_mat[data_i];
@@ -32,8 +32,12 @@ void ARFPOP
       cost->piece_list.emplace_back
       (1.0, -2 * data_vec[0], data_vec[0] * data_vec[0],
        min_mean, max_mean, -1, false);
+      
     }else{ // Alg 3 ln 6 - 8
-      cost_prev -> scale(gam);
+      
+      
+      scaled_prev_cost.set_to_scaled_of(cost_prev, gam, verbose);
+      
       if (*constraint) {
         min_prev_cost.set_to_min_less_of(cost_prev, verbose);
       } else {
@@ -43,11 +47,15 @@ void ARFPOP
       min_prev_cost.set_prev_seg_end(data_i-1);
       min_prev_cost.add(0.0, 0.0, penalty);
       
-      cost->set_to_min_env_of(&min_prev_cost, cost_prev, verbose);
+      min_prev_cost_scaled.set_to_scaled_of(&min_prev_cost, gam, verbose);
+      
+      cost->set_to_min_env_of(&min_prev_cost_scaled, &scaled_prev_cost, verbose);
       cost->add
         (1.0,
          -2 * data_vec[data_i], data_vec[data_i] * data_vec[data_i]);
     }
+    
+    cost_prev = cost;
     
   }
   
@@ -61,6 +69,8 @@ void ARFPOP
     cost->Minimize
       (cost_mat+i, &best_mean,
        &prev_seg_end, &prev_mean);
+        // printf("=cost function* at data_i %d\n", i);
+        // cost -> print();
   }
   
   
@@ -78,15 +88,29 @@ void ARFPOP
   int out_i=0;
   double mean = best_mean;
   
+   // printf("last mean %f\n", mean);
+   // printf("prev_seg_end %d\n", prev_seg_end);
+  
   
   // loop over all prev. changepoints
+  double temp_mean;
   while(prev_seg_old >= 0){
     
     if (prev_seg_old < data_count - 1) {
       cost = &cost_model_mat[prev_seg_end];
       cost -> findMean
         (mean, &prev_seg_end, &prev_mean);
+      
+     // temp_mean = mean;
+     // 
+     // cost->Minimize
+     //   (&best_cost, &mean,
+     //    &prev_seg_end, &prev_mean);
+     // 
+     // printf("Found mean %f versus %f min mean\n", temp_mean, mean);
+      
     }
+    
     
     for (int t = prev_seg_old; t > prev_seg_end; t--){
       mean_vec[out_i] = mean;
@@ -97,7 +121,7 @@ void ARFPOP
     
     prev_seg_old = prev_seg_end;
     
-    if (prev_seg_old > 0) {
+    if (prev_seg_old >= 0) {
       if(prev_mean < INFINITY){
         //equality constraint inactive
         mean = prev_mean;
