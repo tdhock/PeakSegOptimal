@@ -13,7 +13,7 @@ ARFPOP <- structure(function
                             if (!is.null(weight.vec)) {
                               warning("Weights not currently implemented") 
                             }
-                            
+                            stopifnot(gam > 0 && gam < 1)
                             stopifnot(!is.null(gam))
                             weight.vec <- rep(1, length(dat.vec))
                             n.data <- length(dat.vec)
@@ -55,7 +55,7 @@ ARFPOP <- structure(function
                             # start.vec <- c(1, change.vec+1)
                             # length.vec <- end.vec-start.vec+1
                             # mean.vec <- rev(result.list$mean.vec[1:(length(change.vec)+1)])
-                            # result.list$fitted.values <- rep(mean.vec, length.vec)
+                            result.list$fitted.values <- rev(result.list$mean.vec)
                             # 
                             return(result.list)
                             ### List of model parameters. count.vec, weight.vec, n.data, penalty

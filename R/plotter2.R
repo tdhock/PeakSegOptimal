@@ -6,7 +6,8 @@ pattern <- paste0(
 library(namedCapture)
 library(data.table)
 library(ggplot2)
-MAX <- 10
+MAX <- 5
+MIN <- -MAX
 sloss <- function(dt, x){
   ## need to make a new data table, otherwise ifelse may only get one
   ## element, and return only one element.
@@ -19,7 +20,7 @@ getLines <- function(dt){
   for(piece.i in 1:nrow(dt)){
     piece <- dt[piece.i,]
     mean.vec <- piece[, {
-      min.mean <- min_mean
+      min.mean <- max(min_mean, MIN)
       max.mean <- min(max_mean, MAX)
       seq(min.mean, max.mean, l=1000)
     }]
@@ -57,23 +58,32 @@ gdata <- function(txt){
 viz.list <- gdata( "
 =min-less/more
     Square     Linear        Constant        min_mean        max_mean       prev_mean data_i
-                   0.00000000000000000000e+00 0.00000000000000000000e+00 2.00000000000000000000e+00        0.000000             inf        2.000000 1
+                   0.00000000000000000000e+00 0.00000000000000000000e+00 1.71372993871380030484e+00            -inf             inf       -0.335433 1
 =cost model
+                   Square     Linear        Constant        min_mean        max_mean       prev_mean data_i
+                   4.00000000000000000000e+00 5.70600000000000040501e+00 3.03490225000000046762e+00            -inf       -0.490978       -0.481957 0
+                   2.00000000000000000000e+01 1.34173040000000014516e+01 2.96403052156900059799e+00       -0.490978        0.009022        0.000000 -1
+                   4.00000000000000000000e+00 5.70600000000000040501e+00 3.03490225000000046762e+00        0.009022             inf       -0.481957 0
+=result
     Square     Linear        Constant        min_mean        max_mean       prev_mean data_i
-                   1.00000000000000000000e+00 -4.00000000000000000000e+00 5.00000000000000000000e+00        0.000000        3.000000        4.000000 0
-                   2.00000000000000000000e+00 -1.20000000000000000000e+01 2.00000000000000000000e+01        3.000000        5.000000        0.000000 -1
-                   1.00000000000000000000e+00 -4.00000000000000000000e+00 5.00000000000000000000e+00        5.000000             inf        4.000000 0
-=outerer
-    Square     Linear        Constant        min_mean        max_mean       prev_mean data_i
-0.00000000000000000000e+00 0.00000000000000000000e+00 2.00000000000000000000e+00        0.000000        1.000000        2.000000 1
-                   1.00000000000000000000e+00 -4.00000000000000000000e+00 5.00000000000000000000e+00        1.000000        3.000000        4.000000 0
-                   0.00000000000000000000e+00 0.00000000000000000000e+00 2.00000000000000000000e+00        3.000000        5.000000        2.000000 1
+4.00000000000000000000e+00 5.70600000000000040501e+00 3.03490225000000046762e+00            -inf       -0.490978       -0.481957 0
+                   2.00000000000000000000e+01 1.34173040000000014516e+01 2.96403052156900059799e+00       -0.490978       -0.111826        0.000000 -1
+                   0.00000000000000000000e+00 0.00000000000000000000e+00 1.71372993871380030484e+00       -0.111826             inf       -0.335433 1
                   ")
 ggplot()+
   # geom_vline(xintercept=xi, linetype="dashed")+
   geom_line(aes(mean, cost, color=fun),
-            size=2,
-            alpha=0.5,
-            data=viz.list$funs) + 
-  geom_vline(xintercept=3, linetype="dashed")+ geom_vline(xintercept=5, linetype="dashed")
+            size=1,
+            alpha=1,
+            data=viz.list$funs) #+ geom_vline(xintercept=-1.176176) 
+
+
+#+ facet_wrap(~fun) +
+ #                 geom_vline(xintercept=0.4054054) +
+  #                geom_hline(yintercept = 2.284542)
+  
+  
+  #+ geom_vline(xintercept=y[2], linetype="dashed")
+
+# + geom_vline(xintercept=y[2], linetype="dashed")+ geom_vline(xintercept=y[3], linetype="dashed")
 
