@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "funPieceListLog.h"
 #include <math.h>
+#include <R.h> // for Rprintf
 
 #define IFPRINT(arg) if(data_i==-3 && total_changes==1) (arg)
 
@@ -46,8 +47,8 @@ void PeakSegPDPALog
     for(int data_i=total_changes; data_i<data_count; data_i++){
       int prev_i = data_i-1;
       prev_cost_model = &cost_model_vec[prev_i + (total_changes-1)*data_count];
-      IFPRINT(printf("DP changes=%d data_i=%d\n", total_changes, data_i));
-      IFPRINT(printf("=prev cost model\n"));
+      IFPRINT(Rprintf("DP changes=%d data_i=%d\n", total_changes, data_i));
+      IFPRINT(Rprintf("=prev cost model\n"));
       IFPRINT(prev_cost_model->print());
       int verbose = 0, status;
       IFPRINT(verbose=1);
@@ -58,49 +59,49 @@ void PeakSegPDPALog
       }
       status = min_prev_cost.check_min_of(prev_cost_model, prev_cost_model);
       if(status){
-	printf("BAD MIN LESS/MORE CHECK status=%d changes=%d data_i=%d\n",
+	Rprintf("BAD MIN LESS/MORE CHECK status=%d changes=%d data_i=%d\n",
 	       status, total_changes, data_i);
 	if(total_changes % 2){
 	  min_prev_cost.set_to_min_less_of(prev_cost_model, true);
 	}else{
 	  min_prev_cost.set_to_min_more_of(prev_cost_model, true);
 	}
-	printf("=prev cost\n");
+	Rprintf("=prev cost\n");
 	prev_cost_model->print();
-	printf("=min less/more(prev cost)\n");
+	Rprintf("=min less/more(prev cost)\n");
 	min_prev_cost.print();
 	throw status;
       }
       min_prev_cost.set_prev_seg_end(prev_i);
       new_cost_model = &cost_model_vec[data_i + total_changes*data_count];
       if(data_i==total_changes){//first cost model, only one candidate.
-	IFPRINT(printf("=new cost model = min prev cost\n"));
+	IFPRINT(Rprintf("=new cost model = min prev cost\n"));
 	IFPRINT(min_prev_cost.print());
 	*new_cost_model = min_prev_cost;
       }else{
-	IFPRINT(printf("=min prev cost\n"));
+	IFPRINT(Rprintf("=min prev cost\n"));
         IFPRINT(min_prev_cost.print());
-	IFPRINT(printf("=cost model\n"));
+	IFPRINT(Rprintf("=cost model\n"));
 	IFPRINT(cost_model.print());
 	new_cost_model->set_to_min_env_of
 	  (&min_prev_cost, &cost_model, verbose);
 	status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
 	if(status){
-	  printf("DP changes=%d data_i=%d BAD CHECK status=%d\n", total_changes, data_i, status);
+	  Rprintf("DP changes=%d data_i=%d BAD CHECK status=%d\n", total_changes, data_i, status);
 	  new_cost_model->set_to_min_env_of
 	    (&min_prev_cost, &cost_model, true);
-	  printf("=prev cost model\n");
+	  Rprintf("=prev cost model\n");
 	  prev_cost_model->print();
-	  printf("=min prev cost\n");
+	  Rprintf("=min prev cost\n");
 	  min_prev_cost.print();
-	  printf("=cost model\n");
+	  Rprintf("=cost model\n");
 	  cost_model.print();
-	  printf("=new cost model\n");
+	  Rprintf("=new cost model\n");
 	  new_cost_model->print();
 	  throw status;
 	}
       }
-      IFPRINT(printf("=new cost model\n"));
+      IFPRINT(Rprintf("=new cost model\n"));
       IFPRINT(new_cost_model->print());
       new_cost_model->multiply(weight_cumsum_vec[prev_i]);
       new_cost_model->add
@@ -129,14 +130,14 @@ void PeakSegPDPALog
   }
   for(int total_changes=0; total_changes<maxSegments;total_changes++){
     for(int data_i=total_changes; data_i<data_count; data_i++){
-      IFPRINT(printf("decoding changes=%d data_i=%d\n", total_changes, data_i));
+      IFPRINT(Rprintf("decoding changes=%d data_i=%d\n", total_changes, data_i));
       PiecewisePoissonLossLog *cost_model =
 	&cost_model_vec[data_i + total_changes*data_count];
       IFPRINT(cost_model->print());
       cost_model->Minimize
 	(&best_cost, &best_log_mean,
 	 &prev_seg_end, &prev_log_mean);
-      IFPRINT(printf("cost=%f log_mean=%f prev_end=%d prev_log_mean=%f\n", best_cost, best_log_mean, prev_seg_end, prev_log_mean));
+      IFPRINT(Rprintf("cost=%f log_mean=%f prev_end=%d prev_log_mean=%f\n", best_cost, best_log_mean, prev_seg_end, prev_log_mean));
       // for the models up to any data point, we store the best cost
       // and the total number of intervals.
       cost_mat[data_i + total_changes*data_count] = best_cost;
@@ -151,7 +152,7 @@ void PeakSegPDPALog
 	best_mean_vec[total_changes] = exp(best_log_mean);
 	prev_seg_vec[total_changes] = prev_seg_end;
 	for(int seg_i=total_changes-1; 0 <= seg_i; seg_i--){
-	  //printf("seg_i=%d prev_seg_end=%d\n", seg_i, prev_seg_end);
+	  //Rprintf("seg_i=%d prev_seg_end=%d\n", seg_i, prev_seg_end);
 	  cost_model = &cost_model_vec[prev_seg_end + seg_i*data_count];
 	  if(prev_log_mean != INFINITY){
 	    //equality constraint inactive
@@ -200,8 +201,8 @@ void PeakSegPDPAInf
     for(int data_i=total_changes; data_i<data_count; data_i++){
       int prev_i = data_i-1;
       prev_cost_model = &cost_model_vec[prev_i + (total_changes-1)*data_count];
-      IFPRINT(printf("DP changes=%d data_i=%d\n", total_changes, data_i));
-      IFPRINT(printf("=prev cost model\n"));
+      IFPRINT(Rprintf("DP changes=%d data_i=%d\n", total_changes, data_i));
+      IFPRINT(Rprintf("=prev cost model\n"));
       IFPRINT(prev_cost_model->print());
       int verbose = 0, status;
       IFPRINT(verbose=1);
@@ -212,49 +213,49 @@ void PeakSegPDPAInf
       }
       status = min_prev_cost.check_min_of(prev_cost_model, prev_cost_model);
       if(status){
-	printf("BAD MIN LESS/MORE CHECK status=%d changes=%d data_i=%d\n",
+	Rprintf("BAD MIN LESS/MORE CHECK status=%d changes=%d data_i=%d\n",
 	       status, total_changes, data_i);
 	if(total_changes % 2){
 	  min_prev_cost.set_to_min_less_of(prev_cost_model, true);
 	}else{
 	  min_prev_cost.set_to_min_more_of(prev_cost_model, true);
 	}
-	printf("=prev cost\n");
+	Rprintf("=prev cost\n");
 	prev_cost_model->print();
-	printf("=min less/more(prev cost)\n");
+	Rprintf("=min less/more(prev cost)\n");
 	min_prev_cost.print();
 	throw status;
       }
       min_prev_cost.set_prev_seg_end(prev_i);
       new_cost_model = &cost_model_vec[data_i + total_changes*data_count];
       if(data_i==total_changes){//first cost model, only one candidate.
-	IFPRINT(printf("=new cost model = min prev cost\n"));
+	IFPRINT(Rprintf("=new cost model = min prev cost\n"));
 	IFPRINT(min_prev_cost.print());
 	*new_cost_model = min_prev_cost;
       }else{
-	IFPRINT(printf("=min prev cost\n"));
+	IFPRINT(Rprintf("=min prev cost\n"));
         IFPRINT(min_prev_cost.print());
-	IFPRINT(printf("=cost model\n"));
+	IFPRINT(Rprintf("=cost model\n"));
 	IFPRINT(cost_model.print());
 	new_cost_model->set_to_min_env_of
 	  (&min_prev_cost, &cost_model, verbose);
 	status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
 	if(status){
-	  printf("DP changes=%d data_i=%d BAD CHECK status=%d\n", total_changes, data_i, status);
+	  Rprintf("DP changes=%d data_i=%d BAD CHECK status=%d\n", total_changes, data_i, status);
 	  new_cost_model->set_to_min_env_of
 	    (&min_prev_cost, &cost_model, true);
-	  printf("=prev cost model\n");
+	  Rprintf("=prev cost model\n");
 	  prev_cost_model->print();
-	  printf("=min prev cost\n");
+	  Rprintf("=min prev cost\n");
 	  min_prev_cost.print();
-	  printf("=cost model\n");
+	  Rprintf("=cost model\n");
 	  cost_model.print();
-	  printf("=new cost model\n");
+	  Rprintf("=new cost model\n");
 	  new_cost_model->print();
 	  throw status;
 	}
       }
-      IFPRINT(printf("=new cost model\n"));
+      IFPRINT(Rprintf("=new cost model\n"));
       IFPRINT(new_cost_model->print());
       new_cost_model->multiply(weight_cumsum_vec[prev_i]);
       new_cost_model->add
@@ -283,14 +284,14 @@ void PeakSegPDPAInf
   }
   for(int total_changes=0; total_changes<maxSegments;total_changes++){
     for(int data_i=total_changes; data_i<data_count; data_i++){
-      IFPRINT(printf("decoding changes=%d data_i=%d\n", total_changes, data_i));
+      IFPRINT(Rprintf("decoding changes=%d data_i=%d\n", total_changes, data_i));
       PiecewisePoissonLossLog *cost_model =
 	&cost_model_vec[data_i + total_changes*data_count];
       IFPRINT(cost_model->print());
       cost_model->Minimize
 	(&best_cost, &best_log_mean,
 	 &prev_seg_end, &prev_log_mean);
-      IFPRINT(printf("cost=%f log_mean=%f prev_end=%d prev_log_mean=%f\n", best_cost, best_log_mean, prev_seg_end, prev_log_mean));
+      IFPRINT(Rprintf("cost=%f log_mean=%f prev_end=%d prev_log_mean=%f\n", best_cost, best_log_mean, prev_seg_end, prev_log_mean));
       // for the models up to any data point, we store the best cost
       // and the total number of intervals.
       cost_mat[data_i + total_changes*data_count] = best_cost;
@@ -305,7 +306,7 @@ void PeakSegPDPAInf
 	best_mean_vec[total_changes] = exp(best_log_mean);
 	prev_seg_vec[total_changes] = prev_seg_end;
 	for(int seg_i=total_changes-1; 0 <= seg_i; seg_i--){
-	  //printf("seg_i=%d prev_seg_end=%d\n", seg_i, prev_seg_end);
+	  //Rprintf("seg_i=%d prev_seg_end=%d\n", seg_i, prev_seg_end);
 	  cost_model = &cost_model_vec[prev_seg_end + seg_i*data_count];
 	  if(prev_log_mean != INFINITY){
 	    //equality constraint inactive

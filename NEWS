@@ -3,6 +3,12 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2017.07.11
+
+cast to double before taking log, to avoid compile error on solaris.
+
+instead of printf, use Rprintf from R.h, to avoid CRAN check NOTE.
+
 2017.06.20
 
 Register native routines.

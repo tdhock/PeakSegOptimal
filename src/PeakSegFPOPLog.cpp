@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "funPieceListLog.h"
 #include <math.h>
+#include <R.h> // for Rprintf
 
 void PeakSegFPOPLog
 (int *data_vec, double *weight_vec, int data_count,
@@ -46,11 +47,11 @@ void PeakSegFPOPLog
       min_prev_cost.set_to_min_less_of(down_cost_prev, verbose);
       int status = min_prev_cost.check_min_of(down_cost_prev, down_cost_prev);
       if(status){
-	printf("BAD MIN LESS CHECK data_i=%d status=%d\n", data_i, status);
+	Rprintf("BAD MIN LESS CHECK data_i=%d status=%d\n", data_i, status);
 	min_prev_cost.set_to_min_less_of(down_cost_prev, true);
-	printf("=prev down cost\n");
+	Rprintf("=prev down cost\n");
 	down_cost_prev->print();
-	printf("=min less(prev down cost)\n");
+	Rprintf("=min less(prev down cost)\n");
 	min_prev_cost.print();
 	throw status;
       }
@@ -68,15 +69,15 @@ void PeakSegFPOPLog
 	up_cost->set_to_min_env_of(&min_prev_cost, up_cost_prev, verbose);
 	status = up_cost->check_min_of(&min_prev_cost, up_cost_prev);
 	if(status){
-	  printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
+	  Rprintf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
 	  up_cost->set_to_min_env_of(&min_prev_cost, up_cost_prev, true);
-	  printf("=prev down cost\n");
+	  Rprintf("=prev down cost\n");
 	  down_cost_prev->print();
-	  printf("=min less(prev down cost) + %f\n", penalty);
+	  Rprintf("=min less(prev down cost) + %f\n", penalty);
 	  min_prev_cost.print();
-	  printf("=prev up cost\n");
+	  Rprintf("=prev up cost\n");
 	  up_cost_prev->print();
-	  printf("=new up cost model\n");
+	  Rprintf("=new up cost model\n");
 	  up_cost->print();
 	  throw status;
 	}
@@ -97,32 +98,32 @@ void PeakSegFPOPLog
 	min_prev_cost.set_to_min_more_of(up_cost_prev, verbose);
 	status = min_prev_cost.check_min_of(up_cost_prev, up_cost_prev);
 	if(status){
-	  printf("BAD MIN MORE CHECK data_i=%d status=%d\n", data_i, status);
+	  Rprintf("BAD MIN MORE CHECK data_i=%d status=%d\n", data_i, status);
 	  min_prev_cost.set_to_min_more_of(up_cost_prev, true);
-	  printf("=prev up cost\n");
+	  Rprintf("=prev up cost\n");
 	  up_cost_prev->print();
-	  printf("=min more(prev up cost)\n");
+	  Rprintf("=min more(prev up cost)\n");
 	  min_prev_cost.print();
 	  throw status;
 	}
 	min_prev_cost.set_prev_seg_end(data_i-1);
 	//NO PENALTY FOR DOWN CHANGE
 	// if(data_i==27042){
-	//   printf("computing cost data_i=%d\n", data_i);
+	//   Rprintf("computing cost data_i=%d\n", data_i);
 	//   verbose=1;
 	// }
 	down_cost->set_to_min_env_of(&min_prev_cost, down_cost_prev, verbose);
 	status = down_cost->check_min_of(&min_prev_cost, down_cost_prev);
 	if(status){
-	  printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
+	  Rprintf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
 	  down_cost->set_to_min_env_of(&min_prev_cost, down_cost_prev, true);
-	  printf("=prev up cost\n");
+	  Rprintf("=prev up cost\n");
 	  up_cost_prev->print();
-	  printf("=min more(prev up cost)\n");
+	  Rprintf("=min more(prev up cost)\n");
 	  min_prev_cost.print();
-	  printf("=prev down cost\n");
+	  Rprintf("=prev down cost\n");
 	  down_cost_prev->print();
-	  printf("=new down cost model\n");
+	  Rprintf("=new down cost model\n");
 	  down_cost->print();
 	  throw status;
 	}
@@ -165,7 +166,7 @@ void PeakSegFPOPLog
   while(0 <= prev_seg_end){
     // up_cost is actually either an up or down cost.
     up_cost = &cost_model_mat[prev_seg_offset + prev_seg_end];
-    //printf("decoding out_i=%d prev_seg_end=%d prev_seg_offset=%d\n", out_i, prev_seg_end, prev_seg_offset);
+    //Rprintf("decoding out_i=%d prev_seg_end=%d prev_seg_offset=%d\n", out_i, prev_seg_end, prev_seg_offset);
     //up_cost->print();
     if(prev_log_mean != INFINITY){
       //equality constraint inactive
@@ -215,7 +216,7 @@ void PeakSegFPOPLog
 //   PiecewisePoissonLossLog min_prev_cost;
 //   int verbose=0;
 //   for(int data_i=0; data_i<data_count; data_i++){
-//     //printf("computing cost data_i=%d\n", data_i);
+//     //Rprintf("computing cost data_i=%d\n", data_i);
 //     up_cost = &cost_model_mat[data_i];
 //     down_cost = &cost_model_mat[data_i + data_count]; 
 //     if(data_i==0){
@@ -270,13 +271,13 @@ void PeakSegFPOPLog
 //   up_cost->Minimize
 //     (&candidate_cost, &candidate_log_mean,
 //      &candidate_end, &candidate_constraint);
-//   //printf("final up cost=%f at log_mean=%f\n", candidate_cost, candidate_log_mean);
+//   //Rprintf("final up cost=%f at log_mean=%f\n", candidate_cost, candidate_log_mean);
 //   //up_cost->print();
 //   down_cost = &cost_model_mat[data_count*2-1];
 //   down_cost->Minimize
 //     (&best_cost, &best_log_mean,
 //      &prev_seg_end, &equality_constraint_active);
-//   //printf("final down cost=%f at log_mean=%f\n", best_cost, best_log_mean);
+//   //Rprintf("final down cost=%f at log_mean=%f\n", best_cost, best_log_mean);
 //   //down_cost->print();
 //   if(candidate_cost < best_cost){
 //     //more likely to end up, so previous segment was down.
@@ -294,7 +295,7 @@ void PeakSegFPOPLog
 //   end_vec[0] = prev_seg_end;
 //   int out_i=1;
 //   while(0 <= prev_seg_end){
-//     //printf("decoding out_i=%d prev_seg_end=%d prev_seg_offset=%d\n", out_i, prev_seg_end, prev_seg_offset);
+//     //Rprintf("decoding out_i=%d prev_seg_end=%d prev_seg_offset=%d\n", out_i, prev_seg_end, prev_seg_offset);
 //     up_cost = &cost_model_mat[prev_seg_offset + prev_seg_end];
 //     //up_cost->print();
 //     if(equality_constraint_active){
