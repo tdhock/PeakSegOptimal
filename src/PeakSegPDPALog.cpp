@@ -16,9 +16,9 @@ void PeakSegPDPALog
  int *end_mat,//maxSegments x maxSegments(model up to last data point).
  double *mean_mat,
  int *intervals_mat){//maxSegments x maxSegments(model up to last data point).
-  double min_log_mean=log(data_vec[0]), max_log_mean=log(data_vec[0]);
-  for(int data_i=1; data_i<data_count; data_i++){
-    double log_data = log(data_vec[data_i]);
+  double min_log_mean=INFINITY, max_log_mean=-INFINITY;
+  for(int data_i=0; data_i<data_count; data_i++){
+    double log_data = log( (double)data_vec[data_i] );
     if(log_data < min_log_mean){
       min_log_mean = log_data;
     }
