@@ -3,9 +3,14 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2017.07.12
+
+cast to double in PDPA as well.
+
 2017.07.11
 
-cast to double before taking log, to avoid compile error on solaris.
+cast to double before taking log, to avoid compile error on solaris
+(in PeakSegFPOP).
 
 instead of printf, use Rprintf from R.h, to avoid CRAN check NOTE.
 
