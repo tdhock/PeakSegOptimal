@@ -1589,7 +1589,7 @@ void PiecewiseSquareLoss::print(){
 }
 
 void SquareLossPiece::print(){
-  printf("%.20e %.20e %.20e %15f %15f %15f %d\n",
+  printf("%.20e %.20e %.20e %.20e %.20e %15f %d\n",
          Square, Linear, Constant,
          min_mean, max_mean,
          prev_mean, data_i);
@@ -1621,11 +1621,22 @@ void PiecewiseSquareLoss::Minimize
   }
 }
 
+double MidMean(double first, double second) {
+  if (first == -INFINITY && second == INFINITY) {
+    return 0.0;
+  } else if (first == -INFINITY && second != INFINITY) {
+    return second - 1;
+  } else if (first != -INFINITY && second == INFINITY) {
+    return first + 1;
+  } else {
+    return (first + second)  / 2;
+  }
+}
+
 // check that this function is the minimum on all pieces.
 int PiecewiseSquareLoss::check_min_of
   (PiecewiseSquareLoss *prev, PiecewiseSquareLoss *model){
   SquareLossPieceList::iterator it;
-  int verbose = 0;
   for(it = piece_list.begin(); it != piece_list.end(); it++){
     if(it != piece_list.begin()){
       SquareLossPieceList::iterator pit = it;
@@ -1639,7 +1650,8 @@ int PiecewiseSquareLoss::check_min_of
       printf("max_mean<=min_mean=%15.10f min\n", it->min_mean);
       return 2;
     }
-    double mid_mean = (it->min_mean + it->max_mean)/2;
+    double mid_mean = MidMean(it -> min_mean, it -> max_mean); //(it->min_mean + it->max_mean)/2;
+    //    printf("printing out mid mean %10.5f\n", mid_mean);
     if(-INFINITY < mid_mean){
       double cost_min = it->getCost(mid_mean);
       double cost_prev = prev->findCost(mid_mean);
@@ -1673,7 +1685,7 @@ int PiecewiseSquareLoss::check_min_of
       printf("max_mean<=min_mean=%15.10f prev\n", it->min_mean);
       return 2;
     }
-    double mid_mean = (it->min_mean + it->max_mean)/2;
+    double mid_mean = MidMean(it -> min_mean, it -> max_mean);
     if(-INFINITY < mid_mean){
       double cost_prev = it->getCost(mid_mean);
       double cost_min = findCost(mid_mean);
@@ -1699,7 +1711,7 @@ int PiecewiseSquareLoss::check_min_of
       printf("max_mean<=min_mean=%15.10f model\n", it->min_mean);
       return 2;
     }
-    double mid_mean = (it->min_mean + it->max_mean)/2;
+    double mid_mean = MidMean(it -> min_mean, it -> max_mean);
     if(-INFINITY < mid_mean){
       double cost_model = it->getCost(mid_mean);
       double cost_min = findCost(mid_mean);

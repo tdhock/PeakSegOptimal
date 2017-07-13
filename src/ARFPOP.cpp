@@ -30,7 +30,7 @@ void ARFPOP
     // Alg 3, ln 4
     if(data_i==0){
       cost->piece_list.emplace_back
-      (1.0, -2 * data_vec[0], data_vec[0] * data_vec[0],
+      (0.5, - data_vec[0], data_vec[0] * data_vec[0] / 2,
        min_mean, max_mean, -1, false);
       
     }else{ // Alg 3 ln 6 - 8
@@ -50,9 +50,30 @@ void ARFPOP
       min_prev_cost_scaled.set_to_scaled_of(&min_prev_cost, gam, verbose);
       
       cost->set_to_min_env_of(&min_prev_cost_scaled, &scaled_prev_cost, verbose);
+      
+      //      printf("at data point i = %d \n", data_i);
+      //      cost -> print();
+      int status = cost->check_min_of(&min_prev_cost_scaled, &scaled_prev_cost);
+      //      printf("-------\n");
+      
+      if(status){
+        printf("Lambda = %f \t Gamma = %f", penalty, gam);
+        printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
+        cost->set_to_min_env_of(&min_prev_cost_scaled, &scaled_prev_cost, true);
+        printf("=min_prev_cost_scaled\n");
+        min_prev_cost_scaled.print();
+        printf("=scaled_prev_cost + %f\n", penalty);
+        scaled_prev_cost.print();
+        // printf("=prev up cost\n");
+        // up_cost_prev->print();
+        printf("=new cost model\n");
+        cost->print();
+        throw status;
+      }
+      
       cost->add
-        (1.0,
-         -2 * data_vec[data_i], data_vec[data_i] * data_vec[data_i]);
+        (0.5,
+         - data_vec[data_i], data_vec[data_i] * data_vec[data_i] / 2);
     }
     
     cost_prev = cost;
