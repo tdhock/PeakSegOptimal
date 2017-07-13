@@ -14,7 +14,7 @@ void ARFPOP
    // end_vec and mean_vec store the best model up to and including the
    // last data point.
    double gam, // decay parameter
-   double *cost_mat,
+   double *cost_mat, // cost matrix
    int *end_vec, //data_count
    double *mean_vec,//data_count
    int *intervals_mat,//data_count
@@ -67,10 +67,11 @@ void ARFPOP
     cost = &cost_model_mat[i];
     intervals_mat[i] = cost->piece_list.size();
     cost->Minimize
-      (cost_mat+i, &best_mean,
+      (&best_cost, &best_mean,
        &prev_seg_end, &prev_mean);
-        // printf("=cost function* at data_i %d\n", i);
-        // cost -> print();
+    
+    
+    cost_mat[i] = best_cost;
   }
   
   

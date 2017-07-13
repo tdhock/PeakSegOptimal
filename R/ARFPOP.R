@@ -45,7 +45,7 @@ ARFPOP <- structure(function
                             ## 1-indexed segment ends!
                             result.list$ends.vec <- result.list$ends.vec+1L
                             result.list$cost.mat <- matrix(
-                              result.list$cost.mat*cumsum(weight.vec), 1, n.data, byrow=TRUE)
+                              result.list$cost.mat, 1, n.data, byrow=TRUE)
                             result.list$intervals.mat <- matrix(
                               result.list$intervals.mat, 1, n.data, byrow=TRUE)
                             
