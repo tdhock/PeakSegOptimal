@@ -19,8 +19,8 @@ void ARFPOP
    double *mean_vec,//data_count
    int *intervals_mat,//data_count
    bool *constraint){
-  double min_mean=-INFINITY, max_mean=INFINITY;
   
+  double min_mean=0, max_mean=INFINITY;
   std::vector<PiecewiseSquareLoss> cost_model_mat(data_count);
   PiecewiseSquareLoss *cost, *cost_prev;
   PiecewiseSquareLoss min_prev_cost, scaled_prev_cost, min_prev_cost_scaled;

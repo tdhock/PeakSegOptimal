@@ -13,7 +13,8 @@ ARFPOP <- structure(function
                             if (!is.null(weight.vec)) {
                               warning("Weights not currently implemented") 
                             }
-                            stopifnot(gam > 0 && gam < 1)
+                            stopifnot(sum(dat.vec < 0) == 0)
+                            stopifnot(gam > 0 && gam <= 1)
                             stopifnot(!is.null(gam))
                             weight.vec <- rep(1, length(dat.vec))
                             n.data <- length(dat.vec)
