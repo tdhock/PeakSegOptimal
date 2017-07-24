@@ -20,7 +20,21 @@ void ARFPOP
    int *intervals_mat,//data_count
    bool *constraint){
   
-  double min_mean=0, max_mean=INFINITY;
+  double min_mean=0, max_mean;
+  double scale = pow(gam, data_count + 1);
+  if (scale < INFINITY) {
+    max_mean = 0;
+    for(int data_i=0; data_i<data_count; data_i++){
+      double data = data_vec[data_i];
+      if(data > max_mean){
+        max_mean = data;
+      }
+    }
+    
+    max_mean *= (gam + 1) / scale;
+  } else {
+    max_mean = INFINITY;
+  }
   std::vector<PiecewiseSquareLoss> cost_model_mat(data_count);
   PiecewiseSquareLoss *cost, *cost_prev;
   PiecewiseSquareLoss min_prev_cost, scaled_prev_cost, min_prev_cost_scaled;
