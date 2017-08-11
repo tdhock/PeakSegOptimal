@@ -1,16 +1,22 @@
 PeakSegOptimal: Optimal Segmentation Subject to Up-Down Constraints
 
-[[https://travis-ci.org/tdhock/coseg][https://travis-ci.org/tdhock/coseg.png?branch=master]] 
+[[https://travis-ci.org/tdhock/PeakSegOptimal][https://travis-ci.org/tdhock/PeakSegOptimal.png?branch=master]]
 
-NOTE: the name of the package has been changed to PeakSegOptimal, to
+NOTE: the name of the package has been changed from coseg to PeakSegOptimal, to
 avoid confusion with the [[https://cran.r-project.org/web/packages/CoSeg/index.html][CoSeg]] package on CRAN (which is completely
 unrelated to this package).
 
 ** Installation
 
+From CRAN:
 #+BEGIN_SRC R
-install.packages("devtools")
-devtools::install_github("tdhock/coseg")
+install.packages("PeakSegOptimal")
+#+END_SRC
+
+From GitHub:
+#+BEGIN_SRC R
+if(!require(devtools))install.packages("devtools")
+devtools::install_github("tdhock/PeakSegOptimal")
 #+END_SRC
 
 ** PeakSeg solvers
@@ -108,7 +114,7 @@ temporary file on disk (rather than in memory).
 ** Related work
 
 An on-disk implementation of PeakSegFPOP is available as a [[https://github.com/tdhock/PeakSegFPOP][command
-line program]].
+line program]], or in [[https://github.com/tdhock/PeakSegPipeline][PeakSegPipeline]].
 
 | implementation | time       | memory     | disk       |
 |----------------+------------+------------+------------|
