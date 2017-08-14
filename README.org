@@ -102,25 +102,21 @@ cost. For example,
 But that model is not optimal, for the same reason (exercise for the
 reader).
 
-*** problem.* functions
 
-If you want to use the [[file:R/problems.R][problem.* functions]] to perform optimal
-segmentation and peak calling on the whole genome, please read the
-[[https://github.com/tdhock/PeakSegFPOP][PeakSegFPOP tutorial]]. R is limited by memory, so it is better to use
-the PeakSegFPOP command line program to compute optimal peak models
-for large bedGraph files, since it stores the optimal cost in a
-temporary file on disk (rather than in memory).
+** Related work: peak calling on the whole genome
 
-** Related work
+An on-disk implementation of PeakSegFPOP is available in [[https://github.com/tdhock/PeakSegFPOP][PeakSegFPOP]]
+or [[https://github.com/tdhock/PeakSegPipeline][PeakSegPipeline]]. These programs can be used to compute optimal peak
+models for large bedGraph files, since they stores the optimal cost in
+a temporary file on disk (rather than in memory). If you want to use
+PeakSeg to perform peak calling on the whole genome, please try using
+these other implementations.
 
-An on-disk implementation of PeakSegFPOP is available as a [[https://github.com/tdhock/PeakSegFPOP][command
-line program]], or in [[https://github.com/tdhock/PeakSegPipeline][PeakSegPipeline]].
-
-| implementation | time       | memory     | disk       |
-|----------------+------------+------------+------------|
-| command line   | O(N log N) | O(log N)   | O(N log N) |
-| R pkg coseg    | O(N log N) | O(N log N) | 0          |
+| implementation                    | time       | memory     | disk       |
+|-----------------------------------+------------+------------+------------|
+| PeakSegPipeline::PeakSegFPOP_disk | O(N log N) | O(log N)   | O(N log N) |
+| PeakSegOptimal::PeakSegFPOP       | O(N log N) | O(N log N) | 0          |
 
 Note that although both implementations are O(N log N) time complexity
-for N data points, the command line program is slower due to disk
-read/write overhead.
+for N data points, the PeakSegPipeline implementation is slower due to
+disk read/write overhead.
