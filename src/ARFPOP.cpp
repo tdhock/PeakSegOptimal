@@ -18,8 +18,7 @@ void ARFPOP
    int *end_vec, //data_count
    double *mean_vec,//data_count
    int *intervals_mat,//data_count
-   bool *constraint){
-   bool *constraint, 
+   bool *constraint,
    int *success){
   
   int MAX_N_INTERVALS = 1000;
@@ -98,7 +97,6 @@ void ARFPOP
           scaled_prev_cost.print();
           printf("=new cost model\n");
           cost->print();
-          fclose( stream );
           throw status;
         }
       } catch(int e) {
@@ -196,4 +194,5 @@ void ARFPOP
     }
     
   }
+}
 }
