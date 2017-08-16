@@ -1,116 +1,39 @@
-An R package for computing constrained optimal segmentation models
+# FastLZeroSpikeInference: A package for estimating spike times from calcium imaging data using an L0 penalty 
 
-[[https://travis-ci.org/tdhock/coseg][https://travis-ci.org/tdhock/coseg.png?branch=master]] 
+This package implements an algorithm for deconvolving calcium imaging data for a single neuron in order to estimate the times at which the neuron spikes. This algorithim is a modification of the constrained functional pruning algorithm of Hocking et al. (2017). 
 
-** Installation
+This algorithm solves the optimization problems
+### AR(1) model
+minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t neq gamma c_{t-1} }
+subject to c_t >= 0, t = 1, ..., T
 
-#+BEGIN_SRC R
-install.packages("devtools")
-devtools::install_github("tdhock/coseg")
-#+END_SRC
+for the global optimum, where y_t is the observed fluorescence at the tth timepoint.
 
-** PeakSeg solvers
+### Constrained AR(1) model 
+minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t neq gamma c_{t-1} }
+subject to c_t >= 0, t = 1, ..., T
+           c_{t} >= gamma c_{t-1}, t = 2, ..., T
 
-Linear time exact C++ solver for the optimal change points using the
-Poisson loss and the PeakSeg constraint. 
+Install 
+-----
 
-*** PeakSeg Segment Neighborhood problem
+If ``devtools`` is installed type 
 
-There are two R functions that solve the Segment Neighborhood problem
-(best models with at most 1,...,S segments). The constraints are first
-segment mean <= second segment mean >= third segment mean, etc. For S
-segments and N data points, complexity is O(S N log N) memory and
-O(S N log N) time.
-- PeakSegPDPA is a direct interface to the C++ code. Returns matrices
-  for the optimal cost and number of intervals stored by the algorithm
-  at each step. Input parameter is the maximum number of segments S,
-  and outputs are the optimal models from 1 to S segments.
-- PeakSegPDPAchrom is a more user-friendly interface, which takes a
-  data.frame with columns chrom, chromStart, chromEnd, count as input,
-  and returns data.frames as output. Input parameter is the maximum
-  number of peaks P (implying S = P*2+1 segments), and outputs are the
-  optimal models from 0 to P peaks.
+```r
+devtools::install_github("jewellsean/coseg")
+```
 
-*** PeakSeg Optimal Partitioning problem
+Usage
+----
 
-There are two R functions that solve the Optimal Partitioning problem
-(best model for a given penalty parameter). Input parameter is a
-non-negative penalty constant (bigger for fewer peaks, smaller for
-more peaks), and output is the model that minimizes the penalized cost
-using the specified penalty constant. For N data points, complexity is
-O(N log N) memory and time. The first segment mean is constrained
-to be down (mu_1 <= mu_2), as is the last (mu_{N-1} >= mu_N).
-- PeakSegFPOP is a direct interface to the C++ code. Returns matrices
-  for the optimal cost and number of intervals stored by the algorithm
-  at each step.
-- PeakSegFPOPchrom is a more user-friendly interface, which takes a
-  data.frame with columns chrom, chromStart, chromEnd, count as input,
-  and returns data.frames as output.
+Once installed type 
+```{r}
+library(coseg)
 
-*** Note about inequality constraints
+```
 
-Note that as defined in the [[http://jmlr.org/proceedings/papers/v37/hocking15.html][PeakSeg ICML'15 paper]], the PeakSeg problem
-has strict inequality constraints (segment mean 1 < segment mean 2 >
-segment mean 3, etc). However, the solvers in this package use
-non-strict inequality constraints (segment mean 1 <= segment mean 2 >=
-segment mean 3, etc), and so may return a model with adjacent segment
-means that are equal. In this case, the minimum of the PeakSeg problem
-with strict inequality constraints is undefined. For example,
+References
+-----
 
-#+BEGIN_SRC R
-  library(coseg)
-  data.vec <- as.integer(c(1, 2, 3))
-  fit <- PeakSegPDPA(data.vec, max.segments=3L)
-#+END_SRC
-
-For the data 1, 2, 3 the optimal model with at most 3 segments
-actually has only 2 segments:
-
-#+BEGIN_SRC 
-> fit$mean.mat[3,]
-[1] 1.0 2.5 2.5
-#+END_SRC
-
-This implies that the optimal model with strict inequality constraints
-is undefined for these data. For example, the model with means 1, 3, 2
-satisfies the strict inequality constraint, and has a PoissonLoss of
-
-#+BEGIN_SRC 
-> PoissonLoss(c(1,2,3), c(1,3,2))
-[1] 1.723334
-#+END_SRC
-
-But that model is not optimal, because there is another model that
-satisfies the strict inequality constraints, but has a better
-cost. For example, 
-
-#+BEGIN_SRC 
-> PoissonLoss(c(1,2,3), c(1,2.9,2.1))
-[1] 1.644766
-#+END_SRC
-
-But that model is not optimal, for the same reason (exercise for the
-reader).
-
-*** problem.* functions
-
-If you want to use the [[file:R/problems.R][problem.* functions]] to perform optimal
-segmentation and peak calling on the whole genome, please read the
-[[https://github.com/tdhock/PeakSegFPOP][PeakSegFPOP tutorial]]. R is limited by memory, so it is better to use
-the PeakSegFPOP command line program to compute optimal peak models
-for large bedGraph files, since it stores the optimal cost in a
-temporary file on disk (rather than in memory).
-
-** Related work
-
-An on-disk implementation of PeakSegFPOP is available as a [[https://github.com/tdhock/PeakSegFPOP][command
-line program]].
-
-| implementation | time       | memory     | disk       |
-|----------------+------------+------------+------------|
-| command line   | O(N log N) | O(log N)   | O(N log N) |
-| R pkg coseg    | O(N log N) | O(N log N) | 0          |
-
-Note that although both implementations are O(N log N) time complexity
-for N data points, the command line program is slower due to disk
-read/write overhead.
+Jewell and Witten (2017). [Exact Spike Train Inference Via L0 Optimization](https://arxiv.org/abs/1703.08644)
+Hocking, T. D., Rigaill, G., Fearnhead, P., & Bourque, G. (2017). [A log-linear time algorithm for constrained changepoint detection](https://arxiv.org/abs/1703.03352)

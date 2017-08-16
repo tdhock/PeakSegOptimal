@@ -1,6 +1,6 @@
 Package: coseg
-Maintainer: Toby Dylan Hocking <toby.hocking@r-project.org>
-Author: Toby Dylan Hocking
+Maintainer: Sean Jewell <swjewell@uw.edu>
+Author: Sean Jewell, Toby Dylan Hocking
 Version: 2017.04.17
 License: GPL-3
 Title: Constrained Optimal Segmentation
