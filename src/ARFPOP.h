@@ -5,4 +5,5 @@ void ARFPOP
   double *cost_mat,
   int *end_vec,
   double *mean_vec,
-  int *intervals_mat, bool *constraint);
+  int *intervals_mat, bool *constraint, 
+  int *success);

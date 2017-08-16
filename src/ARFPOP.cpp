@@ -19,6 +19,10 @@ void ARFPOP
    double *mean_vec,//data_count
    int *intervals_mat,//data_count
    bool *constraint){
+   bool *constraint, 
+   int *success){
+  
+  int MAX_N_INTERVALS = 1000;
   
   double min_mean=0, max_mean;
   double scale = pow(gam, data_count + 1);
@@ -83,12 +87,39 @@ void ARFPOP
         printf("=new cost model\n");
         cost->print();
         throw status;
+      try {
+        if(status){
+          printf("Lambda = %.20e \t Gamma = %.100e\n", penalty, gam);
+          printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
+          cost->set_to_min_env_of(&min_prev_cost_scaled, &scaled_prev_cost, false);
+          printf("=min_prev_cost_scaled\n");
+          min_prev_cost_scaled.print();
+          printf("=scaled_prev_cost + %f\n", penalty);
+          scaled_prev_cost.print();
+          printf("=new cost model\n");
+          cost->print();
+          fclose( stream );
+          throw status;
+        }
+      } catch(int e) {
+        printf("An exception occured %d \n", e); 
       }
+
       
       cost->add
         (0.5,
          - data_vec[data_i], data_vec[data_i] * data_vec[data_i] / 2);
     }
+    
+    try {
+      if(cost->piece_list.size() > MAX_N_INTERVALS) {
+        throw (int) cost->piece_list.size();
+      }
+    } catch(int e) {
+      *success = 0;
+      printf("Numerically unstable: %d intervals. Choose a smaller lambda.\n", e);
+      return;
+  }
     
     cost_prev = cost;
     

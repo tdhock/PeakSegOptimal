@@ -11,7 +11,7 @@ ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE) {
   ends.vec <- integer(n.data)
   mean.vec <- double(n.data)
   intervals.mat <- integer(n.data)
-  
+  success <- 1
   result.list <- .C(
     "ARFPOP_interface",
     dat.vec = as.numeric(dat),
@@ -23,6 +23,7 @@ ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE) {
     mean.vec = as.double(mean.vec),
     intervals.mat = as.integer(intervals.mat),
     constraint = constraint,
+    success = as.integer(success),
     PACKAGE = "coseg"
   )
   
@@ -41,19 +42,25 @@ ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE) {
     constraint_str <- "-pos-constrained"  
   }
   
-  out <-
-    list(
-      spikes = spikes,
-      fittedValues = rev(result.list$mean.vec),
-      dat = dat,
-      type = paste0("ar1-fpop", constraint_str), 
-      changePts = changePts,
-      call = match.call(),
-      gam = gam,
-      lambda = lambda,
-      cost = as.numeric(result.list$cost.mat)
-    )
-  class(out) <- "estimatedSpikes"
-  return(out)
+  if (result.list$success) {
+    out <-
+      list(
+        spikes = spikes,
+        fittedValues = rev(result.list$mean.vec),
+        dat = dat,
+        type = paste0("ar1-fpop", constraint_str), 
+        changePts = changePts,
+        call = match.call(),
+        gam = gam,
+        lambda = lambda,
+        cost = as.numeric(result.list$cost.mat),
+        nIntervals = as.numeric(result.list$intervals.mat)
+      )
+    class(out) <- "estimatedSpikes"
+    return(out)
+  } else {
+    stop("Numerical issues!")
+  }
+
   
 })

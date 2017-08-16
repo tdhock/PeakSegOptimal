@@ -18,10 +18,10 @@ extern "C" {
    int *data_count, double *penalty,
    double *gam,
    double *cost_mat, int *end_vec,
-   double *mean_vec, int *intervals_mat, bool *constraint){
+   double *mean_vec, int *intervals_mat, bool *constraint, int *success){
     ARFPOP(data_ptr,
                  *data_count, *penalty, *gam,
-                 cost_mat, end_vec, mean_vec, intervals_mat, constraint);
+                 cost_mat, end_vec, mean_vec, intervals_mat, constraint, success);
   }
   
 }
