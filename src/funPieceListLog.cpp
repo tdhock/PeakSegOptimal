@@ -5,7 +5,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#define NEWTON_EPSILON 1e-12
+#define NEWTON_EPSILON 1e-30
 #define NEWTON_STEPS 100
 #define PREV_NOT_SET (-3)
 
@@ -1629,7 +1629,7 @@ double MidMean(double first, double second) {
   } else if (first != -INFINITY && second == INFINITY) {
     return first + 1;
   } else {
-    return (first + second)  / 2;
+    return ((first + second)  / 2);
   }
 }
 
@@ -1646,8 +1646,8 @@ int PiecewiseSquareLoss::check_min_of
         return 3;
       }
     }
-    if(it->max_mean <= it->min_mean){
-      printf("max_mean<=min_mean=%15.10f min\n", it->min_mean);
+    if(it->max_mean -  it->min_mean <= -NEWTON_EPSILON){
+      printf("max_mean (=%15.10f) <=min_mean(=%15.10f) min\n", it -> max_mean, it->min_mean);
       return 2;
     }
     double mid_mean = MidMean(it -> min_mean, it -> max_mean); //(it->min_mean + it->max_mean)/2;
@@ -1664,9 +1664,9 @@ int PiecewiseSquareLoss::check_min_of
       }
       double cost_model = model->findCost(mid_mean);
       if(cost_model+1e-6 < cost_min){
-        printf("model(%f)=%f\n", mid_mean, cost_model);
+        printf("model(%.20e)=%f\n", mid_mean, cost_model);
         model->print();
-        printf("min(%f)=%f\n", mid_mean, cost_min);
+        printf("min(%.20e)=%f\n", mid_mean, cost_min);
         print();
         return 1;
       }
@@ -1681,7 +1681,7 @@ int PiecewiseSquareLoss::check_min_of
         return 3;
       }
     }
-    if(it->max_mean <= it->min_mean){
+    if(it->max_mean - it->min_mean <= -NEWTON_EPSILON){
       printf("max_mean<=min_mean=%15.10f prev\n", it->min_mean);
       return 2;
     }
@@ -1707,8 +1707,8 @@ int PiecewiseSquareLoss::check_min_of
         return 3;
       }
     }
-    if(it->max_mean <= it->min_mean){
-      printf("max_mean<=min_mean=%15.10f model\n", it->min_mean);
+    if(it->max_mean - it->min_mean <= -NEWTON_EPSILON){
+      printf("max_mean=%15.10f<=min_mean=%15.10f model\n", it-> max_mean, it->min_mean);
       return 2;
     }
     double mid_mean = MidMean(it -> min_mean, it -> max_mean);
@@ -2064,15 +2064,17 @@ void PiecewiseSquareLoss::push_min_pieces
   if(second_mean != INFINITY){
     // two crossing points.
     // SWJ: Need to be careful for left-most limit as this could be -inf
-    double before_mean;
-    if (last_min_mean != -INFINITY) {
-      before_mean = (last_min_mean + first_mean )/2;
-    } else {
-      before_mean = first_mean - 1; // should be able to compare anywhere in the interval (-inf, first_mean] ?
-    }
-    
-    double cost_diff_before = diff_piece.getCost(before_mean);
-    if(cost_diff_before < 0){
+    // SWJ: Can we just check the sign of the Square coef?
+    //    double before_mean;
+    //    if (last_min_mean != -INFINITY) {
+    //      before_mean = (last_min_mean + first_mean )/2;
+    //    } else {
+    //      before_mean = first_mean - 1; // should be able to compare anywhere in the interval (-inf, first_mean] ?
+    //    }
+    //
+    //    double cost_diff_before = diff_piece.getCost(before_mean);
+    double squareDiff = diff_piece.Square;
+    if(squareDiff < 0){
       push_piece(it1, last_min_mean, first_mean);
       push_piece(it2, first_mean, second_mean);
       push_piece(it1, second_mean, first_max_mean);
