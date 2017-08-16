@@ -67,25 +67,9 @@ void ARFPOP
       min_prev_cost_scaled.set_to_scaled_of(&min_prev_cost, gam, verbose);
       
       cost->set_to_min_env_of(&min_prev_cost_scaled, &scaled_prev_cost, verbose);
-      
-      //      printf("at data point i = %d \n", data_i);
-      //      cost -> print();
+
       int status = cost->check_min_of(&min_prev_cost_scaled, &scaled_prev_cost);
-      //      printf("-------\n");
-      
-      if(status){
-        printf("Lambda = %f \t Gamma = %f", penalty, gam);
-        printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
-        cost->set_to_min_env_of(&min_prev_cost_scaled, &scaled_prev_cost, true);
-        printf("=min_prev_cost_scaled\n");
-        min_prev_cost_scaled.print();
-        printf("=scaled_prev_cost + %f\n", penalty);
-        scaled_prev_cost.print();
-        // printf("=prev up cost\n");
-        // up_cost_prev->print();
-        printf("=new cost model\n");
-        cost->print();
-        throw status;
+
       try {
         if(status){
           printf("Lambda = %.20e \t Gamma = %.100e\n", penalty, gam);
@@ -102,13 +86,11 @@ void ARFPOP
       } catch(int e) {
         printf("An exception occured %d \n", e); 
       }
-
       
       cost->add
         (0.5,
          - data_vec[data_i], data_vec[data_i] * data_vec[data_i] / 2);
-    }
-    
+
     try {
       if(cost->piece_list.size() > MAX_N_INTERVALS) {
         throw (int) cost->piece_list.size();
@@ -118,7 +100,7 @@ void ARFPOP
       printf("Numerically unstable: %d intervals. Choose a smaller lambda.\n", e);
       return;
   }
-    
+    } 
     cost_prev = cost;
     
   }
@@ -145,18 +127,11 @@ void ARFPOP
     (&best_cost, &best_mean,
      &prev_seg_end, &prev_mean);
   
-  //    mean_vec[0] = best_mean;
-  //    end_vec[0] = prev_seg_end;
-  
-  
+
   int prev_seg_old = data_count - 1;
   int out_i=0;
   double mean = best_mean;
-  
-   // printf("last mean %f\n", mean);
-   // printf("prev_seg_end %d\n", prev_seg_end);
-  
-  
+
   // loop over all prev. changepoints
   double temp_mean;
   while(prev_seg_old >= 0){
@@ -165,14 +140,6 @@ void ARFPOP
       cost = &cost_model_mat[prev_seg_end];
       cost -> findMean
         (mean, &prev_seg_end, &prev_mean);
-      
-     // temp_mean = mean;
-     // 
-     // cost->Minimize
-     //   (&best_cost, &mean,
-     //    &prev_seg_end, &prev_mean);
-     // 
-     // printf("Found mean %f versus %f min mean\n", temp_mean, mean);
       
     }
     
@@ -194,5 +161,4 @@ void ARFPOP
     }
     
   }
-}
 }
