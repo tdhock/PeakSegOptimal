@@ -91,6 +91,8 @@ cv.ARFPOP <- function(dat, gam = NULL,
   
   if (is.null(lambdas)) {
     lambdas <- createLambdaSequence(n, nLambdas)
+  } else {
+    nLambdas <- length(lambdas)
   }
   
   if (is.null(gam))
@@ -259,4 +261,78 @@ computeFittedValues <- function(dat, changePts, params, type, hardThreshold = FA
   }
   
 }
+
+#### grid by grid
+
+
+cv.full.grid.ARFPOP <- function(dat, gammas, lambdas, constrained) {
+  type = "ar1"
+  k <- 2  ## number of folds
+  n <- length(dat)
+  nGammas <- length(gammas)
+  nLambdas <- length(lambdas)
+  
+  nDataEven <- (n %% 2) == 0
+  
+  foldid <- rep(seq(1, k), n)[1:n]
+  cvMSE <- numeric(k)
+  cvMean <- matrix(0, nrow = nLambdas, ncol = nGammas)
+  cvSE <- matrix(0, nrow = nLambdas, ncol = nGammas)
+  
+  for (lambdaInd in 1:nLambdas) {
+    for (gammaInd in 1:nGammas) {
+      paramsTilde <- modifyParams(gammas[gammaInd], type, "fwd")
+      
+      for (fold in 1:k) {
+        trainInd <- which(foldid != fold)
+        testInd <- which(foldid == fold)
+        trainDat <- dat[trainInd]
+        testDat <- dat[testInd]
+        nn <- length(trainInd)
+        
+        segments <- ARFPOP(trainDat, paramsTilde, lambdas[lambdaInd], constrained)   
+        yhatTrain <- segments$fittedValues
+        nnInd <- ceiling(nn)
+        
+        ## predict test points based on training fits
+        yhatTest <- 0.5 * (yhatTrain[1:(nnInd - 1)] + yhatTrain[2:nnInd])
+        if (nDataEven) {
+          if (fold == 1) {
+            yhatTest <- c(yhatTrain[1], yhatTest)
+          }  else {
+            yhatTest <- c(yhatTest, yhatTrain[nn])
+          }
+        } else {
+          if (fold == 1) {
+            yhatTest <- c(yhatTrain[1], yhatTest, yhatTrain[nn])
+          }  
+        }
+        
+        cvMSE[fold] <- mean( (yhatTest - testDat) ^ 2)
+      }
+      
+      cvMean[lambdaInd, gammaInd] <- mean(cvMSE)
+      cvSE[lambdaInd, gammaInd] <- sd(cvMSE) / sqrt(k)
+      
+    }
+  }
+
+  ind <- which(cvMean == min(cvMean), arr.ind = T)
+  lambdaMin <- lambdas[ind[1]]
+  gamMin <- gammas[ind[2]]
+  
+  out <- list(cvError = cvMean, cvSE = cvSE, 
+              lambdas = lambdas,
+              gammas = gammas, 
+              gammaMin = gamMin, 
+              lambdaMin = lambdaMin,
+              call = match.call(),
+              constrained = constrained,
+              type = type)
+  class(out) <- "cvSpike2"
+  return(out)
+  
+}
+
+
 
