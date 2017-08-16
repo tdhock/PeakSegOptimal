@@ -1,4 +1,4 @@
-useDynLib(coseg)
+useDynLib(FastLZeroSpikeInference)
 exportPattern("^[[:alpha:]]")
 importFrom("stats", "quantile", "sd")
 importFrom("utils", "write.table")
