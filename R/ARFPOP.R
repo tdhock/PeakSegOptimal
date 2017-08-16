@@ -24,7 +24,7 @@ ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE) {
     intervals.mat = as.integer(intervals.mat),
     constraint = constraint,
     success = as.integer(success),
-    PACKAGE = "FastLZeroInference"
+    PACKAGE = "FastLZeroSpikeInference"
   )
   
   ## 1-indexed segment ends!
