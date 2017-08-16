@@ -37,7 +37,7 @@ IsotonicFPOP <- structure(function
                              mean.vec=as.double(mean.vec),
                              intervals.mat=as.integer(intervals.mat),
                              constraint = constraint,
-                             PACKAGE="coseg")
+                             PACKAGE="FastLZeroInference")
                            
                            ## 1-indexed segment ends!
                            result.list$ends.vec <- result.list$ends.vec+1L
