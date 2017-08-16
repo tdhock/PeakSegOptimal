@@ -20,7 +20,7 @@ Install
 If ``devtools`` is installed type 
 
 ```r
-devtools::install_github("jewellsean/coseg")
+devtools::install_github("jewellsean/FastLZeroSpikeInference")
 ```
 
 Usage
@@ -28,8 +28,7 @@ Usage
 
 Once installed type 
 ```{r}
-library(coseg)
-
+library(FastLZeroSpikeInference)
 ```
 
 References

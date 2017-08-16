@@ -1,4 +1,4 @@
-Package: coseg
+Package: FastLZeroSpikeInference
 Maintainer: Sean Jewell <swjewell@uw.edu>
 Author: Sean Jewell, Toby Dylan Hocking
 Version: 2017.04.17
