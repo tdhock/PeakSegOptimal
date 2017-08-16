@@ -97,7 +97,6 @@ void ARFPOP
           scaled_prev_cost.print();
           printf("=new cost model\n");
           cost->print();
-          fclose( stream );
           throw status;
         }
       } catch(int e) {
