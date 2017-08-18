@@ -21,7 +21,7 @@ void ARFPOP
    bool *constraint,
    int *success){
   
-  int MAX_N_INTERVALS = 1000;
+  double MAX = 1e200;
   
   double min_mean=0, max_mean;
   double scale = pow(gam, data_count + 1);
@@ -92,12 +92,10 @@ void ARFPOP
          - data_vec[data_i], data_vec[data_i] * data_vec[data_i] / 2);
 
     try {
-      if(cost->piece_list.size() > MAX_N_INTERVALS) {
-        throw (int) cost->piece_list.size();
-      }
-    } catch(int e) {
+        cost -> checkStable(MAX);
+      } catch(double e) {
       *success = 0;
-      printf("Numerically unstable: %d intervals. Choose a smaller lambda.\n", e);
+      printf("Numerically unstable. Choose a smaller lambda.\n");
       return;
   }
     } 

@@ -1588,6 +1588,21 @@ void PiecewiseSquareLoss::print(){
   }
 }
 
+void PiecewiseSquareLoss::checkStable(double MAX){
+  SquareLossPieceList::iterator it;
+  for(it=piece_list.begin(); it != piece_list.end(); it++){
+    if (it -> Square > MAX) {
+      printf("Numerically unstable in interval:\n");
+      printf("%10s %10s %15s %15s %15s %15s %s\n",
+             "Square", "Linear", "Constant",
+             "min_mean", "max_mean",
+             "prev_mean", "data_i");
+      it -> print(); 
+      throw (double) it -> Square; 
+    }
+  }
+}
+
 void SquareLossPiece::print(){
   printf("%.20e %.20e %.20e %.20e %.20e %15f %d\n",
          Square, Linear, Constant,

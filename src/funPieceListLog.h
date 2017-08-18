@@ -113,6 +113,7 @@ public:
   void multiply(double);
   void scale(double);
   void print();
+  void checkStable(double);
   void set_prev_seg_end(int prev_seg_end);
   void findMean(double mean, int *seg_end, double *prev_mean);
   double findCost(double mean);
