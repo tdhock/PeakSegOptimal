@@ -1,7 +1,7 @@
 import numpy as np
 import ctypes as ct 
 
-lib = np.ctypeslib.load_library('FastLZeroSpikeInference', '/Users/jewellsean/Desktop/cloned_ar/FastLZeroSpikeInference/src')
+lib = np.ctypeslib.load_library('FastLZeroSpikeInference', '/home/seanj/test/FastLZeroSpikeInference/src/')
 
 def arfpop(dat, gam, penalty, constraint):
 	dat = np.ascontiguousarray(dat, dtype = float)
