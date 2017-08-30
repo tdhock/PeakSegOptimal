@@ -34,7 +34,7 @@ def arfpop(dat, gam, penalty, constraint):
 	padded = np.array([0])
 
 	out['pos_spike_mag'] = np.concatenate((padded, 
-		np.maximum(fit['spike_mag'], np.zeros(fit['spike_mag'].shape))))
+		np.maximum(out['spike_mag'], np.zeros(out['spike_mag'].shape))))
 
 	## TODO: add error catching here! 
 
