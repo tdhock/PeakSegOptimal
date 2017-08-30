@@ -1,7 +1,7 @@
 import numpy as np
 import ctypes as ct 
 
-lib = np.ctypeslib.load_library('FastLZeroSpikeInference', '/Users/jewellsean/Desktop/cloned_ar/FastLZeroSpikeInference/src')
+lib = np.ctypeslib.load_library('FastLZeroSpikeInference', '/home/seanj/test/FastLZeroSpikeInference/src/')
 
 def arfpop(dat, gam, penalty, constraint):
 	dat = np.ascontiguousarray(dat, dtype = float)
@@ -30,7 +30,7 @@ def arfpop(dat, gam, penalty, constraint):
 	out['changePts'] = np.unique(end_vec) + 1
 	out['spikes'] = out['changePts'][1:] + 1
 	out['spike_mag'] = out['mean_vec'][1:] - out['mean_vec'][0:-1] 
-	out['pos_spike_mag'] = np.maximum(fit['spike_mag'], np.zeros(fit['spike_mag'].shape))
+	out['pos_spike_mag'] = np.maximum(out['spike_mag'], np.zeros(out['spike_mag'].shape))
 
 	## TODO: add error catching here! 
 
