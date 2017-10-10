@@ -1,3 +1,51 @@
+#' Estimate spike train, underlying calcium concentration, and changepoints based on fluorescence
+#' trace.
+#'
+#' @param dat fluorescence data
+#' @param gam a scalar value for the AR(1)/AR(1) + intercept decay parameter.
+#' @param lambda tuning parameter lambda
+#' @param constraint boolean specifying whether constrained or unconstrained optimization
+#' problem
+#'
+#' @return Returns a list with elements:
+#' @return \code{spikes} the set of spikes
+#' @return \code{fittedValues} estimated calcium concentration
+#' @return \code{changePts} the set of changepoints
+#' @return \code{cost} the cost at each time point (vector)
+#' @return \code{nIntervals} the number of intervals at each point (vector)
+#'
+#' @details
+#'
+#' This algorithm solves the optimization problems
+#' 
+#'  \strong{AR(1) model:}
+#'  
+#'  minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t neq gamma c_{t-1} }
+#'  
+#'  subject to c_t >= 0, t = 1, ..., T
+#'  
+#'  for the global optimum, where y_t is the observed fluorescence at the tth timepoint.
+#'
+#' \strong{Constrained AR(1) model}
+#' minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t neq gamma c_{t-1} }
+#' 
+#' subject to c_t >= 0, t = 1, ..., T
+#' 
+#' c_{t} >= gamma c_{t-1}, t = 2, ..., T
+#'
+#' See Jewell and Witten (2017) <arXiv:1703.08644> and 
+#' 
+#' Hocking, T. D., Rigaill, G., Fearnhead, P., and Bourque, G. (2017) <arXiv:1703.03352>
+#'
+#'
+#' @examples
+#'
+#'
+#' @seealso
+#'
+#'
+#' @export
+
 ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE) {
   stopifnot(gam > 0 && gam <= 1)
   stopifnot(!is.null(gam))
