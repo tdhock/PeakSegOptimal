@@ -124,6 +124,7 @@ cv.ARFPOP <- function(dat, gam = NULL,
     trainDat <- dat[trainInd]
     testDat <- dat[testInd]
     nn <- length(trainInd)
+    nTest <- length(testDat)
     
     for (lambdaInd in 1:nLambdas) {
       if (optimizeGams) {
@@ -141,18 +142,21 @@ cv.ARFPOP <- function(dat, gam = NULL,
       yhatTest <- 0.5 * (yhatTrain[1:(nnInd - 1)] + yhatTrain[2:nnInd])
       
       if (nDataEven) {
-      if (fold == 1) {
-        yhatTest <- c(yhatTrain[1], yhatTest)
-      }  else {
-        yhatTest <- c(yhatTest, yhatTrain[nn])
-      }
+        if (fold == 1) {
+          yTest <- testDat[2 : nTest]
+        }  else {
+          yTest <- testDat[1 : (nTest - 1)]
+        }
       } else {
-      if (fold == 1) {
-          yhatTest <- c(yhatTrain[1], yhatTest, yhatTrain[nn])
-        }  
+        if (fold == 1) {
+          yTest <- testDat[2 : (nTest - 1)]
+        } else {
+          yTest <- testDat
+        }
       }
       
-      cvMSE[lambdaInd, fold] <- mean( (yhatTest - testDat) ^ 2)
+      stopifnot(length(yTest) == length(yhatTest))
+      cvMSE[lambdaInd, fold] <- mean( (yhatTest - yTest) ^ 2)
       
       if (optimizeGams) {
         for (i in 1:nParams) paramsOut[[i]][lambdaInd, fold] <-
@@ -334,5 +338,81 @@ cv.full.grid.ARFPOP <- function(dat, gammas, lambdas, constrained) {
   
 }
 
+## cv on calcium estimation
 
-
+cv.calcium <- function(dat, gam, lambdas, constrained) {
+  nLambda <- length(lambdas)
+  fold_thin <- 10
+  cvMSE <- matrix(0, nrow = nLambda, ncol = fold_thin)
+  gam_tilde <- gam ^ fold_thin
+  lambda_error <- numeric(nLambda)
+  for (lambda_i in 1:nLambda) {
+   tryCatch({
+     fit_all_dat <- 
+      ARFPOP(dat = dat, gam = gam, lambda = lambdas[lambda_i], 
+             constraint = constrained)  
+    chgpts <- c(fit_all_dat$changePts, length(dat))
+    nChgpts <- length(chgpts)
+    df <- NULL
+    chgPts_error <- numeric(nChgpts - 1)
+    for (chg_i in 1:(nChgpts - 1)){
+      lower_end <- chgpts[chg_i] + 1
+      upper_end <- chgpts[chg_i + 1]
+      
+      segment_data <- dat[lower_end:upper_end]
+      segment_length <- length(segment_data)
+      
+      if (segment_length > fold_thin) {
+      
+      fold_ind <- rep(seq(1, fold_thin), segment_length)[1:segment_length]      
+      fold_error <- numeric(fold_thin)
+      for (k in 1:fold_thin) {
+        train_ind <- (fold_ind == k)
+        test_ind <- (fold_ind != k)
+        
+        train_dat <- segment_data[train_ind]
+        n_train <- length(train_dat)
+        test_dat <- segment_data[test_ind]
+        
+        est_init_ca <- sum(train_dat * gam_tilde ^ (0:(n_train - 1))) / sum( gam_tilde ^ (2 * (0:(n_train - 1))))
+        
+        fitted_points <- est_init_ca * gam ^ ((1 - k):(segment_length - k))  
+        estimated_test_points <- fitted_points[test_ind]
+        
+        df <- rbind(df, 
+                    data.frame( error = (estimated_test_points - test_dat) ^ 2, 
+                                fold = k, 
+                                lambda = lambdas[lambda_i]))
+      }
+      
+      
+      }
+    }
+    
+    means <- df %>% group_by(fold) %>% summarize(mu = mean(error)) 
+    
+    cvMSE[lambda_i, ] <- means$mu
+   }
+   
+   , 
+   error = function(cond) {
+     
+   })
+  }
+  cvErr <- rowMeans(cvMSE)
+  cvse <- apply(cvMSE, 1, sd) / sqrt(fold_thin)
+  
+  indexMin <- which.min(cvErr)
+  lambdaMin <- lambdas[indexMin]
+  lambda1SE <- max(lambdas[cvErr <= cvErr[indexMin] + cvse[indexMin]])
+  index1SE <- which(lambdas == lambda1SE)
+  
+  out <- list(cvError = cvErr, cvSE = cvse, lambdas = lambdas,
+              lambdaMin = lambdaMin,
+              lambda1SE = lambda1SE, 
+              indexMin = indexMin,
+              index1SE = index1SE,
+              call = match.call())
+  class(out) <- "cvSpike--on-calcium"
+  return(out)
+}
