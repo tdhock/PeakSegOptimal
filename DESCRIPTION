@@ -9,3 +9,4 @@ Description: Computes optimal segmentations subject to constraints
 Depends: R (>= 2.10)
 Imports: data.table (>= 1.9.8)
 Suggests: testthat, ggplot2
+RoxygenNote: 6.0.1
