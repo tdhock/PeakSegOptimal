@@ -22,6 +22,7 @@ void ARFPOP
    int *success){
   
   double MAX = 1e200;
+  double EPS = 1e-8;
   
   double min_mean=0, max_mean;
   double scale = pow(gam, data_count + 1);
@@ -53,7 +54,7 @@ void ARFPOP
     }else{ // Alg 3 ln 6 - 8
       
       
-      scaled_prev_cost.set_to_scaled_of(cost_prev, gam, verbose);
+      scaled_prev_cost.set_to_scaled_of(cost_prev, gam, EPS, verbose);
       
       if (*constraint) {
         min_prev_cost.set_to_min_less_of(cost_prev, verbose);
@@ -64,28 +65,28 @@ void ARFPOP
       min_prev_cost.set_prev_seg_end(data_i-1);
       min_prev_cost.add(0.0, 0.0, penalty);
       
-      min_prev_cost_scaled.set_to_scaled_of(&min_prev_cost, gam, verbose);
+      min_prev_cost_scaled.set_to_scaled_of(&min_prev_cost, gam, EPS, verbose);
       
       cost->set_to_min_env_of(&min_prev_cost_scaled, &scaled_prev_cost, verbose);
 
-      int status = cost->check_min_of(&min_prev_cost_scaled, &scaled_prev_cost);
-
-      try {
-        if(status){
-          printf("Lambda = %.20e \t Gamma = %.100e\n", penalty, gam);
-          printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
-          cost->set_to_min_env_of(&min_prev_cost_scaled, &scaled_prev_cost, false);
-          printf("=min_prev_cost_scaled\n");
-          min_prev_cost_scaled.print();
-          printf("=scaled_prev_cost + %f\n", penalty);
-          scaled_prev_cost.print();
-          printf("=new cost model\n");
-          cost->print();
-          throw status;
-        }
-      } catch(int e) {
-        printf("An exception occured %d \n", e); 
-      }
+      // int status = cost->check_min_of(&min_prev_cost_scaled, &scaled_prev_cost);
+      // 
+      // try {
+      //   if(status){
+      //     printf("Lambda = %.20e \t Gamma = %.100e\n", penalty, gam);
+      //     printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
+      //     cost->set_to_min_env_of(&min_prev_cost_scaled, &scaled_prev_cost, false);
+      //     printf("=min_prev_cost_scaled\n");
+      //     min_prev_cost_scaled.print();
+      //     printf("=scaled_prev_cost + %f\n", penalty);
+      //     scaled_prev_cost.print();
+      //     printf("=new cost model\n");
+      //     cost->print();
+      //     throw status;
+      //   }
+      // } catch(int e) {
+      //   printf("An exception occured %d \n", e); 
+      // }
       
       cost->add
         (0.5,

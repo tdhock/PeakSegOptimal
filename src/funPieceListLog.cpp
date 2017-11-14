@@ -1418,7 +1418,7 @@ void PiecewiseSquareLoss::set_to_min_less_of
 }
 
 void PiecewiseSquareLoss::set_to_scaled_of(PiecewiseSquareLoss *input,
-                                           double gam, int verbose) {
+                                           double gam, double EPS, int verbose) {
   piece_list.clear();
   SquareLossPieceList::iterator it = input->piece_list.begin();
   while(it != input->piece_list.end()){
@@ -1428,10 +1428,11 @@ void PiecewiseSquareLoss::set_to_scaled_of(PiecewiseSquareLoss *input,
     double min_mean = (it -> min_mean) * gam;
     double max_mean = (it -> max_mean) * gam;
     
-    
-    piece_list.emplace_back(Square, Linear, it -> Constant,
-                            min_mean, max_mean,it -> data_i, it -> prev_mean);
-    
+    if (min_mean > EPS | max_mean > EPS) {
+      piece_list.emplace_back(Square, Linear, it -> Constant,
+                              min_mean, max_mean,it -> data_i, it -> prev_mean);      
+    }
+
     it++;
   } //end while
   
