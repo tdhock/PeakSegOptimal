@@ -1,7 +1,24 @@
 import numpy as np
 import ctypes as ct 
+import os
 
-lib = np.ctypeslib.load_library('FastLZeroSpikeInference', '/home/seanj/test/FastLZeroSpikeInference/src/')
+import sys
+
+sys_path = sys.path
+success = False
+i = 0
+n_paths = len(sys_path)
+
+while(not success & (i < n_paths)):
+	try: 
+		lib = np.ctypeslib.load_library('FastLZeroSpikeInference', sys_path[i])
+		success = True
+		break
+	except:
+		i = i + 1
+
+if not success:
+	raise Exception("Could not import required library")
 
 def arfpop(dat, gam, penalty, constraint):
 	dat = np.ascontiguousarray(dat, dtype = float)
