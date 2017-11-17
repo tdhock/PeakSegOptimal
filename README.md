@@ -31,6 +31,24 @@ Once installed type
 library(FastLZeroSpikeInference)
 ```
 
+
+Alpha Python Instructions
+---
+
+Below are instructions for an alpha-release of a simple c-types python wrapper for this C++ code. Only Unix type systems are currently supported. 
+
+Within terminal, clone this repo and run the make script: 
+
+```
+git clone "https://github.com/jewellsean/FastLZeroSpikeInference.git"
+cd FastLZeroSpikeInference/python
+./make.sh
+```
+
+An example using this code can be viewed [here](https://github.com/jewellsean/FastLZeroSpikeInference/blob/master/examples/python/simple_example.py).
+
+More complete installation and usage details are forthcoming! 
+
 References
 -----
 
