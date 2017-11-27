@@ -1271,7 +1271,20 @@ double SquareLossPiece::argmin_mean(){
   // f(u) = Square * u ^ 2 + Linear * u + Constant,
   // f'(u)= 2 * Square * u + Linear = 0 means
   // u = -Linear / (2 * Square)
-  return - Linear / (2 * Square);
+  
+  if (Square > 0) {
+    return - Linear / (2 * Square);  
+  } else if(Square == 0 & Linear > 0) {
+    return min_mean;
+  } else if(Square == 0 & Linear < 0) {
+    return max_mean; 
+  } else if(Square == 0 & Linear == 0) {
+   return min_mean; 
+  }
+    
+    
+  
+  
 }
 
 /// what does this function do differently than argmin_mean()
@@ -1280,7 +1293,27 @@ double SquareLossPiece::argmin(){
 }
 
 double SquareLossPiece::getCost(double mean){
-  return Square * mean * mean + Linear * mean + Constant;
+  if (mean < INFINITY) {
+    return Square * mean * mean + Linear * mean + Constant;  
+  } else if (mean == INFINITY) {
+    if (Square > 0) {
+      return INFINITY; 
+    }
+    if (Square < 0) {
+      return -INFINITY;
+    }
+    if (Square == 0) {
+      if (Linear > 0) {
+        return INFINITY; 
+      if (Linear < 0) {
+        return -INFINITY;
+      } 
+      if (Linear == 0) {
+        return Constant;
+      }
+    }
+  }
+}
 }
 
 void PiecewiseSquareLoss::set_to_min_less_of
@@ -1450,15 +1483,15 @@ void PiecewiseSquareLoss::set_to_unconstrained_min_of
   double right_mean, left_mean, prev_best_mean, mu_cost, mu;
   while(it != input->piece_list.end()){
     
-    //    if (verbose) {
-    //      printf("start new iter of set to unconstrained min of--------------\n");
-    //      printf("Searching for min cost in \n");
-    //      printf("%10s %10s %15s %15s %15s %15s %s\n",
-    //             "Square", "Linear", "Constant",
-    //             "min_mean", "max_mean",
-    //             "prev_mean", "data_i");
-    //      it -> print();
-    //    }
+       if (verbose) {
+         printf("start new iter of set to unconstrained min of--------------\n");
+         printf("Searching for min cost in \n");
+         printf("%10s %10s %15s %15s %15s %15s %s\n",
+                "Square", "Linear", "Constant",
+                "min_mean", "max_mean",
+                "prev_mean", "data_i");
+         it -> print();
+       }
     
     // boundary costs
     left_mean = it -> min_mean;
@@ -1481,12 +1514,13 @@ void PiecewiseSquareLoss::set_to_unconstrained_min_of
     } else {
       double left_cost = it -> getCost(left_mean);
       double right_cost = it -> getCost(right_mean);
-      if (left_cost < right_cost) {
-        mu_cost = left_cost;
-        mu = left_mean;
-      } else {
+      
+      if (right_cost < left_cost) {
         mu_cost = right_cost;
         mu = right_mean;
+      } else {
+        mu_cost = left_cost;
+        mu = left_mean;
       }
     }
     
