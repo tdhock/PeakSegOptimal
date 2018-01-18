@@ -29,7 +29,7 @@ void ARFPOP
    int *success){
   
   double MAX = 1e200;
-  double EPS = 1e-10;
+  double EPS = 1e-40;
   bool pipeOut = 0;
   
   if (pipeOut) {
@@ -56,7 +56,7 @@ void ARFPOP
   max_mean = INFINITY;
   std::vector<PiecewiseSquareLoss> cost_model_mat(data_count);
   PiecewiseSquareLoss *cost, *cost_prev;
-  PiecewiseSquareLoss min_prev_cost, scaled_prev_cost, min_prev_cost_scaled;
+  PiecewiseSquareLoss min_prev_cost, scaled_prev_cost; //, min_prev_cost_scaled;
   int verbose=0;
   for(int data_i=0; data_i<data_count; data_i++){
     cost = &cost_model_mat[data_i];
@@ -66,56 +66,51 @@ void ARFPOP
       (0.5, - data_vec[0], data_vec[0] * data_vec[0] / 2,
        min_mean, max_mean, -1, false);
       
-      // if (pipeOut) {
-      //   printf("=cost at data point i = %d \n", data_i);
-      //   cost -> print();
-      // }
+      if (pipeOut) {
+        printf("=costTYPE at data point i__%d \n", data_i);
+        cost -> print();
+      }
       
 
     }else{ // Alg 3 ln 6 - 8
-      
-      printf("=before-trim at data i = %d \n", data_i);
-      cost_prev -> print();
-      
-      
-      
+
       scaled_prev_cost.set_to_scaled_of(cost_prev, gam, EPS, verbose);
       
-      // printf("=after-trim at data i = %d \n", data_i);
-      // scaled_prev_cost.print();
+      // printf("----- data %i\n", data_i);
       
       if (*constraint) {
-        min_prev_cost.set_to_min_less_of(&scaled_prev_cost, verbose);
+        min_prev_cost.set_to_min_less_of(&scaled_prev_cost, verbose); 
       } else {
         min_prev_cost.set_to_unconstrained_min_of(&scaled_prev_cost, verbose);
       }
+
       
       min_prev_cost.set_prev_seg_end(data_i-1);
       min_prev_cost.add(0.0, 0.0, penalty);
       
-      min_prev_cost_scaled.set_to_scaled_of(&min_prev_cost, gam, 0.0, verbose);
+      if (pipeOut) {
+        printf("=min_prev_costTYPE at data point i__%d \n", data_i);
+        min_prev_cost.print();
+      }
       
-      // printf("=min_prev_cost_scaled at data_i__%d\n", data_i);
-      // min_prev_cost_scaled.print();
-      // printf("=scaled_prev_cost at data_i__%d\n", data_i);
-      // scaled_prev_cost.print();
+      if (pipeOut) {
+        printf("=scaled_prev_costTYPE at data point i__%d \n", data_i);
+        scaled_prev_cost.print();
+      }
+      
+      cost->set_to_min_env_of(&min_prev_cost, &scaled_prev_cost, verbose);
       
       
-      cost->set_to_min_env_of(&min_prev_cost_scaled, &scaled_prev_cost, verbose);
       
-      // printf("=min_min at data_i__%d\n", data_i);
-      // cost -> print();
-      
-      
-      int status = cost->check_min_of(&min_prev_cost_scaled, &scaled_prev_cost);
+      int status = cost->check_min_of(&min_prev_cost, &scaled_prev_cost);
 
       try {
         if(status){
           printf("Lambda = %.20e \t Gamma = %.100e\n", penalty, gam);
           printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
-          cost->set_to_min_env_of(&min_prev_cost_scaled, &scaled_prev_cost, false);
+          cost->set_to_min_env_of(&min_prev_cost, &scaled_prev_cost, false);
           printf("=min_prev_cost_scaled\n");
-          min_prev_cost_scaled.print();
+          min_prev_cost.print();
           printf("=scaled_prev_cost + %f\n", penalty);
           scaled_prev_cost.print();
           printf("=new cost model\n");
@@ -126,10 +121,10 @@ void ARFPOP
         printf("An exception occured %d \n", e);
       }
       
-      // if (pipeOut) {
-      //   printf("=cost at data point i = %d \n", data_i);
-      //   cost -> print();
-      // }
+      if (pipeOut) {
+        printf("=costTYPE at data point i__%d \n", data_i);
+        cost -> print();
+      }
       
       
       cost->add
@@ -150,7 +145,7 @@ void ARFPOP
   
 
   
-  printf("All cost functions assembled\n");
+  // printf("All cost functions assembled\n");
   
   
   // Decoding the cost_model_vec, and writing to the output matrices.
@@ -160,8 +155,8 @@ void ARFPOP
   for(int i=0; i< data_count; i++){
     cost = &cost_model_mat[i];
     
-    printf("Cost function at data_i %i\n", i);
-    cost -> print();
+    // printf("Cost function at data_i %i\n", i);
+    // cost -> print();
     
     intervals_mat[i] = cost->piece_list.size();
     cost->Minimize
@@ -172,7 +167,7 @@ void ARFPOP
     cost_mat[i] = best_cost;
   }
   
-  printf("------ start decoding -----\n");
+  // printf("------ start decoding -----\n");
   
   
   // first step
@@ -189,7 +184,7 @@ void ARFPOP
   double temp_mean;
   while(prev_seg_old >= 0){
     
-    printf("next pt %i\n", prev_seg_old);
+    // printf("next pt %i\n", prev_seg_old);
     
     if (prev_seg_old < data_count - 1) {
       cost = &cost_model_mat[prev_seg_end];
