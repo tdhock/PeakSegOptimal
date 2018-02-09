@@ -37,6 +37,8 @@ Alpha Python Instructions
 
 Below are instructions for an alpha-release of a simple c-types python wrapper for this C++ code. Only Unix type systems are currently supported. 
 
+NB: ubuntu requires `sudo apt install clang libc++-dev g++` 
+
 Within terminal, clone this repo and run the make script: 
 
 ```
