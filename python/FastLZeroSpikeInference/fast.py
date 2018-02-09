@@ -6,19 +6,26 @@ import sys
 
 sys_path = sys.path
 success = False
-i = 0
-n_paths = len(sys_path)
 
-while(not success & (i < n_paths)):
-	try: 
-		lib = np.ctypeslib.load_library('FastLZeroSpikeInference', sys_path[i])
-		success = True
-		break
-	except:
-		i = i + 1
+for path in sys_path:
+    try:
+        lib = np.ctypeslib.load_library('FastLZeroSpikeInference', path)
+        success = True
+        break
+    except OSError as err:
+        if '{0}'.format(err) == 'no file with expected extension':
+            e = err
+            continue
+        else:
+            print("OSError: {0}".format(err))
+            raise
+    except:
+        print("Unexpected error:", sys.exc_info()[0])
+        raise
 
-if not success:
-	raise Exception("Could not import required library")
+assert success, "Failed to import 'FastZeroSpikeInference'"
+
+
 
 def arfpop(dat, gam, penalty, constraint):
 	dat = np.ascontiguousarray(dat, dtype = float)
