@@ -23,7 +23,7 @@ for path in sys_path:
         print("Unexpected error:", sys.exc_info()[0])
         raise
 
-assert success, "Failed to import 'FastZeroSpikeInference'"
+assert success, "Failed to import 'FastZeroSpikeInference': {}".format(e)
 
 
 
