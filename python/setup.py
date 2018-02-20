@@ -3,9 +3,16 @@ import os
 import sys
 from distutils.core import setup, Extension
 
-os.environ["CC"] = "clang++"
-
 is_darwin = sys.platform=='darwin'
+is_linux = 'linux' in sys.platform
+
+extra_compile_args = ['-std=c++11']
+
+if is_darwin:
+  os.environ["CC"] = 'clang++'
+  extra_compile_args.append('-stdlib=libc++')
+elif is_linux:
+  os.environ["CC"] = 'g++'
 
 setup(name='FastLZeroSpikeInference',
       version='1.0',
@@ -24,11 +31,7 @@ setup(name='FastLZeroSpikeInference',
                          ],
               include_dirs = ['src/'], 
               language = 'c++',
-              extra_compile_args = [
-                  '-std=c++11', 
-                  '-stdlib={}'.format('libc++' if is_darwin else 'libstdc++')
-                  ]
+              extra_compile_args = extra_compile_args
               )
           ]
      )
-
