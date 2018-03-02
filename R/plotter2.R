@@ -1,60 +1,59 @@
-# pattern <- paste0(
-#   "=(?<fun>.*?)\n",
-#   "(?<table>",
-#   "(?:[^=].*?\n)*",
-#   ")")
-# library(namedCapture)
-# library(data.table)
-# library(ggplot2)
+pattern <- paste0(
+  "=(?<fun>.*?)\n",
+  "(?<table>",
+  "(?:[^=].*?\n)*",
+  ")")
+library(namedCapture)
+library(data.table)
+library(ggplot2)
 # MAX <- 5
 # MIN <- -MAX
-# sloss <- function(dt, x){
-#   ## need to make a new data table, otherwise ifelse may only get one
-#   ## element, and return only one element.
-#   new.dt <- data.table(dt, x)
-#   new.dt[, Square * x ^ 2 + Linear * x + Constant]
-# }
-# getLines <- function(dt){
-#   line.list <- list()
-#   print(dt)
-#   for(piece.i in 1:nrow(dt)){
-#     piece <- dt[piece.i,]
-#     mean.vec <- piece[, {
-#       min.mean <- max(min_mean, MIN)
-#       max.mean <- min(max_mean, MAX)
-#       seq(min.mean, max.mean, l=1000)
-#     }]
-#     line.list[[piece.i]] <- data.table(
-#       piece.i,
-#       piece,
-#       mean=mean.vec,
-#       cost=sloss(piece, mean.vec))
-#   }
-#   do.call(rbind, line.list)
-# }
-# gdata <- function(txt){
-#   mat <- str_match_all_named(txt, pattern)[[1]]
-#   funs.list <- list()
-#   vlines.list <- list()
-#   coef.list <- list()
-#   for(row.i in 1:nrow(mat)){
-#     r <- mat[row.i,]
-#     df <- read.table(text=r[["table"]], header=TRUE)
-#     dt <- data.table(df)
-#     l <- getLines(dt)
-#     fun <- r[["fun"]]
-#     coef.list[[fun]] <- dt
-#     funs.list[[row.i]] <- data.table(fun, l)
-#     if(1 < nrow(dt)){
-#       vlines.list[[row.i]] <- data.table(fun, dt[-1,])
-#     }
-#   }
-#   list(
-#     funs=do.call(rbind, funs.list),
-#     vlines=do.call(rbind, vlines.list),
-#     coefs=coef.list)
-# }
-# 
+sloss <- function(dt, x){
+  ## need to make a new data table, otherwise ifelse may only get one
+  ## element, and return only one element.
+  new.dt <- data.table(dt, x)
+  new.dt[, Square * x ^ 2 + Linear * x + Constant]
+}
+getLines <- function(dt){
+  line.list <- list()
+  for(piece.i in 1:nrow(dt)){
+    piece <- dt[piece.i,]
+    mean.vec <- piece[, {
+      min.mean <- max(min_mean, MIN)
+      max.mean <- min(max_mean, MAX)
+      seq(min.mean, max.mean, l=1000)
+    }]
+    line.list[[piece.i]] <- data.table(
+      piece.i,
+      piece,
+      mean=mean.vec,
+      cost=sloss(piece, mean.vec))
+  }
+  do.call(rbind, line.list)
+}
+gdata <- function(txt){
+  mat <- str_match_all_named(txt, pattern)[[1]]
+  funs.list <- list()
+  vlines.list <- list()
+  coef.list <- list()
+  for(row.i in 1:nrow(mat)){
+    r <- mat[row.i,]
+    df <- read.table(text=r[["table"]], header=TRUE)
+    dt <- data.table(df)
+    l <- getLines(dt)
+    fun <- r[["fun"]]
+    coef.list[[fun]] <- dt
+    funs.list[[row.i]] <- data.table(fun, l)
+    if(1 < nrow(dt)){
+      vlines.list[[row.i]] <- data.table(fun, dt[-1,])
+    }
+  }
+  list(
+    funs=do.call(rbind, funs.list),
+    vlines=do.call(rbind, vlines.list),
+    coefs=coef.list)
+}
+
 # viz.list <- gdata( "
 # =min-less/more
 #     Square     Linear        Constant        min_mean        max_mean       prev_mean data_i

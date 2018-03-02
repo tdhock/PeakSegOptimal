@@ -1,6 +1,6 @@
 # FastLZeroSpikeInference: A package for estimating spike times from calcium imaging data using an L0 penalty 
 
-This package implements an algorithm for deconvolving calcium imaging data for a single neuron in order to estimate the times at which the neuron spikes. This algorithim is a modification of the constrained functional pruning algorithm of Hocking et al. (2017). 
+This package implements an algorithm for deconvolving calcium imaging data for a single neuron in order to estimate the times at which the neuron spikes (Jewell et al. 2018). This algorithim is an extension of the constrained functional pruning algorithm of Hocking et al. (2017). 
 
 This algorithm solves the optimization problems
 ### AR(1) model
@@ -53,6 +53,7 @@ More complete installation and usage details are forthcoming!
 
 References
 -----
+Jewell, Hocking, Fearnhead, and Witten (2018). [Fast Nonconvex Deconvolution of Calcium Imaging Data](https://arxiv.org/abs/1802.07380)
 
 Jewell and Witten (2017). [Exact Spike Train Inference Via L0 Optimization](https://arxiv.org/abs/1703.08644)
 
