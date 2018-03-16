@@ -35,6 +35,33 @@ getLines <- function(dt){
   }
   do.call(rbind, line.list)
 }
+getLines <- function(dt){
+  line.list <- list()
+  print(dt)
+  for(piece.i in 1:nrow(dt)){
+    piece <- dt[piece.i,]
+    log.mean.vec <- piece[, {
+      min.log.mean <- if(min_log_mean==-Inf){
+        -600
+      }else{
+        min_log_mean
+      }
+      max.log.mean <- if(max_log_mean==Inf){
+        min.log.mean+1
+      }else{
+        max_log_mean
+      }
+      seq(min.log.mean, max.log.mean, l=100)
+    }]
+    line.list[[piece.i]] <- data.table(
+      piece.i,
+      piece,
+      log.mean=log.mean.vec,
+      ##cost=piece[, ifelse(Log==0, 0, Log*log.mean.vec) + Linear*exp(log.mean.vec) + Constant])
+      cost=ploss(piece, exp(log.mean.vec)))
+  }
+  do.call(rbind, line.list)
+}
 gdata <- function(txt){
   mat <- str_match_all_named(txt, pattern)[[1]]
   funs.list <- list()
@@ -59,34 +86,34 @@ gdata <- function(txt){
 }
 
 viz.list <- gdata("
-=min more(prev up cost)
+=prev cost
     Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
-0.00000000000000000000e+00 0.00000000000000000000e+00 -1.50579293620309506707e+00            -inf        1.098612        1.098612 13374
-1.47372169993798088653e-04 -4.42116509981394238855e-04 -1.50574933808218780484e+00        1.098612        4.127134             inf 13374
-=prev down cost
-    Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
-1.47372169993798088653e-04 -4.42116509981394238855e-04 -1.50582645029657946623e+00            -inf        0.000000        0.000000 13373
-2.94744339987596177307e-04 -5.89488679975192354614e-04 -1.50597382246657351956e+00        0.000000        4.127134             inf 13373
-=new down cost model
-    Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
-0.00000000000000000000e+00 0.00000000000000000000e+00 -1.50579293620309506707e+00            -inf        0.000000        1.098612 13374
-2.94744339987596177307e-04 -5.89488679975192354614e-04 -1.50597382246657351956e+00        0.000000        1.098612             inf 13373
-1.47372169993798088653e-04 -4.42116509981394238855e-04 -1.50574933808218780484e+00        1.098612        4.127134             inf 13374
+2.00000000000000011102e-01 -4.00000000000000000000e+00 -1.41163501263891912885e+01        0.693147        2.570013        2.803360 3
+4.00000000000000022204e-01 -7.00000000000000000000e+00 -9.01950994083225410236e+00        2.570013        2.840016        2.890372 2
+2.00000000000000011102e-01 -4.00000000000000000000e+00 -1.41163501263891912885e+01        2.840016        2.995732        2.803360 3
 ")
-xi <- 0.549306 # the point at which the error was detected.
+xi <- NA # the point at which the error was detected.
 gg <- ggplot()+
   geom_vline(xintercept=xi, linetype="dashed")+
-  geom_line(aes(log.mean, cost, color=fun),
+  geom_point(aes(log.mean, cost, color=fun),
             size=2,
             alpha=0.5,
             data=viz.list$funs)
-if(!is.null(C12.221minless$vlines)){
+if(!is.null(viz.list$vlines)){
   gg <- gg+
     geom_vline(aes(xintercept=min_log_mean, color=fun),
                data=viz.list$vlines)
 }
 print(gg)
 
-gg+
-  coord_cartesian(ylim=c(-1.506, -1.505), xlim=c(-1, 2))
+sapply(viz.list$coefs, function(dt){
+  ploss(dt[min_log_mean < xi & xi < max_log_mean], exp(xi))
+})
 
+gg+
+  coord_cartesian(xlim=c(-290, -280), ylim=c(16225, 16300))
+
+gg+
+  coord_cartesian(ylim=c(-0.966165, -0.966160), xlim=c(3.51898, 3.519))
+
+PeakSegPipeline::PeakSegFPOP_disk("~/coverage.bedGraph", "48402378.5676387")

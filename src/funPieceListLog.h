@@ -38,6 +38,7 @@ class PiecewisePoissonLossLog {
  public:
   PoissonLossPieceListLog piece_list;
   void set_to_min_less_of(PiecewisePoissonLossLog *, int);
+  void set_to_unconstrained_min_of(PiecewisePoissonLossLog *, int);
   void set_to_min_more_of(PiecewisePoissonLossLog *, int);
   void set_to_min_env_of
     (PiecewisePoissonLossLog *, PiecewisePoissonLossLog *, int);
