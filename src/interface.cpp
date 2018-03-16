@@ -1,5 +1,6 @@
-/* -*- compile-command: "R CMD INSTALL .." -*- */
+/* -*- compile-command: "R CMD INSTALL .. && R -e 'library(PeakSegOptimal);example(PeakSegFPOP)'" -*- */
 
+#include "UnconstrainedPDPA.h"
 #include "PeakSegPDPALog.h"
 #include "PeakSegFPOPLog.h"
 #include <R.h>
@@ -12,6 +13,16 @@ void PeakSegPDPALog_interface
  double *mean_mat, int *intervals_mat
  ){
   PeakSegPDPALog(data_ptr, weight_ptr, *data_count, *maxSegments,
+		 cost_mat, end_mat, mean_mat, intervals_mat);
+}
+  
+void UnconstrainedPDPA_interface
+(int *data_ptr, double *weight_ptr,
+ int *data_count, int *maxSegments,
+ double *cost_mat, int *end_mat,
+ double *mean_mat, int *intervals_mat
+ ){
+  UnconstrainedPDPA(data_ptr, weight_ptr, *data_count, *maxSegments,
 		 cost_mat, end_mat, mean_mat, intervals_mat);
 }
   
@@ -36,6 +47,10 @@ void PeakSegFPOPLog_interface
 }
 
 R_CMethodDef cMethods[] = {
+  {"UnconstrainedPDPA_interface",
+   (DL_FUNC) &UnconstrainedPDPA_interface, 8
+   //,{REALSXP, REALSXP, INTSXP, INTSXP, REALSXP}
+  },
   {"PeakSegPDPALog_interface",
    (DL_FUNC) &PeakSegPDPALog_interface, 8
    //,{REALSXP, REALSXP, INTSXP, INTSXP, REALSXP}

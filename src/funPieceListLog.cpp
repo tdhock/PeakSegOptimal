@@ -255,6 +255,34 @@ double PoissonLossPieceLog::getDeriv(double log_mean){
   return linear_term + Log;
 }
 
+void PiecewisePoissonLossLog::set_to_unconstrained_min_of
+(PiecewisePoissonLossLog *input, int verbose){
+  PoissonLossPieceListLog::iterator it = input->piece_list.begin();
+  double best_cost = INFINITY;
+  double min_log_mean = it->min_log_mean;
+  double best_log_mean;
+  while(it != input->piece_list.end()){
+    double mu = it->argmin();
+    if(it->max_log_mean < mu){
+      mu = it->max_log_mean;
+    }
+    if(mu < it->min_log_mean){
+      mu = it->min_log_mean;
+    }
+    double mu_cost = it->getCost(mu);
+    if(mu_cost < best_cost){
+      best_cost = mu_cost;
+      best_log_mean = mu;
+    }
+    it++;
+  }
+  it--;
+  piece_list.clear();
+  piece_list.emplace_back(0, 0, best_cost,
+			  min_log_mean, it->max_log_mean, PREV_NOT_SET,
+			  best_log_mean);
+}
+
 void PiecewisePoissonLossLog::set_to_min_less_of
 (PiecewisePoissonLossLog *input, int verbose){
   piece_list.clear();

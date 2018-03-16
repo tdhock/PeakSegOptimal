@@ -37,6 +37,10 @@ void PeakSegPDPALog
     PiecewisePoissonLossLog *cost_model = &cost_model_vec[data_i];
     cost_model->piece_list.emplace_back
       (1.0, -data_weight_cumsum/weight_cumsum, 0.0, min_log_mean, max_log_mean, -1, false);
+    Rprintf("DP changes=0 data_i=%d\n", data_i);
+    Rprintf("=new cost model + new data point\n");
+    cost_model->print();
+    Rprintf("\n");
   }
 
   // DP: compute functional model of best cost in S segments up to
@@ -47,9 +51,9 @@ void PeakSegPDPALog
     for(int data_i=total_changes; data_i<data_count; data_i++){
       int prev_i = data_i-1;
       prev_cost_model = &cost_model_vec[prev_i + (total_changes-1)*data_count];
-      IFPRINT(Rprintf("DP changes=%d data_i=%d\n", total_changes, data_i));
-      IFPRINT(Rprintf("=prev cost model\n"));
-      IFPRINT(prev_cost_model->print());
+      Rprintf("DP changes=%d data_i=%d\n", total_changes, data_i);
+      Rprintf("=prev cost model\n");
+      prev_cost_model->print();
       int verbose = 0, status;
       IFPRINT(verbose=1);
       if(total_changes % 2){
@@ -75,14 +79,14 @@ void PeakSegPDPALog
       min_prev_cost.set_prev_seg_end(prev_i);
       new_cost_model = &cost_model_vec[data_i + total_changes*data_count];
       if(data_i==total_changes){//first cost model, only one candidate.
-	IFPRINT(Rprintf("=new cost model = min prev cost\n"));
-	IFPRINT(min_prev_cost.print());
+	Rprintf("=new cost model = min prev cost\n");
+	min_prev_cost.print();
 	*new_cost_model = min_prev_cost;
       }else{
-	IFPRINT(Rprintf("=min prev cost\n"));
-        IFPRINT(min_prev_cost.print());
-	IFPRINT(Rprintf("=cost model\n"));
-	IFPRINT(cost_model.print());
+	Rprintf("=min prev cost\n");
+        min_prev_cost.print();
+	Rprintf("=cost model\n");
+	cost_model.print();
 	new_cost_model->set_to_min_env_of
 	  (&min_prev_cost, &cost_model, verbose);
 	status = new_cost_model->check_min_of(&min_prev_cost, &cost_model);
@@ -101,16 +105,18 @@ void PeakSegPDPALog
 	  throw status;
 	}
       }
-      IFPRINT(Rprintf("=new cost model\n"));
-      IFPRINT(new_cost_model->print());
+      Rprintf("=new cost model\n");
+      new_cost_model->print();
       new_cost_model->multiply(weight_cumsum_vec[prev_i]);
       new_cost_model->add
 	(weight_vec[data_i],
 	 -data_vec[data_i]*weight_vec[data_i],
 	 0.0);
       new_cost_model->multiply(1/weight_cumsum_vec[data_i]);
-      IFPRINT(new_cost_model->print());
+      Rprintf("=new cost model + new data point\n");
+      new_cost_model->print();
       cost_model = *new_cost_model;
+      Rprintf("\n");
     }
   }
 
