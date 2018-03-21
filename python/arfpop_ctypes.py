@@ -30,9 +30,7 @@ def arfpop(dat, gam, penalty, constraint):
 	out['changePts'] = np.unique(end_vec) + 1
 	out['spikes'] = out['changePts'][1:] + 1
 	
-	padded = np.array([0])
-
-	out['spike_mag'] = np.concatenate((padded, out['mean_vec'][1:] - out['mean_vec'][0:-1]))
+	out['spike_mag'] = out['mean_vec'][out['spikes'] - 1] - gam * out['mean_vec'][out['spikes'] - 2]
 	out['pos_spike_mag'] = np.maximum(out['spike_mag'], np.zeros(out['spike_mag'].shape))
 
 	## TODO: add error catching here! 
