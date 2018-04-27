@@ -19,7 +19,7 @@ void IsotonicFPOP
    int *intervals_mat, //data_count
    bool *constraint){
   double min_mean=data_vec[0], max_mean=data_vec[0];
-  
+  double EPS = 1e-40;
   for(int data_i=1; data_i<data_count; data_i++){
     double data = data_vec[data_i];
     if(data < min_mean){
@@ -46,10 +46,10 @@ void IsotonicFPOP
       if (*constraint) {
         min_prev_cost.set_to_min_less_of(cost_prev, verbose);  
       } else {
-        min_prev_cost.set_to_unconstrained_min_of(cost_prev, verbose);  
+        min_prev_cost.set_to_unconstrained_min_of(cost_prev, EPS, verbose);  
       }
 
-      min_prev_cost.set_prev_seg_end(data_i-1);
+      min_prev_cost.set_prev_seg_end(data_i-1, EPS);
       min_prev_cost.add(0.0, 0.0, penalty);
       cost->set_to_min_env_of(&min_prev_cost, cost_prev, verbose);
       

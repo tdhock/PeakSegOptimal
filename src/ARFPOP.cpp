@@ -8,8 +8,6 @@
 
 #include <stdlib.h>
 
-FILE *stream;
-
 
 
 void ARFPOP
@@ -28,46 +26,62 @@ void ARFPOP
    bool *constraint,
    int *success){
   
+  freopen("/Users/jewellsean/Desktop/out.txt","w", stdout);
+  
   double MAX = 1e200;
-  double EPS = 1e-40;
-
-  double min_mean=0, max_mean;
-  max_mean = INFINITY;
+  double EPS = 0.1;
+  double min_mean = 0;
+  double max_mean = INFINITY;
   std::vector<PiecewiseSquareLoss> cost_model_mat(data_count);
   PiecewiseSquareLoss *cost, *cost_prev;
-  PiecewiseSquareLoss min_prev_cost, scaled_prev_cost; //, min_prev_cost_scaled;
+  PiecewiseSquareLoss min_prev_cost, scaled_prev_cost, scaled_prev_cost_clean;
   int verbose=0;
-  for(int data_i=0; data_i<data_count; data_i++){
+  for(int data_i=0; data_i< data_count; data_i++){
     cost = &cost_model_mat[data_i];
     // Alg 3, ln 4
     if(data_i==0){
+      // segment for min_mean
+      cost->piece_list.emplace_back
+      (0, 0, (data_vec[0] - EPS) * (data_vec[0] - EPS) / 2,
+       EPS, EPS, -1, false);
+      // segment for rest of parameter interval range
       cost->piece_list.emplace_back
       (0.5, - data_vec[0], data_vec[0] * data_vec[0] / 2,
-       min_mean, max_mean, -1, false);
+       EPS, max_mean, -1, false);
+      
+      // printf("first part of cost function built \n");
+      // cost -> print(); 
+      
     }else{ 
+  
       scaled_prev_cost.set_to_scaled_of(cost_prev, gam, EPS, verbose);
+      
+      // printf("scaled cost function \n");
+      // scaled_prev_cost.print(); 
+
       if (*constraint) {
         min_prev_cost.set_to_min_less_of(&scaled_prev_cost, verbose); 
       } else {
-        min_prev_cost.set_to_unconstrained_min_of(&scaled_prev_cost, verbose);
+        min_prev_cost.set_to_unconstrained_min_of(&scaled_prev_cost, EPS, verbose);
       }
 
-      min_prev_cost.set_prev_seg_end(data_i-1);
-      min_prev_cost.add(0.0, 0.0, penalty);
-      cost->set_to_min_env_of(&min_prev_cost, &scaled_prev_cost, verbose);
+      min_prev_cost.set_prev_seg_end(data_i - 1, EPS);
+      min_prev_cost.add_penalty(penalty, EPS);
       
-
-      int status = cost->check_min_of(&min_prev_cost, &scaled_prev_cost);
+      scaled_prev_cost_clean.set_to_clean(&scaled_prev_cost, EPS, verbose); 
+      cost->set_to_min_env_of(&min_prev_cost, &scaled_prev_cost_clean, 0);
+      
+      int status = cost->check_min_of(&min_prev_cost, &scaled_prev_cost_clean);
 
       try {
         if(status){
           printf("Lambda = %.20e \t Gamma = %.100e\n", penalty, gam);
           printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
-          cost->set_to_min_env_of(&min_prev_cost, &scaled_prev_cost, false);
+          cost->set_to_min_env_of(&min_prev_cost, &scaled_prev_cost_clean, false);
           printf("=min_prev_cost_scaled\n");
           min_prev_cost.print();
           printf("=scaled_prev_cost + %f\n", penalty);
-          scaled_prev_cost.print();
+          scaled_prev_cost_clean.print();
           printf("=new cost model\n");
           cost->print();
           throw status;
@@ -76,9 +90,14 @@ void ARFPOP
         printf("An exception occured %d \n", e);
       }
 
-      cost->add
+      cost->add_protect
         (0.5,
-         - data_vec[data_i], data_vec[data_i] * data_vec[data_i] / 2);
+         - data_vec[data_i], data_vec[data_i] * data_vec[data_i] / 2, EPS, 0);
+      
+      cost->add_protect
+        (0,
+         0, (data_vec[data_i] - EPS) * (data_vec[data_i] - EPS) / 2, EPS, 1);
+      
 
     try {
         cost -> checkStable(MAX);
@@ -88,6 +107,10 @@ void ARFPOP
       return;
   }
     } 
+    
+    printf("=opt_cost at data_i = %d \n", data_i);
+    cost -> print();
+
     cost_prev = cost;
     
   }
@@ -98,12 +121,10 @@ void ARFPOP
   
   for(int i=0; i< data_count; i++){
     cost = &cost_model_mat[i];
-
     intervals_mat[i] = cost->piece_list.size();
     cost->Minimize
       (&best_cost, &best_mean,
        &prev_seg_end, &prev_mean);
-    
     
     cost_mat[i] = best_cost;
   }
@@ -150,4 +171,7 @@ void ARFPOP
     }
     
   }
+  
+  fclose(stdout);
+  
 }
