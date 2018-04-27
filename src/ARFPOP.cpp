@@ -24,17 +24,18 @@ void ARFPOP
    double *mean_vec,//data_count
    int *intervals_mat,//data_count
    bool *constraint,
-   int *success){
+   int *success, 
+   double EPS){
   
-  freopen("/Users/jewellsean/Desktop/out.txt","w", stdout);
+  // freopen("/Users/jewellsean/Desktop/out.txt","w", stdout);
   
   double MAX = 1e200;
-  double EPS = 0.1;
+  // double EPS = 0.1;
   double min_mean = 0;
   double max_mean = INFINITY;
   std::vector<PiecewiseSquareLoss> cost_model_mat(data_count);
   PiecewiseSquareLoss *cost, *cost_prev;
-  PiecewiseSquareLoss min_prev_cost, scaled_prev_cost, scaled_prev_cost_clean;
+  PiecewiseSquareLoss min_prev_cost, scaled_prev_cost, scaled_prev_cost_clean, min_eps;
   int verbose=0;
   for(int data_i=0; data_i< data_count; data_i++){
     cost = &cost_model_mat[data_i];
@@ -48,37 +49,30 @@ void ARFPOP
       cost->piece_list.emplace_back
       (0.5, - data_vec[0], data_vec[0] * data_vec[0] / 2,
        EPS, max_mean, -1, false);
-      
-      // printf("first part of cost function built \n");
-      // cost -> print(); 
-      
     }else{ 
   
       scaled_prev_cost.set_to_scaled_of(cost_prev, gam, EPS, verbose);
-      
-      // printf("scaled cost function \n");
-      // scaled_prev_cost.print(); 
+      min_eps.set_to_eps_min_of(&scaled_prev_cost, EPS, verbose);
 
       if (*constraint) {
-        min_prev_cost.set_to_min_less_of(&scaled_prev_cost, verbose); 
+        min_prev_cost.set_to_min_less_of(&min_eps, EPS, verbose); 
       } else {
-        min_prev_cost.set_to_unconstrained_min_of(&scaled_prev_cost, EPS, verbose);
+        min_prev_cost.set_to_unconstrained_min_of(&min_eps, EPS, verbose);
       }
 
       min_prev_cost.set_prev_seg_end(data_i - 1, EPS);
       min_prev_cost.add_penalty(penalty, EPS);
-      
-      scaled_prev_cost_clean.set_to_clean(&scaled_prev_cost, EPS, verbose); 
-      cost->set_to_min_env_of(&min_prev_cost, &scaled_prev_cost_clean, 0);
-      
+      scaled_prev_cost_clean.set_to_clean(&min_eps, EPS, verbose); 
+      cost->set_to_min_env_of(&min_prev_cost, &scaled_prev_cost_clean, EPS, verbose);
+
       int status = cost->check_min_of(&min_prev_cost, &scaled_prev_cost_clean);
 
       try {
         if(status){
           printf("Lambda = %.20e \t Gamma = %.100e\n", penalty, gam);
           printf("BAD MIN ENV CHECK data_i=%d status=%d\n", data_i, status);
-          cost->set_to_min_env_of(&min_prev_cost, &scaled_prev_cost_clean, false);
-          printf("=min_prev_cost_scaled\n");
+          cost->set_to_min_env_of(&min_prev_cost, &scaled_prev_cost_clean, EPS, false);
+          printf("=min_prev_cost\n");
           min_prev_cost.print();
           printf("=scaled_prev_cost + %f\n", penalty);
           scaled_prev_cost_clean.print();
@@ -108,11 +102,8 @@ void ARFPOP
   }
     } 
     
-    printf("=opt_cost at data_i = %d \n", data_i);
-    cost -> print();
-
     cost_prev = cost;
-    
+
   }
   
   // Decoding the cost_model_vec, and writing to the output matrices.
@@ -172,6 +163,6 @@ void ARFPOP
     
   }
   
-  fclose(stdout);
+  // fclose(stdout);
   
 }

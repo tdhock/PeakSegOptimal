@@ -70,7 +70,7 @@ double SquareLossPiece::argmin_mean(){
   // f'(u)= 2 * Square * u + Linear = 0 means
   // u = -Linear / (2 * Square)
   
-  if (Square > 0) {
+  if (Square > 0 || Square < 0) {
     return - Linear / (2 * Square);  
   } else if(Square == 0 & Linear > 0) {
     return min_mean;
@@ -115,7 +115,7 @@ double SquareLossPiece::getCost(double mean){
 }
 
 void PiecewiseSquareLoss::set_to_min_less_of
-  (PiecewiseSquareLoss *input, int verbose){
+  (PiecewiseSquareLoss *input, double EPS, int verbose){
   piece_list.clear();
   SquareLossPieceList::iterator it = input->piece_list.begin();
   SquareLossPieceList::iterator next_it;
@@ -123,6 +123,20 @@ void PiecewiseSquareLoss::set_to_min_less_of
   double prev_min_mean = it->min_mean;
   double prev_best_mean;
   while(it != input->piece_list.end()){
+    
+    if (it -> min_mean == EPS && it -> max_mean == EPS) {
+      if (verbose) { printf("hitting EPS interval \n"); }
+      
+      // return constant function over two segments 
+      piece_list.emplace_back
+        (0, 0, it -> Constant,
+         EPS, EPS, it -> data_i,
+         it -> prev_mean);
+      prev_min_cost = it -> Constant; 
+      prev_best_mean = EPS;
+      it++;
+    } else {
+    
     double left_cost = it->getCost(it->min_mean);
     double right_cost = it->getCost(it->max_mean);
     if(verbose)printf("left_cost=%f right_cost=%f\n", left_cost, right_cost);
@@ -237,6 +251,7 @@ void PiecewiseSquareLoss::set_to_min_less_of
       printf("current min-less-------------------\n");
       print();
     }
+    }
   }//while(it
   if(prev_min_cost < INFINITY){
     // ending on a constant piece.
@@ -331,15 +346,11 @@ void PiecewiseSquareLoss::set_to_scaled_of(PiecewiseSquareLoss *input,
 // that is constant on two intervals
 // min over eps interval
 // min over (eps, infty) 
-void PiecewiseSquareLoss::set_to_unconstrained_min_of
+
+void PiecewiseSquareLoss::set_to_eps_min_of
   (PiecewiseSquareLoss *input, double EPS, int verbose) {
   piece_list.clear();
   SquareLossPieceList::iterator it = input->piece_list.begin();
-  // outside of eps interval costs
-  double prev_min_cost = INFINITY;
-  double left_most = INFINITY;
-  double right_most = -INFINITY;
-  double right_mean, left_mean, prev_best_mean, mu_cost, mu;
   
   // eps interval costs
   double prev_min_cost_EPS = INFINITY;
@@ -350,7 +361,7 @@ void PiecewiseSquareLoss::set_to_unconstrained_min_of
   
   while(it != input->piece_list.end()){
     if (verbose) {
-      printf("start new iter of set to unconstrained min of--------------\n");
+      printf("start new iter of eps min--------------\n");
       printf("Searching for min cost in \n");
       printf("%10s %10s %15s %15s %15s %15s %s\n",
              "Square", "Linear", "Constant",
@@ -373,7 +384,7 @@ void PiecewiseSquareLoss::set_to_unconstrained_min_of
         prev_best_mean_EPS = mu_EPS;
         data_i = it -> data_i;
       }
-
+      
       
       if (verbose) {printf("cost at pt %d \t %f \n", it -> data_i, mu_cost_EPS);}
       
@@ -425,12 +436,67 @@ void PiecewiseSquareLoss::set_to_unconstrained_min_of
       if (verbose) {printf("cost at pt %d \t %f \n", it -> data_i, mu_cost_EPS);}
       
       
-    } else{
-      // the whole interval must be greater than EPS (by construction of the scaling operator)
-      if (it -> min_mean < EPS) {
-        throw("interval construction error");
-      }
-    
+    } 
+    it++;
+  } // end loop over components
+  
+  
+  // return constant @ EPS interval
+    piece_list.emplace_back
+    (0, 0, prev_min_cost_EPS,
+     EPS, EPS, data_i,
+     prev_best_mean_EPS);
+  
+  // loop over elements and return components that 
+  // have max_mean > EPS
+  it = input->piece_list.begin();
+  while(it != input->piece_list.end()){
+  
+  if (it -> max_mean > EPS) {
+    piece_list.emplace_back
+    (it -> Square, it -> Linear, it -> Constant,
+     it -> min_mean, it -> max_mean, it -> data_i,
+     it -> prev_mean);  
+  }
+  it++;
+  }
+  
+}
+
+
+
+void PiecewiseSquareLoss::set_to_unconstrained_min_of
+  (PiecewiseSquareLoss *input, double EPS, int verbose) {
+  piece_list.clear();
+  SquareLossPieceList::iterator it = input->piece_list.begin();
+  // outside of eps interval costs
+  double prev_min_cost = INFINITY;
+  double left_most = INFINITY;
+  double right_most = -INFINITY;
+  double right_mean, left_mean, prev_best_mean, mu_cost, mu;
+  
+  while(it != input->piece_list.end()){
+    if (verbose) {
+      printf("start new iter of set to unconstrained min of--------------\n");
+      printf("Searching for min cost in \n");
+      printf("%10s %10s %15s %15s %15s %15s %s\n",
+             "Square", "Linear", "Constant",
+             "min_mean", "max_mean",
+             "prev_mean", "data_i");
+      it -> print();
+
+    }
+    if (it -> min_mean == EPS && it -> max_mean == EPS) {
+      if (verbose) { printf("hitting EPS interval \n"); }
+      
+      // return constant function over two segments 
+      piece_list.emplace_back
+        (0, 0, it -> Constant,
+         EPS, EPS, it -> data_i,
+         it -> prev_mean);
+      
+    }
+      
     // boundary costs
     left_mean = it -> min_mean;
     
@@ -466,24 +532,9 @@ void PiecewiseSquareLoss::set_to_unconstrained_min_of
       prev_min_cost = mu_cost;
       prev_best_mean = mu;
     }
-    }
     it++;
   } // end loop over components
   
-  
-  // return constant function over two segments 
-  if (verbose) printf("storing this min cost value %f \n", prev_min_cost_EPS);
-  piece_list.emplace_back
-    (0, 0, prev_min_cost_EPS,
-     EPS, EPS, data_i,
-     prev_best_mean_EPS);
-  
-  // update so we have min of all segments
-  if (prev_min_cost_EPS < prev_min_cost) {
-    prev_min_cost = prev_min_cost_EPS;
-    prev_best_mean = prev_best_mean_EPS;
-    left_most = EPS;
-  }
     piece_list.emplace_back
     (0, 0, prev_min_cost,
      left_most, right_most, PREV_NOT_SET,
@@ -759,7 +810,7 @@ int PiecewiseSquareLoss::check_min_of
 }
 
 void PiecewiseSquareLoss::set_to_min_env_of
-  (PiecewiseSquareLoss *fun1, PiecewiseSquareLoss *fun2, int verbose){
+  (PiecewiseSquareLoss *fun1, PiecewiseSquareLoss *fun2, double EPS, int verbose){
   SquareLossPieceList::iterator
   it1 = fun1->piece_list.begin(),
   it2 = fun2->piece_list.begin();
@@ -786,14 +837,19 @@ void PiecewiseSquareLoss::set_to_min_env_of
                             it2->data_i, it2->prev_mean);
   }
   
-  // start at second element of both of these lists
   it1++;
   it2++;
+  
+  // start at second element of both of these lists
+  // fun1 -> piece_list.(it1++);
+  // fun2 -> piece_list.erase(it2++);
+  
   }
   
+
   while(it1 != fun1->piece_list.end() &&
         it2 != fun2->piece_list.end()){
-    push_min_pieces(fun1, fun2, it1, it2, verbose);
+    push_min_pieces(fun1, fun2, it1, it2, EPS, verbose);
     if(verbose){
       print();
       printf("------\n");
@@ -821,6 +877,7 @@ void PiecewiseSquareLoss::push_min_pieces
    PiecewiseSquareLoss *fun2,
    SquareLossPieceList::iterator it1,
    SquareLossPieceList::iterator it2,
+   double EPS, 
    int verbose){
   bool same_at_left;
   double last_min_mean;
@@ -828,6 +885,8 @@ void PiecewiseSquareLoss::push_min_pieces
   prev2--;
   SquareLossPieceList::iterator prev1 = it1;
   prev1--;
+  
+
   if(it1->min_mean < it2->min_mean){
     //it1 function piece starts to the left of it2.
     same_at_left = sameFunsSquare(prev2, it1);
@@ -843,9 +902,14 @@ void PiecewiseSquareLoss::push_min_pieces
       if(it1==fun1->piece_list.begin() &&
          it2==fun2->piece_list.begin()){
         same_at_left = false;
-      }else{
-        same_at_left = sameFunsSquare(prev1, prev2);
-      }
+        }else{
+         same_at_left = sameFunsSquare(prev1, prev2);
+          if (prev1 -> min_mean == EPS && 
+              prev1 -> max_mean == EPS &&
+              prev2 -> min_mean == EPS &&
+              prev2 -> max_mean == EPS)
+            same_at_left = false;
+       }
     }
   }
   SquareLossPieceList::iterator next2 = it2;
@@ -911,7 +975,6 @@ void PiecewiseSquareLoss::push_min_pieces
      last_min_mean, first_max_mean,
      -5, false);
   // Evaluate the middle in the original space, to avoid problems when
-  // first_max_log_mean is -Inf.
   // SWJ: need to be careful here in case either first_max_mean of last_min_mean
   // is -Inf or Inf
   // If either is Inf or -Inf then
@@ -926,7 +989,6 @@ void PiecewiseSquareLoss::push_min_pieces
   } else  {
     mid_mean = 0;
   }
-  
   
   double cost_diff_mid = diff_piece.getCost(mid_mean);
   // Easy case of equality on both left and right.
@@ -989,12 +1051,14 @@ void PiecewiseSquareLoss::push_min_pieces
     }
     if(verbose)printf("Square zero with no roots in interval\n");
     return;
-  }//if(diff->Log == 0
+  }
   
   
   double cost_diff_left = diff_piece.getCost(last_min_mean);
   double cost_diff_right = diff_piece.getCost(first_max_mean);
   bool two_roots = diff_piece.has_two_roots(0.0);
+  
+  
   double smaller_mean, larger_mean;
   if(two_roots){
     smaller_mean = diff_piece.get_smaller_root(0.0);
@@ -1047,7 +1111,10 @@ void PiecewiseSquareLoss::push_min_pieces
       // There could be a crossing point to the right.
       double mean_at_crossing = larger_mean;
       double mean_at_optimum = diff_piece.argmin();
-      if(verbose)printf("larger_mean=%f\n", mean_at_crossing);
+      if(verbose)printf("mean_at_crossing=%f\n", mean_at_crossing);
+      if(verbose)printf("last_min_mean=%f\n", last_min_mean);
+      if(verbose)printf("mean_at_optimum=%f\n", mean_at_optimum);
+      if(verbose)printf("first_max_mean=%f\n", first_max_mean);
       if(last_min_mean < mean_at_optimum &&
          mean_at_optimum < mean_at_crossing &&
          mean_at_crossing < first_max_mean){
@@ -1068,6 +1135,8 @@ void PiecewiseSquareLoss::push_min_pieces
     }else{
       push_piece(it2, last_min_mean, first_max_mean);
     }
+   printf("same at left value %d \n", same_at_left);
+    if (verbose) printf("cost diff left, mid, right (%f, %f, %f) \n", cost_diff_left, cost_diff_mid, cost_diff_right);
     if(verbose)printf("equal on the left with no crossing in interval\n");
     return;
   }

@@ -6,6 +6,7 @@
 #' @param lambda tuning parameter lambda
 #' @param constraint boolean specifying whether constrained or unconstrained optimization
 #' problem
+#' @param EPS double specfying the minimum calcium value
 #'
 #' @return Returns a list with elements:
 #' @return \code{spikes} the set of spikes
@@ -46,7 +47,7 @@
 #'
 #' @export
 
-ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE) {
+ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE, EPS = 1e-10) {
   stopifnot(gam > 0 && gam <= 1)
   stopifnot(!is.null(gam))
   weight.vec <- rep(1, length(dat))
@@ -72,6 +73,7 @@ ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE) {
     intervals.mat = as.integer(intervals.mat),
     constraint = constraint,
     success = as.integer(success),
+    EPS = as.numeric(EPS), 
     PACKAGE = "FastLZeroSpikeInference"
   )
   

@@ -6,4 +6,5 @@ void ARFPOP
   int *end_vec,
   double *mean_vec,
   int *intervals_mat, bool *constraint, 
-  int *success);
+  int *success, 
+  double EPS);

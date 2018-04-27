@@ -40,16 +40,17 @@ typedef std::list<SquareLossPiece> SquareLossPieceList;
 class PiecewiseSquareLoss {
 public:
   SquareLossPieceList piece_list;
-  void set_to_min_less_of(PiecewiseSquareLoss *, int);
+  void set_to_min_less_of(PiecewiseSquareLoss *, double, int);
   void set_to_unconstrained_min_of(PiecewiseSquareLoss *, double, int);
   void set_to_scaled_of(PiecewiseSquareLoss *, double, double, int);
+  void set_to_eps_min_of(PiecewiseSquareLoss *, double, int);
   void set_to_clean(PiecewiseSquareLoss *, double, int);
   void set_to_min_env_of
-    (PiecewiseSquareLoss *, PiecewiseSquareLoss *, int);
+    (PiecewiseSquareLoss *, PiecewiseSquareLoss *, double, int);
   int check_min_of(PiecewiseSquareLoss *, PiecewiseSquareLoss *);
   void push_min_pieces
     (PiecewiseSquareLoss *, PiecewiseSquareLoss *,
-     SquareLossPieceList::iterator, SquareLossPieceList::iterator, int);
+     SquareLossPieceList::iterator, SquareLossPieceList::iterator, double, int);
   void push_piece(SquareLossPieceList::iterator, double, double);
   void add(double Square, double Linear, double Constant);
   void add_penalty(double penalty, double EPS);
