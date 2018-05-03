@@ -566,9 +566,11 @@ void PiecewiseSquareLoss::add_protect(double Square, double Linear, double Const
     } 
   } else {
     for(it=piece_list.begin(); it != piece_list.end(); it++){
-        it->Square += Square;
-        it->Linear += Linear;
-        it->Constant += Constant; 
+        if (it -> max_mean > EPS) {
+          it->Square += Square;
+          it->Linear += Linear;
+          it->Constant += Constant;   
+        }
     } 
   }
 }

@@ -2,18 +2,19 @@
 #' trace.
 #'
 #' @param dat fluorescence data
-#' @param gam a scalar value for the AR(1)/AR(1) + intercept decay parameter.
+#' @param gam a scalar value for the AR(1) decay parameter.
 #' @param lambda tuning parameter lambda
-#' @param constraint boolean specifying whether constrained or unconstrained optimization
-#' problem
+#' @param constraint boolean specifying constrained or unconstrained optimization
+#' problem (see below)
+#' @param compute_fitted_values boolean specifying whether fitted values are calculated
 #' @param EPS double specfying the minimum calcium value
 #'
 #' @return Returns a list with elements:
 #' @return \code{spikes} the set of spikes
 #' @return \code{fittedValues} estimated calcium concentration
 #' @return \code{changePts} the set of changepoints
-#' @return \code{cost} the cost at each time point (vector)
-#' @return \code{nIntervals} the number of intervals at each point (vector)
+#' @return \code{cost} the cost at each time point 
+#' @return \code{nIntervals} the number of intervals at each point
 #'
 #' @details
 #'
@@ -21,24 +22,17 @@
 #' 
 #'  \strong{AR(1) model:}
 #'  
-#'  minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t neq gamma c_{t-1} }
-#'  
-#'  subject to c_t >= 0, t = 1, ..., T
+#'  minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t != max(gam c_{t-1}, EPS) }
 #'  
 #'  for the global optimum, where y_t is the observed fluorescence at the tth timepoint.
 #'
 #' \strong{Constrained AR(1) model}
-#' minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t neq gamma c_{t-1} }
+#' minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t != max(gam c_{t-1}, EPS) }
 #' 
-#' subject to c_t >= 0, t = 1, ..., T
-#' 
-#' c_{t} >= gamma c_{t-1}, t = 2, ..., T
+#' c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
 #'
-#' See Jewell and Witten (2017) <arXiv:1703.08644> and 
-#' 
-#' Hocking, T. D., Rigaill, G., Fearnhead, P., and Bourque, G. (2017) <arXiv:1703.03352>
-#'
-#'
+#' See Jewell, Hocking, Fearnhead, and Witten (2018) <arXiv:1802.07380> and 
+#' Jewell and Witten (2017) <arXiv:1703.08644> and 
 #' @examples
 #'
 #'
@@ -47,7 +41,7 @@
 #'
 #' @export
 
-ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE, EPS = 1e-10) {
+ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE, compute_fitted_values = FALSE, EPS = 1e-10) {
   stopifnot(gam > 0 && gam <= 1)
   stopifnot(!is.null(gam))
   weight.vec <- rep(1, length(dat))
@@ -73,6 +67,7 @@ ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE, EPS = 1e-10) 
     intervals.mat = as.integer(intervals.mat),
     constraint = constraint,
     success = as.integer(success),
+    compute_fitted_values = compute_fitted_values, 
     EPS = as.numeric(EPS), 
     PACKAGE = "FastLZeroSpikeInference"
   )
@@ -92,11 +87,18 @@ ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE, EPS = 1e-10) 
     constraint_str <- "-pos-constrained"  
   }
   
+  if (compute_fitted_values) {
+    fitted_values = result.list$mean.vec  
+  } else {
+    fitted_values = NA 
+  }
+  
+  
   if (result.list$success) {
     out <-
       list(
         spikes = spikes,
-        fittedValues = rev(result.list$mean.vec),
+        fittedValues = fitted_values,
         dat = dat,
         type = paste0("ar1-fpop", constraint_str), 
         changePts = changePts,
@@ -104,7 +106,9 @@ ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE, EPS = 1e-10) 
         gam = gam,
         lambda = lambda,
         cost = as.numeric(result.list$cost.mat),
-        nIntervals = as.numeric(result.list$intervals.mat)
+        nIntervals = as.numeric(result.list$intervals.mat),
+        end_vec = result.list$ends.vec,
+        EPS = EPS
       )
     class(out) <- "estimatedSpikes"
     return(out)

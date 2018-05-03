@@ -6,5 +6,6 @@ void ARFPOP
   int *end_vec,
   double *mean_vec,
   int *intervals_mat, bool *constraint, 
-  int *success, 
+  int *success,
+  bool *compute_fitted_values, 
   double EPS);

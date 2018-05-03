@@ -4,15 +4,15 @@ This package implements an algorithm for deconvolving calcium imaging data for a
 
 This algorithm solves the optimization problems
 ### AR(1) model
-minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t neq gamma c_{t-1} }
-subject to c_t >= 0, t = 1, ..., T
+
+minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t != max(gam c_{t-1}, EPS) }
 
 for the global optimum, where y_t is the observed fluorescence at the tth timepoint.
 
 ### Constrained AR(1) model 
-minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t neq gamma c_{t-1} }
-subject to c_t >= 0, t = 1, ..., T
-           c_{t} >= gamma c_{t-1}, t = 2, ..., T
+minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t != max(gam c_{t-1}, EPS) }
+ 
+subject to c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
 
 Install 
 -----
@@ -48,8 +48,6 @@ cd FastLZeroSpikeInference/python
 ```
 
 An example using this code can be viewed [here](https://github.com/jewellsean/FastLZeroSpikeInference/blob/master/examples/python/simple_example.py).
-
-More complete installation and usage details are forthcoming! 
 
 References
 -----

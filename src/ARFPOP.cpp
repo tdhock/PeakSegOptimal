@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "funPieceListLog.h"
 #include <math.h>
-
+#include "FitSegmentModel.h"
 
 #include <stdlib.h>
 
@@ -25,6 +25,7 @@ void ARFPOP
    int *intervals_mat,//data_count
    bool *constraint,
    int *success, 
+   bool *compute_fitted_values,
    double EPS){
   
   // freopen("/Users/jewellsean/Desktop/out.txt","w", stdout);
@@ -50,10 +51,9 @@ void ARFPOP
       (0.5, - data_vec[0], data_vec[0] * data_vec[0] / 2,
        EPS, max_mean, -1, false);
     }else{ 
-  
       scaled_prev_cost.set_to_scaled_of(cost_prev, gam, EPS, verbose);
       min_eps.set_to_eps_min_of(&scaled_prev_cost, EPS, verbose);
-
+  
       if (*constraint) {
         min_prev_cost.set_to_min_less_of(&min_eps, EPS, verbose); 
       } else {
@@ -83,6 +83,7 @@ void ARFPOP
       } catch(int e) {
         printf("An exception occured %d \n", e);
       }
+
 
       cost->add_protect
         (0.5,
@@ -163,6 +164,14 @@ void ARFPOP
     
   }
   
+  if (*compute_fitted_values) {
+    FitSegmentModel
+    (data_vec, data_count,
+     gam, // decay parameter
+     end_vec, //input changepts
+     mean_vec,//data_count
+     EPS);  
+  }
   // fclose(stdout);
   
 }

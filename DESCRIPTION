@@ -1,11 +1,11 @@
 Package: FastLZeroSpikeInference
 Maintainer: Sean Jewell <swjewell@uw.edu>
 Author: Sean Jewell, Toby Dylan Hocking
-Version: 2018.03.02
+Version: 2018.05.03
 License: GPL-3
 Title: Fast Nonconvex Deconvolution of Calcium Imaging Data
 Description: A package for estimating spike times from calcium imaging data using an L0 penalty
 Depends: R (>= 2.10)
-Imports: data.table (>= 1.9.8)
+Imports: data.table (>= 1.9.8), LZeroSpikeInference
 Suggests: testthat, ggplot2
 RoxygenNote: 6.0.1
