@@ -6,11 +6,6 @@
 #' spikes.
 #'
 #'
-#' @seealso
-#' \strong{Estimate spikes:}
-#' \code{\link{ARFPOP}}
-#' \code{\link{fit_ar1_model}}
-#'
 #'
 #' @details
 #'
