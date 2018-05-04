@@ -28,8 +28,6 @@ void ARFPOP
    bool *compute_fitted_values,
    double EPS){
   
-  // freopen("/Users/jewellsean/Desktop/out.txt","w", stdout);
-  
   double MAX = 1e200;
   // double EPS = 0.1;
   double min_mean = 0;
@@ -64,7 +62,6 @@ void ARFPOP
       min_prev_cost.add_penalty(penalty, EPS);
       scaled_prev_cost_clean.set_to_clean(&min_eps, EPS, verbose); 
       cost->set_to_min_env_of(&min_prev_cost, &scaled_prev_cost_clean, EPS, verbose);
-
       int status = cost->check_min_of(&min_prev_cost, &scaled_prev_cost_clean);
 
       try {
@@ -102,7 +99,7 @@ void ARFPOP
       return;
   }
     } 
-    
+ 
     cost_prev = cost;
 
   }
@@ -127,6 +124,7 @@ void ARFPOP
     (&best_cost, &best_mean,
      &prev_seg_end, &prev_mean);
   
+  
   int prev_seg_old = data_count - 1;
   int out_i=0;
   double mean = best_mean;
@@ -142,7 +140,6 @@ void ARFPOP
       cost->Minimize
         (&best_cost, &best_mean,
          &prev_seg_end, &prev_mean);
-      
     }
     
     
@@ -172,6 +169,4 @@ void ARFPOP
      mean_vec,//data_count
      EPS);  
   }
-  // fclose(stdout);
-  
 }
