@@ -14,6 +14,9 @@ double regression_coef(double *data_vec, int segment_start, int segment_end, int
   } else if (coef < EPS && start_i == (segment_end - 1)) { // basically unconstrained regression on the whole segment 
     coef = EPS;
   }
+  if (coef < 0) { 
+    coef = EPS;
+  }
   
   return(coef);
 }
