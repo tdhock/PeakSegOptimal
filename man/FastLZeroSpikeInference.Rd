@@ -12,29 +12,58 @@ for a single neuron in order to estimate the times at which the neuron
 spikes.
 }
 \details{
-This package implements an algorithm for deconvolving calcium imaging data for a single 
-neuron in order to estimate the times at which the neuron spikes (Jewell et al. 2018). 
-This algorithim is an extension of the constrained functional pruning algorithm of 
-Hocking et al. (2017). 
-
 This algorithm solves the optimization problems
-### AR(1) model
-minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t != max(gam c_{t-1}, EPS) }
 
-for the global optimum, where y_t is the observed fluorescence at the tth timepoint.
+ \strong{AR(1) model:}
+ 
+ minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_[c_t != max(gam c_{t-1}, EPS)]
+ 
+ for the global optimum, where y_t is the observed fluorescence at the tth timepoint.
 
-### Constrained AR(1) model 
-minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_{c_t != max(gam c_{t-1}, EPS) }
+\strong{Constrained AR(1) model:}
 
-subject to c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
+minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_[c_t != max(gam c_{t-1}, EPS)]
 
-See Jewell, Hocking, Fearnhead, and Witten (2018) <arXiv:1802.07380> and 
-Jewell and Witten (2017) <arXiv:1703.08644> and
+c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
+
+For additional information see: 
+
+1. Jewell, Hocking, Fearnhead, and Witten (2018) <arXiv:1802.07380> and 
+
+2. Jewell and Witten (2017) <arXiv:1703.08644>
 }
 \examples{
+
+library(LZeroSpikeInference)
+sim <- simulateAR1(n = 500, gam = 0.95, poisMean = 0.009, sd = 0.05, seed = 1)
+plot(sim)
+
+## Fits for a single tuning parameter
+
+# AR(1) model
+fit <- ARFPOP(dat = sim$fl, gam = 0.95, lambda = 1)
+print(fit)
+
+# compute fitted values from prev. fit
+fit <- fit_ar1_model(fit)
+plot(fit)
+
+# or 
+fit <- ARFPOP(dat = sim$fl, gam = 0.95, lambda = 1, compute_fitted_values = T)
+plot(fit)
+
+# Constrained AR(1) model
+fit <- ARFPOP(dat = sim$fl, gam = 0.95, lambda = 1, constraint = T, compute_fitted_values = T)
+print(fit)
+plot(fit)
 
 }
 \seealso{
 \strong{Estimate spikes:}
-\code{\link{ARFPOP.R}}
+\code{\link{ARFPOP}}
+\code{\link{fit_ar1_model}}
+
+\strong{Estimate spikes:}
+\code{\link{ARFPOP}}
+\code{\link{fit_ar1_model}}
 }
