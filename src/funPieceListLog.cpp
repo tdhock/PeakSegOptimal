@@ -1137,7 +1137,7 @@ void PiecewiseSquareLoss::push_min_pieces
     }else{
       push_piece(it2, last_min_mean, first_max_mean);
     }
-   printf("same at left value %d \n", same_at_left);
+   // printf("same at left value %d \n", same_at_left);
     if (verbose) printf("cost diff left, mid, right (%f, %f, %f) \n", cost_diff_left, cost_diff_mid, cost_diff_right);
     if(verbose)printf("equal on the left with no crossing in interval\n");
     return;

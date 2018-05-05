@@ -14,7 +14,7 @@ double regression_coef(double *data_vec, int segment_start, int segment_end, int
   } else if (coef < EPS && start_i == (segment_end - 1)) { // basically unconstrained regression on the whole segment 
     coef = EPS;
   }
-  if (coef < 0) { 
+  if (coef < EPS) { 
     coef = EPS;
   }
   
@@ -39,7 +39,6 @@ void update_fitted_values(double *mean_vec, int segment_start, int segment_end, 
 
 void fit_from_regression(double end_value, double *fitted_values, int length_y, int length_sub, double gam, double EPS) {
   fitted_values[length_sub - 1] = end_value; 
-  double current_value;
   
   for (int data_i= (length_sub - 2); data_i > -1; data_i--) {
     fitted_values[data_i] = fitted_values[data_i + 1] / gam;
