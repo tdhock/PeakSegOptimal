@@ -15,7 +15,7 @@ elif is_linux:
   os.environ["CC"] = 'g++'
 
 setup(name='FastLZeroSpikeInference',
-      version='1.0',
+      version='2018.05.03',
       description='Python wrapper for FastLZeroSpikeInference',
       author='Sean Jewell',
       author_email='swjewell@uw.edu',
@@ -26,7 +26,7 @@ setup(name='FastLZeroSpikeInference',
               name = 'FastLZeroSpikeInference', 
               sources = ['src/funPieceListLog.cpp', 
                          'src/ARFPOP.cpp', 
-                         'src/IsotonicFPOP.cpp', 
+                         'src/FitSegmentModel.cpp', 
                          'src/interface.cpp'
                          ],
               include_dirs = ['src/'], 
