@@ -27,7 +27,7 @@ assert success, "Failed to import 'FastZeroSpikeInference': {}".format(e)
 
 
 
-def arfpop(dat, gam, penalty, constraint = False, compute_fitted_values = False, EPS = 1e-10):
+def estimate_spikes(dat, gam, penalty, constraint = False, estimate_calcium = False, EPS = 1e-10):
 	"""
 	Estimate spike train, underlying calcium concentration, and changepoints based on fluorescence
 	trace.
@@ -38,16 +38,16 @@ def arfpop(dat, gam, penalty, constraint = False, compute_fitted_values = False,
 	gam (double): a scalar value for the AR(1) decay parameter; 0 < gam <= 1
 	penalty (double): tuning parameter lambda > 0
 	constraint (bool): constrained (true) or unconstrained (false) optimization
-	compute_fitted_values (bool): specifying whether fitted values are calculated
-	EPS (double): minimum calcium value
+	estimate_calcium (bool): boolean specifying whether to estimate the calcium
+	EPS (double): minimum calcium value (>= 0)
 	
 	Returns: 
 	
 	dict with elements 
 
 	spikes: the set of spikes
-	mean_vec: estimated calcium concentration
-	changePts: the set of changepoints
+	estimated_calcium: estimated calcium concentration
+	change_pts: the set of changepoints
 	spike_mag: mag. of change to calcium concentration at a spike
 	pos_spike_mag: positive subset of spike_mag
 
@@ -63,6 +63,19 @@ def arfpop(dat, gam, penalty, constraint = False, compute_fitted_values = False,
 		minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_[c_t != max(gam c_{t-1}, EPS)]
 		subject to			 c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
 
+	We introduce the constant EPS > 0, typically on the order of 10^-10, to avoid 
+	arbitrarily small calcium concentrations that would result in numerical  
+	instabilities. In practice, this means that the estimated calcium concentration 
+	decays according to the AR(1) model for values greater than EPS and is equal to EPS thereafter.
+
+	When estimating the spikes, it is not necessary to explicitly compute the 
+	calcium concentration. Therefore, if only the spike times are required, the user
+	can avoid this computation cost by setting the compute_fitted_values boolean to false. 
+	By default, the calcium concentration is not estimated. 
+
+	Given the set of estimated spikes produced from the estimate_spike, the calcium concentration
+	can be estimated with the estimate_calcium function.
+
 	For additional information see:  
 	1. Jewell, Hocking, Fearnhead, and Witten (2018) <arXiv:1802.07380> and  
 	2. Jewell and Witten (2017) <arXiv:1703.08644> 
@@ -75,13 +88,13 @@ def arfpop(dat, gam, penalty, constraint = False, compute_fitted_values = False,
 	y = np.power(gam, np.concatenate([np.arange(100), np.arange(100)]))
 	
 	# Basic fit, no calcium concentration estimated
-	fit = fast.arfpop(y, gam, 1, False)
+	fit = fast.estimate_spikes(y, gam, 1, False)
 
 	# Determine calcium concentration from fit
-	fit = fast.fit_ar1_model(fit)
+	fit = fast.estimate_calcium(fit)
 
 	# Estimate both spikes and calcium concentration
-	fit = fast.arfpop(y, gam, 1, False, True)
+	fit = fast.estimate_spikes(y, gam, 1, False, True)
 
 
 	"""
@@ -91,12 +104,15 @@ def arfpop(dat, gam, penalty, constraint = False, compute_fitted_values = False,
 	if (dat.shape[0] < 3):
 		print "number of data points must be >2"
 		return 0
+	if (EPS < 0):
+		print "EPS must be >= 0"
+		return 0
 
 	dat = np.ascontiguousarray(dat, dtype = float)
 	dat_count = dat.shape[0]
 	cost_mat = np.ascontiguousarray(np.zeros(dat_count, dtype=float))
 	end_vec = np.ascontiguousarray(np.zeros(dat_count, dtype=np.int32))
-	mean_vec = np.ascontiguousarray(np.zeros(dat_count, dtype=float))
+	estimated_calcium = np.ascontiguousarray(np.zeros(dat_count, dtype=float))
 	intervals_mat = np.ascontiguousarray(np.zeros(dat_count, dtype=np.int32))
 	success = False
 
@@ -106,27 +122,27 @@ def arfpop(dat, gam, penalty, constraint = False, compute_fitted_values = False,
 	                                ct.pointer(ct.c_double(gam)),  # gamma
 	                                cost_mat.ctypes.data_as(ct.POINTER(ct.c_double)), # cost mat
 	                                end_vec.ctypes.data_as(ct.POINTER(ct.c_int)), # end_vec
-	                                mean_vec.ctypes.data_as(ct.POINTER(ct.c_double)), # mean_vec
+	                                estimated_calcium.ctypes.data_as(ct.POINTER(ct.c_double)), # estimated_calcium
 	                                intervals_mat.ctypes.data_as(ct.POINTER(ct.c_int)), # int_vec
 	                                ct.pointer(ct.c_bool(constraint)), # constraint
 	                                ct.pointer(ct.c_int(success)),
-	                                ct.pointer(ct.c_bool(compute_fitted_values)), # fitted values	
+	                                ct.pointer(ct.c_bool(estimate_calcium)), # fitted values	
 	                                ct.pointer(ct.c_double(EPS)))
 
 	out = {}
-	out['changePts'] = np.unique(end_vec) + 1
-	out['spikes'] = out['changePts'][1:] + 1
+	out['change_pts'] = np.unique(end_vec) + 1
+	out['spikes'] = out['change_pts'][1:] + 1
 	out['end_vec'] = end_vec + 1
 	out['dat'] = dat
 	out['gam'] = gam 
 	out['EPS'] = EPS
 
-	if (compute_fitted_values):
-		out['mean_vec'] = mean_vec
-		out['spike_mag'] = out['mean_vec'][out['spikes'] - 1] - gam * out['mean_vec'][out['spikes'] - 2]
+	if (estimate_calcium):
+		out['estimated_calcium'] = estimated_calcium
+		out['spike_mag'] = out['estimated_calcium'][out['spikes'] - 1] - gam * out['estimated_calcium'][out['spikes'] - 2]
 		out['pos_spike_mag'] = np.maximum(out['spike_mag'], 0)
 	else:
-		out['mean_vec'] = None
+		out['estimated_calcium'] = None
 		out['spike_mag'] = None
 		out['pos_spike_mag'] = None
 
@@ -135,21 +151,21 @@ def arfpop(dat, gam, penalty, constraint = False, compute_fitted_values = False,
 	return out 
 
 
-def fit_ar1_model(fit):
+def estimate_calcium(fit):
 	"""
-	Estimate underlying calcium concentration based on fit from arfpop
+	Estimate underlying calcium concentration based on fit from estimate_spikes
 	
 	Args:
 
-	fit: object returned from running arfpop
+	fit: object returned from running estimate_spikes
 	
 	Returns: 
 	
 	dict with elements 
 
 	spikes: the set of spikes
-	mean_vec: estimated calcium concentration
-	changePts: the set of changepoints
+	estimated_calcium: estimated calcium concentration
+	change_pts: the set of changepoints
 	spike_mag: mag. of change to calcium concentration at a spike
 	pos_spike_mag: positive subset of spike_mag
 
@@ -165,6 +181,19 @@ def fit_ar1_model(fit):
 		minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_[c_t != max(gam c_{t-1}, EPS)]
 		subject to			 c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
 
+	We introduce the constant EPS > 0, typically on the order of 10^-10, to avoid 
+	arbitrarily small calcium concentrations that would result in numerical  
+	instabilities. In practice, this means that the estimated calcium concentration 
+	decays according to the AR(1) model for values greater than EPS and is equal to EPS thereafter.
+
+	When estimating the spikes, it is not necessary to explicitly compute the 
+	calcium concentration. Therefore, if only the spike times are required, the user
+	can avoid this computation cost by setting the compute_fitted_values boolean to false. 
+	By default, the calcium concentration is not estimated. 
+
+	Given the set of estimated spikes produced from the estimate_spike, the calcium concentration
+	can be estimated with the estimate_calcium function.
+
 	For additional information see:  
 	1. Jewell, Hocking, Fearnhead, and Witten (2018) <arXiv:1802.07380> and  
 	2. Jewell and Witten (2017) <arXiv:1703.08644> 
@@ -177,31 +206,33 @@ def fit_ar1_model(fit):
 	y = np.power(gam, np.concatenate([np.arange(100), np.arange(100)]))
 	
 	# Basic fit, no calcium concentration estimated
-	fit = fast.arfpop(y, gam, 1, False)
+	fit = fast.estimate_spikes(y, gam, 1, False)
 
 	# Determine calcium concentration from fit
-	fit = fast.fit_ar1_model(fit)
+	fit = fast.estimate_calcium(fit)
 
 	# Estimate both spikes and calcium concentration
-	fit = fast.arfpop(y, gam, 1, False, True)
+	fit = fast.estimate_spikes(y, gam, 1, False, True)
+
+
 
 	"""
 	dat = np.ascontiguousarray(fit['dat'], dtype = float)
 	dat_count = fit['dat'].shape[0]
 	end_vec = np.ascontiguousarray(np.array(fit['end_vec'] - 1, dtype=np.int32))
-	mean_vec = np.ascontiguousarray(np.zeros(dat_count, dtype=float))
+	estimated_calcium = np.ascontiguousarray(np.zeros(dat_count, dtype=float))
 
 	lib.FitSegmentModel_interface(dat.ctypes.data_as(ct.POINTER(ct.c_double)), # data ptr
 	                                ct.pointer(ct.c_int(dat_count)),  # data count
 	                                ct.pointer(ct.c_double(fit['gam'])),  # gamma
 	                                end_vec.ctypes.data_as(ct.POINTER(ct.c_int)), # end_vec
-	                                mean_vec.ctypes.data_as(ct.POINTER(ct.c_double)), # mean_vec
+	                                estimated_calcium.ctypes.data_as(ct.POINTER(ct.c_double)), # estimated_calcium
 	                                ct.pointer(ct.c_double(fit['EPS'])))
 
 	out = fit
 
-	out['mean_vec'] = mean_vec
-	out['spike_mag'] = out['mean_vec'][out['spikes'] - 1] - out['gam'] * out['mean_vec'][out['spikes'] - 2]
+	out['estimated_calcium'] = estimated_calcium
+	out['spike_mag'] = out['estimated_calcium'][out['spikes'] - 1] - out['gam'] * out['estimated_calcium'][out['spikes'] - 2]
 	out['pos_spike_mag'] = np.maximum(out['spike_mag'], 0)
 
 

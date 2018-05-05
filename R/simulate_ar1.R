@@ -20,9 +20,10 @@
 #' @seealso
 #'
 #' @examples
-#' sim <- simulateAR1(n = 500, gam = 0.998, poisMean = 0.009, sd = 0.05, seed = 1)
+#' sim <- simulate_ar1(n = 500, gam = 0.998, poisMean = 0.009, sd = 0.05, seed = 1)
 #' plot(sim)
 #' @import stats
+#' 
 #' @export
 simulate_ar1 <- function(n, gam, poisMean, sd, seed)
 {

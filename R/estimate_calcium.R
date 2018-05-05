@@ -1,7 +1,6 @@
-#' Estimate spike train, underlying calcium concentration, and changepoints based on fluorescence
-#' trace.
+#' Estimate underlying calcium concentration based on estimated spikes
 #' 
-#' @param fit object created by running ARFPOP
+#' @param fit object created by running estimate_spikes
 #' 
 #' @return Returns a list with elements:
 #' @return \code{spikes} the set of estimated spikes
@@ -24,16 +23,16 @@
 #' 
 #' minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_[c_t != max(gam c_{t-1}, EPS)]
 #' 
-#' c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
+#' subject to c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
 #'
 #' We introduce the constant EPS > 0, typically on the order of 10^-10, to avoid 
 #' arbitrarily small calcium concentrations that would result in numerical  
 #' instabilities. In practice, this means that the estimated calcium concentration 
-#' decays according to the AR(1) for values greater than EPS and is equal to EPS thereafter.
+#' decays according to the AR(1) model for values greater than EPS and is equal to EPS thereafter.
 #'
 #' When estimating the spikes, it is not necessary to explicitly compute the 
 #' calcium concentration. Therefore, if only the spike times are required, the user
-#' can avoid this computation cost by setting the compute_fitted_values boolean to false. 
+#' can avoid this computation cost by setting the estimate_calcium boolean to false. 
 #' By default, the calcium concentration is not estimated. 
 #'
 #' Given the set of estimated spikes produced from the estimate_spike, the calcium concentration
@@ -47,26 +46,25 @@
 #' 
 #' @examples
 #'
-#' library(LZeroSpikeInference)
 #' sim <- simulate_ar1(n = 500, gam = 0.95, poisMean = 0.009, sd = 0.05, seed = 1)
 #' plot(sim)
-#'
+#' 
 #' ## Fits for a single tuning parameter
-#'
+#' 
 #' # AR(1) model
 #' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1)
 #' print(fit)
-#'
+#' 
 #' # compute fitted values from prev. fit
 #' fit <- estimate_calcium(fit)
 #' plot(fit)
-#'
-#' # or 
-#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, compute_fitted_values = T)
+#' 
+#' # or
+#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, estimate_calcium = T)
 #' plot(fit)
-#'
+#' 
 #' # Constrained AR(1) model
-#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, constraint = T, compute_fitted_values = T)
+#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, constraint = T, estimate_calcium = T)
 #' print(fit)
 #' plot(fit)
 #' 
@@ -78,6 +76,7 @@
 #' \strong{Simulate:}
 #' \code{\link{simulate_ar1}}
 #'
+#' @useDynLib FastLZeroSpikeInference
 #' @export
 estimate_calcium <- structure(function(fit) {
   
