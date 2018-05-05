@@ -1,8 +1,8 @@
-#' Estimate spike train, underlying calcium concentration, and changepoints based on fluorescence
+#' Estimate spike train, underlying calcium concentration, and changepoints based on a fluorescence
 #' trace.
 #'
 #' @param dat fluorescence data
-#' @param gam a scalar value for the AR(1) decay parameter.
+#' @param gam a scalar value for the AR(1) decay parameter
 #' @param lambda tuning parameter lambda
 #' @param constraint boolean specifying constrained or unconstrained optimization
 #' problem (see below)
@@ -10,11 +10,11 @@
 #' @param EPS double specfying the minimum calcium value
 #'
 #' @return Returns a list with elements:
-#' @return \code{spikes} the set of spikes
-#' @return \code{fittedValues} estimated calcium concentration
-#' @return \code{changePts} the set of changepoints
+#' @return \code{spikes} the set of estimated spikes
+#' @return \code{estimated_calcium} estimated calcium concentration
+#' @return \code{change_pts} the set of changepoints
 #' @return \code{cost} the cost at each time point 
-#' @return \code{nIntervals} the number of intervals at each point
+#' @return \code{n_intervals} the number of intervals at each point
 #'
 #' @details
 #'
@@ -32,6 +32,19 @@
 #' 
 #' c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
 #'
+#' We introduce the constant EPS > 0, typically on the order of 10^-10, to avoid 
+#' arbitrarily small calcium concentrations that would result in numerical  
+#' instabilities. In practice, this means that the estimated calcium concentration 
+#' decays according to the AR(1) for values greater than EPS and is equal to EPS thereafter.
+#'
+#' When estimating the spikes, it is not necessary to explicitly compute the 
+#' calcium concentration. Therefore, if only the spike times are required, the user
+#' can avoid this computation cost by setting the compute_fitted_values boolean to false. 
+#' By default, the calcium concentration is not estimated. 
+#'
+#' Given the set of estimated spikes produced from the estimate_spike, the calcium concentration
+#' can be estimated with the estimate_calcium function (see examples below).
+#'
 #' For additional information see: 
 #' 
 #' 1. Jewell, Hocking, Fearnhead, and Witten (2018) <arXiv:1802.07380> and 
@@ -41,37 +54,41 @@
 #' @examples
 #'
 #' library(LZeroSpikeInference)
-#' sim <- simulateAR1(n = 500, gam = 0.95, poisMean = 0.009, sd = 0.05, seed = 1)
+#' sim <- simulate_ar1(n = 500, gam = 0.95, poisMean = 0.009, sd = 0.05, seed = 1)
 #' plot(sim)
 #'
 #' ## Fits for a single tuning parameter
 #'
 #' # AR(1) model
-#' fit <- ARFPOP(dat = sim$fl, gam = 0.95, lambda = 1)
+#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1)
 #' print(fit)
 #'
 #' # compute fitted values from prev. fit
-#' fit <- fit_ar1_model(fit)
+#' fit <- estimate_calcium(fit)
 #' plot(fit)
 #'
 #' # or 
-#' fit <- ARFPOP(dat = sim$fl, gam = 0.95, lambda = 1, compute_fitted_values = T)
+#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, compute_fitted_values = T)
 #' plot(fit)
 #'
 #' # Constrained AR(1) model
-#' fit <- ARFPOP(dat = sim$fl, gam = 0.95, lambda = 1, constraint = T, compute_fitted_values = T)
+#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, constraint = T, compute_fitted_values = T)
 #' print(fit)
 #' plot(fit)
 #' 
 #' @seealso
 #' \strong{Estimate spikes:}
-#' \code{\link{ARFPOP}}
-#' \code{\link{fit_ar1_model}}
+#' \code{\link{estimate_spikes}}
+#' \code{\link{estimate_calcium}}
+#'
+#' \strong{Simulate:}
+#' \code{\link{simulate_ar1}}
 #'
 #' @export
 
-ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE, compute_fitted_values = FALSE, EPS = 1e-10) {
+estimate_spikes <- structure(function(dat, gam, lambda, constraint = FALSE, estimate_calcium = FALSE, EPS = 1e-10) {
   stopifnot(gam > 0 && gam <= 1)
+  stopifnot(EPS > 0)
   stopifnot(!is.null(gam))
   weight.vec <- rep(1, length(dat))
   n.data <- length(dat)
@@ -96,7 +113,7 @@ ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE, compute_fitte
     intervals.mat = as.integer(intervals.mat),
     constraint = constraint,
     success = as.integer(success),
-    compute_fitted_values = compute_fitted_values, 
+    compute_fitted_values = estimate_calcium, 
     EPS = as.numeric(EPS), 
     PACKAGE = "FastLZeroSpikeInference"
   )
@@ -116,7 +133,7 @@ ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE, compute_fitte
     constraint_str <- "-pos-constrained"  
   }
   
-  if (compute_fitted_values) {
+  if (estimate_calcium) {
     fitted_values = result.list$mean.vec  
   } else {
     fitted_values = NA 
@@ -127,19 +144,19 @@ ARFPOP <- structure(function(dat, gam, lambda, constraint = FALSE, compute_fitte
     out <-
       list(
         spikes = spikes,
-        fittedValues = fitted_values,
+        estimated_calcium = fitted_values,
         dat = dat,
         type = paste0("ar1-fpop", constraint_str), 
-        changePts = changePts,
+        change_pts = changePts,
         call = match.call(),
         gam = gam,
         lambda = lambda,
         cost = as.numeric(result.list$cost.mat),
-        nIntervals = as.numeric(result.list$intervals.mat),
+        n_intervals = as.numeric(result.list$intervals.mat),
         end_vec = result.list$ends.vec,
         EPS = EPS
       )
-    class(out) <- "estimatedSpikes"
+    class(out) <- "estimated_spikes"
     return(out)
   } else {
     stop("Numerical issues!")
