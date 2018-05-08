@@ -48,7 +48,8 @@ decays according to the AR(1) model for values greater than EPS and is equal to 
 When estimating the spikes, it is not necessary to explicitly compute the 
 calcium concentration. Therefore, if only the spike times are required, the user
 can avoid this computation cost by setting the estimate_calcium boolean to false. 
-By default, the calcium concentration is not estimated. 
+Because estimating the calcium requires additional computation time, 
+we suggest estimating the calcium only if it is needed.
 
 Given the set of estimated spikes produced from the estimate_spike, the calcium concentration
 can be estimated with the estimate_calcium function (see examples below).
