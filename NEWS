@@ -15,11 +15,9 @@ Major updates to the package:
 
 1. Updated constrained and unconstrained models for better numerical stability over long periods of no neural activity 
 
-2. Added proceedure detect_spikes to compute the solution path across a range of tuning parameters lambda
+2. Require LZeroSpikeInference as dependency 
 
-3. Require LZeroSpikeInference as dependency 
-
-4. Remove cross validation utility
+3. Remove cross validation utility
 
 2018.03-02
 ----
