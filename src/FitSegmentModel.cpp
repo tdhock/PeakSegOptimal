@@ -71,7 +71,7 @@ void FitSegmentModel
     segment_start = end_vec[data_i] + 1;
     if (segment_start < segment_end) { 
       // do the regression 
-      rss_best = std::numeric_limits<double>::infinity();
+      rss_best = INFINITY;
       length_segment = segment_end - segment_start;
       double ss = 0; 
       double fitted_values[length_segment];
