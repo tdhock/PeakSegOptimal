@@ -74,18 +74,25 @@ viz.list <- gdata("
 1.47372169993798088653e-04 -4.42116509981394238855e-04 -1.50574933808218780484e+00        1.098612        4.127134             inf 13374
 ")
 xi <- 0.549306 # the point at which the error was detected.
-gg <- ggplot()+
-  geom_vline(xintercept=xi, linetype="dashed")+
-  geom_line(aes(log.mean, cost, color=fun),
-            size=2,
-            alpha=0.5,
-            data=viz.list$funs)
-if(!is.null(C12.221minless$vlines)){
-  gg <- gg+
-    geom_vline(aes(xintercept=min_log_mean, color=fun),
-               data=viz.list$vlines)
-}
-print(gg)
+=======
+=min less(prev down cost) + 866939314852865280.000000
+    Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
+1.00000000000000000000e+00 -1.95652173913043481157e+00 1.88465068446275080000e+16            -inf        0.671168             inf 1
+0.00000000000000000000e+00 0.00000000000000000000e+00 1.88465068446275080000e+16        0.671168        0.693147        0.671168 1
+=prev up cost
+    Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
+1.00000000000000000000e+00 -1.95652173913043481157e+00 1.88465068446275040000e+16            -inf        0.693147             inf 0
+=new up cost model
+    Linear        Log        Constant    min_log_mean    max_log_mean   prev_log_mean data_i
+1.00000000000000000000e+00 -1.95652173913043481157e+00 1.88465068446275040000e+16            -inf        0.693147             inf 0
+")
+xi <- -0.306853 # the point at which the error was detected.
+sapply(viz.list$coefs, function(dt){
+  ploss(dt[min_log_mean < xi & xi < max_log_mean], exp(xi))
+})
+
+gg+
+  coord_cartesian(xlim=c(-1, 0))
 
 gg+
   coord_cartesian(ylim=c(-1.506, -1.505), xlim=c(-1, 2))
