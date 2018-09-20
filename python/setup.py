@@ -11,6 +11,7 @@ extra_compile_args = ['-std=c++11']
 if is_darwin:
   os.environ["CC"] = 'clang++'
   extra_compile_args.append('-stdlib=libc++')
+  extra_compile_args.append('-mmacosx-version-min=10.7')
 elif is_linux:
   os.environ["CC"] = 'g++'
 
@@ -23,13 +24,13 @@ setup(name='FastLZeroSpikeInference',
       packages=['FastLZeroSpikeInference'],
       ext_modules=[
           Extension(
-              name = 'FastLZeroSpikeInference', 
-              sources = ['src/funPieceListLog.cpp', 
-                         'src/ARFPOP.cpp', 
-                         'src/FitSegmentModel.cpp', 
+              name = 'FastLZeroSpikeInference',
+              sources = ['src/funPieceListLog.cpp',
+                         'src/ARFPOP.cpp',
+                         'src/FitSegmentModel.cpp',
                          'src/interface.cpp'
                          ],
-              include_dirs = ['src/'], 
+              include_dirs = ['src/'],
               language = 'c++',
               extra_compile_args = extra_compile_args
               )
