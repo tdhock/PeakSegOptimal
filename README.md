@@ -6,16 +6,15 @@ spikes.
 
 This algorithm solves the optimization problems
 
-AR(1) model
+## AR(1) model
 
-minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_[c_t != max(gam c_{t-1}, EPS)]
+![](un-constr.png)
 
 for the global optimum, where y_t is the observed fluorescence at the tth timepoint.
 
-Constrained AR(1) model:
+## Constrained AR(1) model
 
-minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_[c_t != max(gam c_{t-1}, EPS)]
- subject to c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
+![](constr.png)
 
 We introduce the constant EPS > 0, typically on the order of 10^-10, to avoid 
 arbitrarily small calcium concentrations that would result in numerical  
