@@ -6,15 +6,15 @@ spikes.
 
 This algorithm solves the optimization problems
 
-## AR(1) model
+### AR(1) model
 
-![](un-constr.png)
+<img src="un-constr.png" alt="alt text" width="600" height="80">
 
 for the global optimum, where y_t is the observed fluorescence at the tth timepoint.
 
-## Constrained AR(1) model
+### Constrained AR(1) model
 
-![](constr.png)
+<img src="constr.png" alt="alt text" width="600" height="140">
 
 for the global optimum, where y_t is the observed fluorescence at the tth timepoint.
 
