@@ -79,10 +79,7 @@ double SquareLossPiece::argmin_mean(){
   } else if(Square == 0 & Linear == 0) {
    return min_mean; 
   }
-    
-    
-  
-  
+  throw;
 }
 
 /// what does this function do differently than argmin_mean()
@@ -112,6 +109,7 @@ double SquareLossPiece::getCost(double mean){
     }
   }
 }
+  throw;
 }
 
 void PiecewiseSquareLoss::set_to_min_less_of
@@ -644,6 +642,7 @@ double PiecewiseSquareLoss::findCost(double mean){
       return it->getCost(mean);
     }
   }
+  throw;
 }
 
 void PiecewiseSquareLoss::print(){
