@@ -1,5 +1,5 @@
 #' Plot the solution to an L0 segmentation problem
-#' @param x output from running estimatedSpikes
+#' @param x output from running estimate_spikes
 #' @param xlims optional parameter to specify the x-axis limits
 #' @param ... arguments to be passed to methods
 #'
@@ -32,7 +32,7 @@ plot.estimated_spikes <- function(x, xlims = NULL, ...) {
 }
 
 #' Plot simulated data
-#' @param x output data from simulateAR1
+#' @param x output data from simulate_ar1
 #' @param xlims optional parameter to specify the x-axis limits
 #' @param ... arguments to be passed to methods
 #' @seealso
