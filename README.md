@@ -33,9 +33,9 @@ can be estimated with the estimate_calcium function.
 
 For additional information see: 
  
-1. Jewell, Hocking, Fearnhead, and Witten (2018) <arXiv:1802.07380> and 
- 
-2. Jewell and Witten (2017) <arXiv:1703.08644> 
+Jewell, Hocking, Fearnhead, and Witten (2018). [Fast Nonconvex Deconvolution of Calcium Imaging Data](https://arxiv.org/abs/1802.07380)
+
+Jewell and Witten (2017). [Exact Spike Train Inference Via L0 Optimization](https://arxiv.org/abs/1703.08644)
 
 R examples 
 ```r
