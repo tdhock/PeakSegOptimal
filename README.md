@@ -16,6 +16,8 @@ for the global optimum, where y_t is the observed fluorescence at the tth timepo
 
 ![](constr.png)
 
+for the global optimum, where y_t is the observed fluorescence at the tth timepoint.
+
 We introduce the constant EPS > 0, typically on the order of 10^-10, to avoid 
 arbitrarily small calcium concentrations that would result in numerical  
 instabilities. In practice, this means that the estimated calcium concentration 
