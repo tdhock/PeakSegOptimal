@@ -2,12 +2,21 @@
 % Please edit documentation in R/utils.R
 \name{plot.estimated_spikes}
 \alias{plot.estimated_spikes}
+\alias{plot.estimated_spikes}
 \title{Plot the solution to an L0 segmentation problem}
 \usage{
-\method{plot}{estimated_spikes}(x, xlims = NULL, ...)
+\method{plot}{estimated_spikes}(fits, xlims = NULL, ...)
+
+\method{plot}{estimated_spikes}(fits, xlims = NULL, ...)
 }
 \arguments{
-\item{x}{output from running estimatedSpikes}
+\item{fits}{output from running estimate_spike_paths}
+
+\item{xlims}{optional parameter to specify the x-axis limits}
+
+\item{...}{arguments to be passed to methods}
+
+\item{x}{output from running estimate_spikes}
 
 \item{xlims}{optional parameter to specify the x-axis limits}
 
@@ -15,8 +24,14 @@
 }
 \description{
 Plot the solution to an L0 segmentation problem
+
+Plot number of spikes vs. tuning paramter
 }
 \seealso{
+\code{\link{estimate_spikes}},
+\code{\link{estimate_calcium}},
+
+\code{\link{estimate_spike_paths}},
 \code{\link{estimate_spikes}},
 \code{\link{estimate_calcium}},
 }

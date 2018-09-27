@@ -11,7 +11,8 @@
 #'
 plot.estimated_spikes <- function(x, xlims = NULL, ...) {
   if (sum(is.na(x$estimated_calcium))) {
-    stop("Calcium concentration must be estimated before plotting. (Run estimate_calcium(fit).)")
+    warning("Calcium concentration must be estimated before plotting. Automatically running estimate_calcium(fit), however estimated_calicum is not saved.)")
+    x <- estimate_calcium(x)
   }
   ind <- 1:length(x$dat)
   rng <- range(c(x$dat, x$estimated_calcium))
@@ -65,6 +66,30 @@ plot.simdata <- function(x, xlims = NULL, ...) {
   }
 }
 
+#' Plot number of spikes vs. tuning paramter
+#' @param fits output from running estimate_spike_paths
+#' @param xlims optional parameter to specify the x-axis limits
+#' @param ... arguments to be passed to methods
+#'
+#' @seealso
+#' \code{\link{estimate_spike_paths}},
+#' \code{\link{estimate_spikes}},
+#' \code{\link{estimate_calcium}},
+#' @export
+#' @import graphics
+#'
+plot.estimated_spike_paths <- function(fits, xlims = NULL, ...) {
+  ind <- sort.int(fits$path_stats[, 1], index.return = T)$ix
+
+  x <- fits$path_stats[ind, 1]
+  y <- fits$path_stats[ind, 2]
+
+  plot(x,y,type="n", xlim = xlims, ylab = "Number of spikes", xlab = "Tuning parameter (lambda)")
+  segments(x[-length(x)],y[-length(x)],x[-1],y[-length(x)])
+  points(x[-length(x)],y[-length(x)],pch=16)
+  points(x[-1],y[-length(x)],pch=1)
+}
+
 #' Print simulated data
 #' @param x simulated data
 #' @param ... arguments to be passed to methods
@@ -99,4 +124,23 @@ print.estimated_spikes <- function(x, ...)
   cat("Model type \t\t", x$type, "\n")
   cat("Gamma \t\t\t", x$gam, "\n")
   cat("Lambda \t\t\t", x$lambda, "\n")
+}
+
+
+#' Print estimated spike path
+#'
+#' @param x estimated spikes path
+#' @param ... arguments to be passed to methods
+#' @export
+print.estimated_spike_paths <- function(x, ...)
+{
+  cat("\n Output: \n")
+  cat("Number of tuning values used \t", dim(x$path_stats)[[1]], "\n")
+
+  data_info <- x$path_fits[[1]]
+
+  cat("\n Settings: \n")
+  cat("Data length \t\t", length(data_info$dat), "\n")
+  cat("Model type \t\t", data_info$type, "\n")
+  cat("Gamma \t\t\t", data_info$gam, "\n")
 }
