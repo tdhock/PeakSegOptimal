@@ -83,8 +83,15 @@ plot.estimated_spike_paths <- function(fits, xlims = NULL, ...) {
 
   x <- fits$path_stats[ind, 1]
   y <- fits$path_stats[ind, 2]
-
-  plot(x,y,type="n", xlim = xlims, ylab = "Number of spikes", xlab = "Tuning parameter (lambda)")
+  
+  if (fits$approximate_path) {
+    title_str = "Approximate # spikes vs tuning parameter"
+  } else {
+    title_str = "# spikes vs tuning parameter"
+  }
+  
+  plot(x,y,type="n", xlim = xlims, ylab = "Number of spikes",
+       xlab = "Tuning parameter (lambda)", main = title_str)
   segments(x[-length(x)],y[-length(x)],x[-1],y[-length(x)])
   points(x[-length(x)],y[-length(x)],pch=16)
   points(x[-1],y[-length(x)],pch=1)
