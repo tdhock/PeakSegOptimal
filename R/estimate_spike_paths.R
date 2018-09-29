@@ -39,13 +39,12 @@ get_cost <- function(lambda, df) {
 #'
 #' @param dat fluorescence data
 #' @param gam a scalar value for the AR(1) decay parameter
-#' @param lambda tuning parameter lambda
-#' @param constraint boolean specifying constrained or unconstrained
-#'   optimization problem (see below)
 #' @param lambda_min minimum lamba value
 #' @param lambda_max maximum lamba value
-#' @param max_iters maximum number of tuning parameters attempted
+#' @param constraint boolean specifying constrained or unconstrained
+#'   optimization problem (see below)
 #' @param EPS double specfying the minimum calcium value
+#' @param max_iters maximum number of tuning parameters attempted
 #'
 #' @return Returns a list with elements:
 #' @return \code{path_stats} a dataframe with summary statistics (number of spikes, tuning paramters, cost)
@@ -116,11 +115,12 @@ get_cost <- function(lambda, df) {
 #' plot(fit)
 #'
 #' # or
-#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, estimate_calcium = T)
+#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, estimate_calcium = TRUE)
 #' plot(fit)
 #'
 #' # Constrained AR(1) model
-#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, constraint = T, estimate_calcium = T)
+#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, constraint = TRUE,
+#'                                                     estimate_calcium = TRUE)
 #' print(fit)
 #' plot(fit)
 #'
@@ -134,12 +134,11 @@ get_cost <- function(lambda, df) {
 #'
 #' @useDynLib FastLZeroSpikeInference
 #' @export
-estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, min_interval = 1e-3, max_iters = 10, constrained = F) {
+estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, constraint = FALSE, EPS = 1e-10, max_iters = 10) {
     lambdas_used <- c(lambda_min, lambda_max)
-    interval_length <- lambda_max - lambda_min
     path_fits <- list()
     path_stats <- NULL
-    approximate_path <- F
+    approximate_path <- FALSE
 
     ## input validity
     stopifnot(lambda_min > 0)
@@ -149,9 +148,9 @@ estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, 
     stopifnot(is.numeric(dat))
 
     # 1. Run CPD for penalty values lambda_min and lambda_max;
-    path_fits[[1]] <- estimate_spikes(dat, gam, lambda_min, constrained)
+    path_fits[[1]] <- estimate_spikes(dat, gam, lambda_min, constraint, EPS)
     path_stats <- update_path_stats(path_stats, path_fits[[1]])
-    path_fits[[2]] <- estimate_spikes(dat, gam, lambda_max, constrained)
+    path_fits[[2]] <- estimate_spikes(dat, gam, lambda_max, constraint, EPS)
     path_stats <- update_path_stats(path_stats, path_fits[[2]])
 
     n_fits <- 2
@@ -160,7 +159,6 @@ estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, 
     lambda_star <- list(lambdas_used)
 
     while (length(lambda_star) > 0 &&
-        interval_length > min_interval &&
         n_fits <= max_iters) {
         # 3. Choose an element of lambda_∗; denote this element as [lambda_0,lambda_1];
         # here always take the first element of list
@@ -174,8 +172,7 @@ estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, 
             )
 
             n_fits <- n_fits + 1
-            interval_length <- min(interval_length, current_interal[2] - current_interal[1])
-            path_fits[[n_fits]] <- estimate_spikes(dat, gam, lambda_int, constrained)
+            path_fits[[n_fits]] <- estimate_spikes(dat, gam, lambda_int, constraint, EPS)
             path_stats <- update_path_stats(path_stats, path_fits[[n_fits]])
 
             if (get_num_changepts(lambda_int, path_stats) !=
@@ -187,12 +184,6 @@ estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, 
             }
         }
         lambda_star[[1]] <- NULL
-
-        if (interval_length < min_interval) {
-            warning(paste0("Full search path terminated early since difference in tuning parameter values < ", min_interval,
-            ", the minimum interval length. Rerun with smaller 'min_interval' parameter for full path."))
-            approximate_path = T
-        }
 
         if (n_fits == max_iters) {
             warning(paste0("Full search path terminated early since maximum number of iterations (", max_iters,

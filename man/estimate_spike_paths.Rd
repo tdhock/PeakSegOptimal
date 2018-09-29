@@ -7,7 +7,7 @@ based on a fluorescence trace. Automatic tuning parameter selection within
 a range of values [lambda_min, lambda_max]}
 \usage{
 estimate_spike_paths(dat, gam, lambda_min = 0.01, lambda_max = 10,
-  min_interval = 0.001, max_iters = 10, constrained = F)
+  constraint = FALSE, EPS = 1e-10, max_iters = 10)
 }
 \arguments{
 \item{dat}{fluorescence data}
@@ -18,14 +18,12 @@ estimate_spike_paths(dat, gam, lambda_min = 0.01, lambda_max = 10,
 
 \item{lambda_max}{maximum lamba value}
 
-\item{max_iters}{maximum number of tuning parameters attempted}
-
-\item{lambda}{tuning parameter lambda}
-
 \item{constraint}{boolean specifying constrained or unconstrained
 optimization problem (see below)}
 
 \item{EPS}{double specfying the minimum calcium value}
+
+\item{max_iters}{maximum number of tuning parameters attempted}
 }
 \value{
 Returns a list with elements:
@@ -104,11 +102,12 @@ fit <- estimate_calcium(fit)
 plot(fit)
 
 # or
-fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, estimate_calcium = T)
+fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, estimate_calcium = TRUE)
 plot(fit)
 
 # Constrained AR(1) model
-fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, constraint = T, estimate_calcium = T)
+fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, constraint = TRUE,
+                                                    estimate_calcium = TRUE)
 print(fit)
 plot(fit)
 

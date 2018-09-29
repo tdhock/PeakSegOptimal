@@ -3,3 +3,5 @@ README.org
 ^.*\.Rproj$
 ^\.Rproj\.user$
 python/*
+math_figures/*
+.idea

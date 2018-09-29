@@ -61,11 +61,12 @@
 #' plot(fit)
 #' 
 #' # or
-#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, estimate_calcium = T)
+#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, estimate_calcium = TRUE)
 #' plot(fit)
 #' 
 #' # Constrained AR(1) model
-#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, constraint = T, estimate_calcium = T)
+#' fit <- estimate_spikes(dat = sim$fl, gam = 0.95, lambda = 1, constraint = TRUE,
+#'                                                     estimate_calcium = TRUE)
 #' print(fit)
 #' plot(fit)
 #' 

@@ -67,7 +67,7 @@ plot.simdata <- function(x, xlims = NULL, ...) {
 }
 
 #' Plot number of spikes vs. tuning paramter
-#' @param fits output from running estimate_spike_paths
+#' @param x output from running estimate_spike_paths
 #' @param xlims optional parameter to specify the x-axis limits
 #' @param ... arguments to be passed to methods
 #'
@@ -78,23 +78,29 @@ plot.simdata <- function(x, xlims = NULL, ...) {
 #' @export
 #' @import graphics
 #'
-plot.estimated_spike_paths <- function(fits, xlims = NULL, ...) {
-  ind <- sort.int(fits$path_stats[, 1], index.return = T)$ix
+plot.estimated_spike_paths <- function(x, xlims = NULL, ...) {
+  ind <- sort.int(x$path_stats[, 1], index.return = T)$ix
 
-  x <- fits$path_stats[ind, 1]
-  y <- fits$path_stats[ind, 2]
-  
-  if (fits$approximate_path) {
+  xx <- x$path_stats[ind, 1]
+  y <- x$path_stats[ind, 2]
+
+  if (x$approximate_path) {
     title_str = "Approximate # spikes vs tuning parameter"
   } else {
     title_str = "# spikes vs tuning parameter"
   }
   
-  plot(x,y,type="n", xlim = xlims, ylab = "Number of spikes",
-       xlab = "Tuning parameter (lambda)", main = title_str)
-  segments(x[-length(x)],y[-length(x)],x[-1],y[-length(x)])
-  points(x[-length(x)],y[-length(x)],pch=16)
-  points(x[-1],y[-length(x)],pch=1)
+  if (is.null(xlims)) {
+    plot(xx,y,type="n", ylab = "Number of spikes",
+         xlab = "Tuning parameter (lambda)", main = title_str)
+  } else {
+    plot(xx,y,type="n", xlim = xlims, ylab = "Number of spikes",
+         xlab = "Tuning parameter (lambda)", main = title_str)  
+  }
+  
+  segments(xx[-length(xx)],y[-length(xx)],xx[-1],y[-length(xx)])
+  points(xx[-length(xx)],y[-length(xx)],pch=16)
+  points(xx[-1],y[-length(xx)],pch=1)
 }
 
 #' Print simulated data
