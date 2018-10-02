@@ -162,7 +162,16 @@ estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, 
         n_fits <= max_iters) {
         # 3. Choose an element of lambda_∗; denote this element as [lambda_0,lambda_1];
         # here always take the first element of list
-        current_interal <- lambda_star[[1]]
+        max_interval_size <- 0
+        for (interval_i in 1:length(lambda_star)) {
+            interval = lambda_star[[interval_i]]
+            if ((interval[2] - interval[1]) > max_interval_size) {
+                ind <- interval_i
+            }
+        }
+
+        current_interal <- lambda_star[[ind]]
+
         if (get_num_changepts(current_interal[1], path_stats) >
         get_num_changepts(current_interal[2], path_stats) + 1) {
             lambda_int <- (get_cost(current_interal[2], path_stats) -
@@ -183,12 +192,12 @@ estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, 
                 lambda_star[[n_intervals + 2]] <- c(lambda_int, current_interal[2])
             }
         }
-        lambda_star[[1]] <- NULL
+        lambda_star[[ind]] <- NULL
 
         if (n_fits == max_iters) {
             warning(paste0("Full search path terminated early since maximum number of iterations (", max_iters,
             ") reached. Rerun with larger 'max_iter' parameter for full path."))
-            approximate_path = T
+            approximate_path = TRUE
         }
     }
 
