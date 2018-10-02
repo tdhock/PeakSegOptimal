@@ -281,7 +281,7 @@ def estimate_spike_paths(dat, gam, lambda_min=1e-2, lambda_max=1e1, constraint=F
             path_fits.append(estimate_spikes(dat, gam, lambda_int, constraint, EPS))
             path_stats = update_path_stats(path_stats, path_fits[n_fits])
 
-            if (get_num_changepts(lambda_int, path_stats) != get_num_changepts(current_interval[0], path_stats)):
+            if (get_num_changepts(lambda_int, path_stats) != get_num_changepts(current_interval[1], path_stats)):
                 # Set lambda_star = {lambda_star,[lambda_0,lambda_int),[lambda_int,lambda_1]}.;
                 lambda_star.append((current_interval[0], lambda_int))
                 lambda_star.append((lambda_int, current_interval[1]))

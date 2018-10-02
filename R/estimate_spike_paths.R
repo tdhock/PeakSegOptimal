@@ -185,7 +185,7 @@ estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, 
             path_stats <- update_path_stats(path_stats, path_fits[[n_fits]])
 
             if (get_num_changepts(lambda_int, path_stats) !=
-            get_num_changepts(current_interal[1], path_stats)) {
+            get_num_changepts(current_interal[2], path_stats)) {
                 # Set lambda_∗ = {lambda_∗,[lambda_0,lambda_int),[lambda_int,lambda_1]}.;
                 n_intervals <- length(lambda_star)
                 lambda_star[[n_intervals + 1]] <- c(current_interal[1], lambda_int)
