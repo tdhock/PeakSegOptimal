@@ -30,7 +30,7 @@ setup(name='FastLZeroSpikeInference',
                          'src/FitSegmentModel.cpp', 
                          'src/python_interface.cpp'
                          ],
-              include_dirs = ['src/'], 
+              include_dirs = ['src/'],
               language = 'c++',
               extra_compile_args = extra_compile_args
               )
