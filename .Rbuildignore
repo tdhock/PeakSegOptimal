@@ -1,5 +1,9 @@
+^CRAN-RELEASE$
 .travis.yml
-README.org
+README.md
 ^.*\.Rproj$
 ^\.Rproj\.user$
 python/*
+math_figures/*
+.idea
+cran-comments.md

@@ -7,7 +7,7 @@
 \method{plot}{simdata}(x, xlims = NULL, ...)
 }
 \arguments{
-\item{x}{output data from simulateAR1}
+\item{x}{output data from simulate_ar1}
 
 \item{xlims}{optional parameter to specify the x-axis limits}
 

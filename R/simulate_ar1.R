@@ -17,8 +17,6 @@
 #'
 #' @return spikes, fluorescence, and calcium concentration
 #'
-#' @seealso
-#'
 #' @examples
 #' sim <- simulate_ar1(n = 500, gam = 0.998, poisMean = 0.009, sd = 0.05, seed = 1)
 #' plot(sim)
