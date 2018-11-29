@@ -20,10 +20,10 @@ for the global optimum, where y_t is the observed fluorescence at the tth timepo
 
 for the global optimum, where y_t is the observed fluorescence at the tth timepoint.
 
-We introduce the constant EPS > 0, typically on the order of 10^-10, to avoid 
+We introduce the constant EPS > 0, to avoid 
 arbitrarily small calcium concentrations that would result in numerical  
 instabilities. In practice, this means that the estimated calcium concentration 
-decays according to the AR(1) model for values greater than EPS and is equal to EPS thereafter.
+decays according to the AR(1) model for values greater than EPS and is equal to EPS thereafter. For small EPS, the difference between the old and new formulation is negligible (the objective function differ only when, under the old formulation, c_t < EPS, and at such timesteps the difference is bounded by 2y_t * EPS + 0.5 EPS^2; in our experiments, we choose EPS = 1e-4.)
 
 When estimating the spikes, it is not necessary to explicitly compute the 
 calcium concentration. Therefore, if only the spike times are required, the user
