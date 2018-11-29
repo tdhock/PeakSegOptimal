@@ -43,13 +43,13 @@ get_cost <- function(lambda, df) {
 #' @param lambda_max maximum lamba value
 #' @param constraint boolean specifying constrained or unconstrained
 #'   optimization problem (see below)
-#' @param EPS double specfying the minimum calcium value
+#' @param EPS double specifying the minimum calcium value
 #' @param max_iters maximum number of tuning parameters attempted
 #'
 #' @return Returns a list with elements:
-#' @return \code{path_stats} a dataframe with summary statistics (number of spikes, tuning paramters, cost)
+#' @return \code{path_stats} a dataframe with summary statistics (number of spikes, tuning parameters, cost)
 #' @return \code{path_fits} a list with estimated_spikes object for each tuning parameter
-#' @return \code{approximate_path} a boolean indicating whether an early stopping criterion conditon occured
+#' @return \code{approximate_path} a boolean indicating whether an early stopping criterion condition occurred
 #'
 #' @details
 #'
@@ -61,7 +61,7 @@ get_cost <- function(lambda, df) {
 #' 1_[c_t != max(gam c_{t-1}, EPS)]
 #'
 #' for the global optimum, where y_t is the observed fluorescence at the tth
-#' timepoint.
+#' timestep.
 #'
 #' \strong{Constrained AR(1) model:}
 #'
@@ -70,7 +70,7 @@ get_cost <- function(lambda, df) {
 #'
 #' subject to c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
 #'
-#' We introduce the constant EPS > 0, typically on the order of 10^-10, to avoid
+#' We introduce the constant EPS > 0, to avoid
 #' arbitrarily small calcium concentrations that would result in numerical
 #' instabilities. In practice, this means that the estimated calcium
 #' concentration decays according to the AR(1) model for values greater than EPS and
@@ -90,7 +90,9 @@ get_cost <- function(lambda, df) {
 #'
 #' 1. Jewell, Hocking, Fearnhead, and Witten (2018) <arXiv:1802.07380> and
 #'
-#' 2. Jewell and Witten (2017) <arXiv:1703.08644>
+#' 2. Jewell, Sean; Witten, Daniela. Exact spike train inference via l0 optimization. 
+#' Ann. Appl. Stat. 12 (2018), no. 4, 2457--2482. doi:10.1214/18-AOAS1162. 
+#' https://projecteuclid.org/euclid.aoas/1542078052
 #'
 #' @examples
 #'
@@ -134,7 +136,7 @@ get_cost <- function(lambda, df) {
 #'
 #' @useDynLib FastLZeroSpikeInference
 #' @export
-estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, constraint = FALSE, EPS = 1e-10, max_iters = 10) {
+estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, constraint = FALSE, EPS = 1e-4, max_iters = 10) {
     lambdas_used <- c(lambda_min, lambda_max)
     path_fits <- list()
     path_stats <- NULL
@@ -147,7 +149,7 @@ estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, 
     stopifnot(gam > 0 & gam < 1)
     stopifnot(is.numeric(dat))
 
-    # 1. Run CPD for penalty values lambda_min and lambda_max;
+    ## 1. Run CPD for penalty values lambda_min and lambda_max
     path_fits[[1]] <- estimate_spikes(dat, gam, lambda_min, constraint, EPS)
     path_stats <- update_path_stats(path_stats, path_fits[[1]])
     path_fits[[2]] <- estimate_spikes(dat, gam, lambda_max, constraint, EPS)
@@ -155,12 +157,12 @@ estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, 
 
     n_fits <- 2
 
-    # 2. Set lambda_∗ = {[lambda_min, lambda_max]};
+    ## 2. Set lambda_star = {[lambda_min, lambda_max]}
     lambda_star <- list(lambdas_used)
 
     while (length(lambda_star) > 0 &&
         n_fits <= max_iters) {
-        # 3. Choose an element of lambda_∗; denote this element as [lambda_0,lambda_1];
+        # 3. Choose an element of lambda_star; denote this element as [lambda_0,lambda_1];
         # here always take the first element of list
         max_interval_size <- 0
         for (interval_i in 1:length(lambda_star)) {
@@ -186,7 +188,7 @@ estimate_spike_paths <- function(dat, gam, lambda_min = 1e-2, lambda_max = 1e1, 
 
             if (get_num_changepts(lambda_int, path_stats) !=
             get_num_changepts(current_interal[2], path_stats)) {
-                # Set lambda_∗ = {lambda_∗,[lambda_0,lambda_int),[lambda_int,lambda_1]}.;
+                ## Set lambda_star = {lambda_star,[lambda_0,lambda_int),[lambda_int,lambda_1]}.;
                 n_intervals <- length(lambda_star)
                 lambda_star[[n_intervals + 1]] <- c(current_interal[1], lambda_int)
                 lambda_star[[n_intervals + 2]] <- c(lambda_int, current_interal[2])

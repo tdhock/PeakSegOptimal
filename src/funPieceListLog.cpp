@@ -72,11 +72,11 @@ double SquareLossPiece::argmin_mean(){
   
   if (Square > 0 || Square < 0) {
     return - Linear / (2 * Square);  
-  } else if(Square == 0 & Linear > 0) {
+  } else if((Square == 0) & (Linear > 0)) {
     return min_mean;
-  } else if(Square == 0 & Linear < 0) {
+  } else if((Square == 0) & (Linear < 0)) {
     return max_mean; 
-  } else if(Square == 0 & Linear == 0) {
+  } else if((Square == 0) & (Linear == 0)) {
    return min_mean; 
   }
   throw;

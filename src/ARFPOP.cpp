@@ -29,7 +29,6 @@ void ARFPOP
    double EPS){
   
   double MAX = 1e200;
-  // double EPS = 0.1;
   double min_mean = 0;
   double max_mean = INFINITY;
   std::vector<PiecewiseSquareLoss> cost_model_mat(data_count);

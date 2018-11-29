@@ -66,7 +66,7 @@ plot.simdata <- function(x, xlims = NULL, ...) {
   }
 }
 
-#' Plot number of spikes vs. tuning paramter
+#' Plot number of spikes vs. tuning parameter
 #' @param x output from running estimate_spike_paths
 #' @param xlims optional parameter to specify the x-axis limits
 #' @param ... arguments to be passed to methods

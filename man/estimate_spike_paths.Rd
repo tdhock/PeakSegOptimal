@@ -7,7 +7,7 @@ based on a fluorescence trace. Automatic tuning parameter selection within
 a range of values [lambda_min, lambda_max]}
 \usage{
 estimate_spike_paths(dat, gam, lambda_min = 0.01, lambda_max = 10,
-  constraint = FALSE, EPS = 1e-10, max_iters = 10)
+  constraint = FALSE, EPS = 1e-04, max_iters = 10)
 }
 \arguments{
 \item{dat}{fluorescence data}
@@ -21,18 +21,18 @@ estimate_spike_paths(dat, gam, lambda_min = 0.01, lambda_max = 10,
 \item{constraint}{boolean specifying constrained or unconstrained
 optimization problem (see below)}
 
-\item{EPS}{double specfying the minimum calcium value}
+\item{EPS}{double specifying the minimum calcium value}
 
 \item{max_iters}{maximum number of tuning parameters attempted}
 }
 \value{
 Returns a list with elements:
 
-\code{path_stats} a dataframe with summary statistics (number of spikes, tuning paramters, cost)
+\code{path_stats} a dataframe with summary statistics (number of spikes, tuning parameters, cost)
 
 \code{path_fits} a list with estimated_spikes object for each tuning parameter
 
-\code{approximate_path} a boolean indicating whether an early stopping criterion conditon occured
+\code{approximate_path} a boolean indicating whether an early stopping criterion condition occurred
 }
 \description{
 Estimate spike train, underlying calcium concentration, and changepoints
@@ -48,7 +48,7 @@ minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T
 1_[c_t != max(gam c_{t-1}, EPS)]
 
 for the global optimum, where y_t is the observed fluorescence at the tth
-timepoint.
+timestep.
 
 \strong{Constrained AR(1) model:}
 
@@ -57,7 +57,7 @@ minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T
 
 subject to c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
 
-We introduce the constant EPS > 0, typically on the order of 10^-10, to avoid
+We introduce the constant EPS > 0, to avoid
 arbitrarily small calcium concentrations that would result in numerical
 instabilities. In practice, this means that the estimated calcium
 concentration decays according to the AR(1) model for values greater than EPS and
@@ -77,7 +77,9 @@ For additional information see:
 
 1. Jewell, Hocking, Fearnhead, and Witten (2018) <arXiv:1802.07380> and
 
-2. Jewell and Witten (2017) <arXiv:1703.08644>
+2. Jewell, Sean; Witten, Daniela. Exact spike train inference via l0 optimization. 
+Ann. Appl. Stat. 12 (2018), no. 4, 2457--2482. doi:10.1214/18-AOAS1162. 
+https://projecteuclid.org/euclid.aoas/1542078052
 }
 \examples{
 

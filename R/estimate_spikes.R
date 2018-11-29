@@ -7,7 +7,7 @@
 #' @param constraint boolean specifying constrained or unconstrained
 #'   optimization problem (see below)
 #' @param estimate_calcium boolean specifying whether to estimate the calcium
-#' @param EPS double specfying the minimum calcium value
+#' @param EPS double specifying the minimum calcium value
 #'
 #' @return Returns a list with elements:
 #' @return \code{spikes} the set of estimated spikes
@@ -26,7 +26,7 @@
 #' 1_[c_t != max(gam c_{t-1}, EPS)]
 #'
 #' for the global optimum, where y_t is the observed fluorescence at the tth
-#' timepoint.
+#' timestep.
 #'
 #' \strong{Constrained AR(1) model:}
 #'
@@ -35,7 +35,7 @@
 #'
 #' subject to c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
 #'
-#' We introduce the constant EPS > 0, typically on the order of 10^-10, to avoid
+#' We introduce the constant EPS > 0, to avoid
 #' arbitrarily small calcium concentrations that would result in numerical
 #' instabilities. In practice, this means that the estimated calcium
 #' concentration decays according to the AR(1) model for values greater than EPS and
@@ -55,7 +55,9 @@
 #'
 #' 1. Jewell, Hocking, Fearnhead, and Witten (2018) <arXiv:1802.07380> and
 #'
-#' 2. Jewell and Witten (2017) <arXiv:1703.08644>
+#' 2. Jewell, Sean; Witten, Daniela. Exact spike train inference via l0 optimization. 
+#' Ann. Appl. Stat. 12 (2018), no. 4, 2457--2482. doi:10.1214/18-AOAS1162. 
+#' https://projecteuclid.org/euclid.aoas/1542078052
 #'
 #' @examples
 #' 
@@ -93,7 +95,7 @@
 #' @useDynLib FastLZeroSpikeInference
 #' @export
 
-estimate_spikes <- structure(function(dat, gam, lambda, constraint = FALSE, estimate_calcium = FALSE, EPS = 1e-10) {
+estimate_spikes <- structure(function(dat, gam, lambda, constraint = FALSE, estimate_calcium = FALSE, EPS = 1e-4) {
   stopifnot(gam > 0 && gam <= 1)
   stopifnot(EPS > 0)
   stopifnot(!is.null(gam))

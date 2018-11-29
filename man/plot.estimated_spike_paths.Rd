@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{plot.estimated_spike_paths}
 \alias{plot.estimated_spike_paths}
-\title{Plot number of spikes vs. tuning paramter}
+\title{Plot number of spikes vs. tuning parameter}
 \usage{
 \method{plot}{estimated_spike_paths}(x, xlims = NULL, ...)
 }
@@ -14,7 +14,7 @@
 \item{...}{arguments to be passed to methods}
 }
 \description{
-Plot number of spikes vs. tuning paramter
+Plot number of spikes vs. tuning parameter
 }
 \seealso{
 \code{\link{estimate_spike_paths}},
