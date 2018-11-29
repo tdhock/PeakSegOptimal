@@ -11,11 +11,12 @@ extra_compile_args = ['-std=c++11']
 if is_darwin:
   os.environ["CC"] = 'clang++'
   extra_compile_args.append('-stdlib=libc++')
+  extra_compile_args.append('-mmacosx-version-min=10.7')
 elif is_linux:
   os.environ["CC"] = 'g++'
 
 setup(name='FastLZeroSpikeInference',
-      version='2018.09.29',
+      version='2018.11.28',
       description='Python wrapper for FastLZeroSpikeInference',
       author='Sean Jewell',
       author_email='swjewell@uw.edu',

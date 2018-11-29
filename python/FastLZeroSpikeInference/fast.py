@@ -1,7 +1,7 @@
 import numpy as np
 import ctypes as ct
 import os
-from utils import update_path_stats, get_num_changepts, get_cost
+from .utils import update_path_stats, get_num_changepts, get_cost
 import warnings
 import sys
 
@@ -27,7 +27,7 @@ for path in sys_path:
 assert success, "Failed to import 'FastZeroSpikeInference': {}".format(e)
 
 
-def estimate_spikes(dat, gam, penalty, constraint=False, estimate_calcium=False, EPS=1e-10):
+def estimate_spikes(dat, gam, penalty, constraint=False, estimate_calcium=False, EPS=1e-4):
     """
     Estimate spike train, underlying calcium concentration, and changepoints based on fluorescence
     trace.
@@ -63,7 +63,7 @@ def estimate_spikes(dat, gam, penalty, constraint=False, estimate_calcium=False,
         minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_[c_t != max(gam c_{t-1}, EPS)]
         subject to			 c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
 
-    We introduce the constant EPS > 0, typically on the order of 10^-10, to avoid
+    We introduce the constant EPS > 0, to avoid
     arbitrarily small calcium concentrations that would result in numerical
     instabilities. In practice, this means that the estimated calcium concentration
     decays according to the AR(1) model for values greater than EPS and is equal to EPS thereafter.
@@ -78,7 +78,9 @@ def estimate_spikes(dat, gam, penalty, constraint=False, estimate_calcium=False,
 
     For additional information see:
     1. Jewell, Hocking, Fearnhead, and Witten (2018) <arXiv:1802.07380> and
-    2. Jewell and Witten (2017) <arXiv:1703.08644>
+    2. Jewell, Sean; Witten, Daniela. Exact spike train inference via l0 optimization.
+    Ann. Appl. Stat. 12 (2018), no. 4, 2457--2482. doi:10.1214/18-AOAS1162.
+    https://projecteuclid.org/euclid.aoas/1542078052
 
     Examples:
 
@@ -99,13 +101,13 @@ def estimate_spikes(dat, gam, penalty, constraint=False, estimate_calcium=False,
 
     """
     if (gam > 1 or gam <= 0):
-        print "gam must be in interval (0, 1]"
+        print("gam must be in interval (0, 1]")
         return 0
     if (dat.shape[0] < 3):
-        print "number of data points must be >2"
+        print("number of data points must be >2")
         return 0
     if (EPS < 0):
-        print "EPS must be >= 0"
+        print("EPS must be >= 0")
         return 0
 
     dat = np.ascontiguousarray(dat, dtype=float)
@@ -184,7 +186,7 @@ def estimate_calcium(fit):
         minimize_{c1,...,cT} 0.5 sum_{t=1}^T ( y_t - c_t )^2 + lambda sum_{t=2}^T 1_[c_t != max(gam c_{t-1}, EPS)]
         subject to			 c_t >= max(gam c_{t-1}, EPS), t = 2, ..., T
 
-    We introduce the constant EPS > 0, typically on the order of 10^-10, to avoid
+    We introduce the constant EPS > 0, to avoid
     arbitrarily small calcium concentrations that would result in numerical
     instabilities. In practice, this means that the estimated calcium concentration
     decays according to the AR(1) model for values greater than EPS and is equal to EPS thereafter.
@@ -199,7 +201,10 @@ def estimate_calcium(fit):
 
     For additional information see:
     1. Jewell, Hocking, Fearnhead, and Witten (2018) <arXiv:1802.07380> and
-    2. Jewell and Witten (2017) <arXiv:1703.08644>
+    2. Jewell, Sean; Witten, Daniela. Exact spike train inference via l0 optimization.
+    Ann. Appl. Stat. 12 (2018), no. 4, 2457--2482. doi:10.1214/18-AOAS1162.
+    https://projecteuclid.org/euclid.aoas/1542078052
+
 
     Examples:
 
@@ -244,7 +249,7 @@ def estimate_calcium(fit):
     return out
 
 
-def estimate_spike_paths(dat, gam, lambda_min=1e-2, lambda_max=1e1, constraint=False, EPS=1e-10, max_iters=10):
+def estimate_spike_paths(dat, gam, lambda_min=1e-2, lambda_max=1e1, constraint=False, EPS=1e-4, max_iters=10):
     lambdas_used = (lambda_min, lambda_max)
     path_fits = []
     path_stats = []

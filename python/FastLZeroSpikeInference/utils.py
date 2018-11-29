@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 def arfpop_stats(fit):
     df = {'penalty': [fit['penalty']],
@@ -25,10 +25,10 @@ def get_num_changepts(penalty, df):
 def get_cost(penalty, df):
     return df['cost'][df['penalty'].index(penalty)]
 
-def plot_penalty_path(fits):
-    stats = fits['path_stats']
-    inds = np.argsort(stats['penalty'])
-    x = [stats['penalty'][i] for i in inds]
-    y = [stats['changepoints_n'][i] for i in inds]
-    plt.figure()
-    plt.plot(x, y)
+# def plot_penalty_path(fits):
+#     stats = fits['path_stats']
+#     inds = np.argsort(stats['penalty'])
+#     x = [stats['penalty'][i] for i in inds]
+#     y = [stats['changepoints_n'][i] for i in inds]
+#     plt.figure()
+#     plt.plot(x, y)
