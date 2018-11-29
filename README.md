@@ -103,8 +103,8 @@ References
 -----
 Jewell, Hocking, Fearnhead, and Witten (2018). [Fast Nonconvex Deconvolution of Calcium Imaging Data](https://arxiv.org/abs/1802.07380)
 
-Jewell and Witten (2018). [Exact Spike Train Inference Via L0 Optimization](https://arxiv.org/abs/1703.08644)
+Jewell and Witten (2018). [Exact Spike Train Inference Via L0 Optimization](https://projecteuclid.org/euclid.aoas/1542078052)
 Ann. Appl. Stat. 12 (2018), no. 4, 2457--2482. doi:10.1214/18-AOAS1162. 
-https://projecteuclid.org/euclid.aoas/1542078052
+
 
 Hocking, T. D., Rigaill, G., Fearnhead, P., & Bourque, G. (2017). [A log-linear time algorithm for constrained changepoint detection](https://arxiv.org/abs/1703.03352)
