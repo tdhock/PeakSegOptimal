@@ -3,6 +3,10 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2018.12.11 PR#21
+
+Error for constant data.
+
 2017.07.12
 
 cast to double in PDPA as well.
