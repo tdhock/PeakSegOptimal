@@ -8,7 +8,7 @@
 
 #define IFPRINT(arg) if(data_i==-3 && total_changes==1) (arg)
 
-void PeakSegPDPALog
+int PeakSegPDPALog
 (int *data_vec, double *weight_vec, int data_count,
  int maxSegments,
  // the following matrices are for output:
@@ -25,6 +25,9 @@ void PeakSegPDPALog
     if(max_log_mean < log_data){
       max_log_mean = log_data;
     }
+  }
+  if(min_log_mean == max_log_mean){
+    return ERROR_MIN_MAX_SAME;
   }
   std::vector<PiecewisePoissonLossLog> cost_model_vec(data_count * maxSegments);
   double data_weight_cumsum = 0.0;
@@ -166,6 +169,7 @@ void PeakSegPDPALog
       }//if(data_i
     }//for(data_i
   }//for(total_changes
+  return 0;
 }
 
 // The only difference between this modified algo and the original one
