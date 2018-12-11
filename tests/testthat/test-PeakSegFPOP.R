@@ -122,3 +122,26 @@ test_that("error for negative data", {
     PeakSegFPOPchrom(df, 0)
   })
 })
+
+pos <- 1:3
+rep.df <- data.frame(
+  count=0L,
+  chromStart=pos,
+  chromEnd=pos+1L)
+test_that("FPOP errors for all same data", {
+  expect_error({
+    PeakSegFPOPchrom(rep.df, 10)
+  }, "data[i]=0 for all i", fixed=TRUE)
+})
+
+pos <- 1:3
+rep.df <- data.frame(
+  count=c(5L, 0L, 0L),
+  chromStart=pos,
+  chromEnd=pos+1L)
+test_that("FPOP OK for repeated 0", {
+  fit <- PeakSegFPOPchrom(rep.df, 10)
+  expect_equal(fit$segments$mean, mean(rep.df$count))
+})
+
+
