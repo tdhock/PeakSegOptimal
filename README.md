@@ -33,12 +33,7 @@ By default, the calcium concentration is not estimated.
 Given the set of estimated spikes produced from the estimate_spike, the calcium concentration
 can be estimated with the estimate_calcium function.
 
-For additional information see: 
- 
-Jewell, Hocking, Fearnhead, and Witten (2018). [Fast Nonconvex Deconvolution of Calcium Imaging Data](https://arxiv.org/abs/1802.07380)
-
-Jewell and Witten (2018). [Exact Spike Train Inference Via L0 Optimization](https://projecteuclid.org/euclid.aoas/1542078052)
-Ann. Appl. Stat. 12 (2018), no. 4, 2457--2482. doi:10.1214/18-AOAS1162. 
+For additional information visit my [website](https://jewellsean.github.io/fast-spike-deconvolution/index.html).  
 
 R examples 
 ```r
@@ -102,7 +97,7 @@ An example using this code can be viewed [here](https://github.com/jewellsean/Fa
 
 References
 -----
-Jewell, Hocking, Fearnhead, and Witten (2018). [Fast Nonconvex Deconvolution of Calcium Imaging Data](https://arxiv.org/abs/1802.07380)
+Jewell, Hocking, Fearnhead, and Witten (2019). [Fast Nonconvex Deconvolution of Calcium Imaging Data](https://doi.org/10.1093/biostatistics/kxy083) Biostatistics. kxy083.
 
 Jewell and Witten (2018). [Exact Spike Train Inference Via L0 Optimization](https://projecteuclid.org/euclid.aoas/1542078052)
 Ann. Appl. Stat. 12 (2018), no. 4, 2457--2482. doi:10.1214/18-AOAS1162. 
