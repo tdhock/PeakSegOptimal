@@ -10,12 +10,12 @@ number of intervals between the two implementations.}
     max.segments = NULL)}
 \arguments{
   \item{count.vec}{integer vector of count data.}
-  \item{weight.vec}{numeric vector (same length as count.vec) of positive weights.}
+  \item{weight.vec}{numeric vector (same length as \code{count.vec}) of positive weights.}
   \item{max.segments}{integer of length 1: maximum number of segments (must be >= 2).}
 }
 
-\value{List of model parameters. count.vec, weight.vec, n.data,
-max.segments (input parameters), cost.mat (optimal Poisson loss),
+\value{List of model parameters. \code{count.vec}, \code{weight.vec}, n.data,
+\code{max.segments} (input parameters), cost.mat (optimal Poisson loss),
 ends.mat (optimal position of segment ends, 1-indexed), mean.mat
 (optimal segment means), intervals.mat (number of intervals stored
 by the functional pruning algorithm). To recover the solution in

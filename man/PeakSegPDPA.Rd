@@ -5,9 +5,9 @@
 PeakSeg constraint. For N data points and S segments, the
 functional pruning algorithm is O(S*NlogN) space and O(S*NlogN)
 time. It recovers the exact solution to the following optimization
-problem. Let Z be an N-vector of count data (count.vec,
+problem. Let Z be an N-vector of count data (\code{count.vec},
 non-negative integers) and let W be an N-vector of positive
-weights (weight.vec). Find the N-vector M of real numbers (segment
+weights (\code{weight.vec}). Find the N-vector M of real numbers (segment
 means) and (N-1)-vector C of change-point indicators in {-1,0,1}
 which minimize the Poisson Loss, sum_{i=1}^N
 w_i*[m_i-z_i*log(m_i)], subject to constraints: (1) there are
@@ -26,12 +26,12 @@ problem, and the optimum of the PeakSeg problem is undefined.}
     max.segments = NULL)}
 \arguments{
   \item{count.vec}{integer vector of count data.}
-  \item{weight.vec}{numeric vector (same length as count.vec) of positive weights.}
+  \item{weight.vec}{numeric vector (same length as \code{count.vec}) of positive weights.}
   \item{max.segments}{integer of length 1: maximum number of segments (must be >= 2).}
 }
 
-\value{List of model parameters. count.vec, weight.vec, n.data,
-max.segments (input parameters), cost.mat (optimal Poisson loss),
+\value{List of model parameters. \code{count.vec}, \code{weight.vec}, n.data,
+\code{max.segments} (input parameters), cost.mat (optimal Poisson loss),
 ends.mat (optimal position of segment ends, 1-indexed), mean.mat
 (optimal segment means), intervals.mat (number of intervals stored
 by the functional pruning algorithm). To recover the solution in
@@ -92,7 +92,7 @@ ggplot()+
   facet_grid(segments ~ .)+
   geom_line(aes(data, intervals), data=some.intervals)+
   scale_y_continuous(
-    "intervals stored by the\nconstrained optimal segmentation algorithm",
+    "intervals stored by the\\nconstrained optimal segmentation algorithm",
     breaks=c(20, 40))
 
 }

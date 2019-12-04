@@ -1,8 +1,8 @@
 \name{PoissonLoss}
 \alias{PoissonLoss}
 \title{PoissonLoss}
-\description{Compute the weighted Poisson loss function, which is seg.mean -
-count * log(seg.mean). The edge case is when the mean is zero, in
+\description{Compute the weighted Poisson loss function, which is \code{seg.mean} -
+\code{count} * log(\code{seg.mean}). The edge case is when the mean is zero, in
 which case the probability mass function takes a value of 1 when
 the data is 0 (and 0 otherwise). Thus the log-likelihood of a
 maximum likelihood segment with mean zero must be zero.}

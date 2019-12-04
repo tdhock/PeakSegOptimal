@@ -3,6 +3,10 @@ TODOs
 Regularized isotonic regression solver, square loss and penalized
 (FPOP) parameterization.
 
+2019.12.4
+
+update tests.
+
 2018.12.11 PR#21
 
 Error for constant data.

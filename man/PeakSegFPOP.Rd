@@ -5,8 +5,8 @@
 PeakSeg constraint. For N data points, the functional pruning
 algorithm is O(N log N) time and memory. It recovers the exact
 solution to the following optimization problem. Let Z be an
-N-vector of count data (count.vec, non-negative integers), let W
-be an N-vector of positive weights (weight.vec), and let penalty
+N-vector of count data (\code{count.vec}, non-negative integers), let W
+be an N-vector of positive weights (\code{weight.vec}), and let \code{penalty}
 be a non-negative real number. Find the N-vector M of real numbers
 (segment means) and (N-1)-vector C of change-point indicators in
 {-1,0,1} which minimize the penalized Poisson Loss,
@@ -28,12 +28,12 @@ problem is undefined.}
     penalty = NULL)}
 \arguments{
   \item{count.vec}{integer vector of length >= 3: non-negative count data to segment.}
-  \item{weight.vec}{numeric vector (same length as count.vec) of positive weights.}
-  \item{penalty}{non-negative numeric scalar: penalty parameter (smaller for more
+  \item{weight.vec}{numeric vector (same length as \code{count.vec}) of positive weights.}
+  \item{penalty}{non-negative numeric scalar: \code{penalty} parameter (smaller for more
 peaks, larger for fewer peaks).}
 }
 
-\value{List of model parameters. count.vec, weight.vec, n.data, penalty
+\value{List of model parameters. \code{count.vec}, \code{weight.vec}, n.data, \code{penalty}
 (input parameters), cost.mat (optimal Poisson loss), ends.vec
 (optimal position of segment ends, 1-indexed), mean.vec (optimal
 segment means), intervals.mat (number of intervals stored by the
@@ -95,6 +95,6 @@ ggplot()+
   facet_grid(label ~ .)+
   geom_line(aes(data, intervals), data=FPOP.intervals)+
   scale_y_continuous(
-    "intervals stored by the\nconstrained optimal segmentation algorithm")
+    "intervals stored by the\\nconstrained optimal segmentation algorithm")
 
 }

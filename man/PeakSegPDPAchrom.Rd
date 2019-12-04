@@ -3,7 +3,7 @@
 \title{PeakSegPDPAchrom}
 \description{Find the optimal change-points using the Poisson loss and the
 PeakSeg constraint. This function is a user-friendly interface to
-the PeakSegPDPA function.}
+the \code{\link{PeakSegPDPA}} function.}
 \usage{PeakSegPDPAchrom(count.df, max.peaks = NULL)}
 \arguments{
   \item{count.df}{data.frame with columns count, chromStart, chromEnd.}
@@ -15,7 +15,7 @@ segmentation model, loss describes model loss and feasibility,
 modelSelection.feasible describes the set of all linear penalty
 (lambda) values which can be used to select the feasible models,
 modelSelection.decreasing selects from all models that decrease
-the Poisson loss relative to simpler models (same as PeakSegFPOP).}
+the Poisson loss relative to simpler models (same as \code{\link{PeakSegFPOP}}).}
 
 \author{Toby Dylan Hocking}
 

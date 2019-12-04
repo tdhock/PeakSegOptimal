@@ -3,16 +3,16 @@
 \title{PeakSegFPOPchrom}
 \description{Find the optimal change-points using the Poisson loss and the
 PeakSeg constraint. This function is a user-friendly interface to
-the PeakSegFPOP function.}
+the \code{\link{PeakSegFPOP}} function.}
 \usage{PeakSegFPOPchrom(count.df, penalty = NULL)}
 \arguments{
   \item{count.df}{data.frame with columns count, chromStart, chromEnd.}
-  \item{penalty}{non-negative numeric scalar: penalty parameter (smaller for more
+  \item{penalty}{non-negative numeric scalar: \code{penalty} parameter (smaller for more
 peaks, larger for fewer peaks).}
 }
 
 \value{List of data.frames: segments can be used for plotting the
-segmentation model, loss summarizes the penalized PoissonLoss and
+segmentation model, loss summarizes the penalized \code{\link{PoissonLoss}} and
 feasibilty of the computed model.}
 
 \author{Toby Dylan Hocking}

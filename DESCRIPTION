@@ -1,7 +1,7 @@
 Package: PeakSegOptimal
 Maintainer: Toby Dylan Hocking <toby.hocking@r-project.org>
 Author: Toby Dylan Hocking
-Version: 2018.12.11
+Version: 2019.12.4
 License: GPL-3
 URL: https://github.com/tdhock/PeakSegOptimal
 BugReports: https://github.com/tdhock/PeakSegOptimal/issues
@@ -19,4 +19,4 @@ Suggests:
  PeakSegDP (>= 2016.08.06),
  cosegData,
  ggplot2, testthat, data.table (>= 1.9.8)
-Remotes: tdhock/cosegData, tdhock/PeakSegDP
+Remotes: tdhock/cosegData
