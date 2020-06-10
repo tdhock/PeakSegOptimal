@@ -132,7 +132,7 @@ def estimate_spikes(dat, gam, penalty, constraint=False, estimate_calcium=False,
                          ct.pointer(ct.c_double(EPS)))
 
     out = {}
-    out['change_pts'] = np.unique(end_vec) + 1
+    out['change_pts'] = np.unique(end_vec)
     out['spikes'] = out['change_pts'][1:] + 1
     out['end_vec'] = end_vec + 1
     out['dat'] = dat
@@ -143,8 +143,8 @@ def estimate_spikes(dat, gam, penalty, constraint=False, estimate_calcium=False,
 
     if (estimate_calcium):
         out['estimated_calcium'] = estimated_calcium
-        out['spike_mag'] = out['estimated_calcium'][out['spikes'] - 1] - gam * out['estimated_calcium'][
-            out['spikes'] - 2]
+        out['spike_mag'] = out['estimated_calcium'][out['spikes']] - gam * out['estimated_calcium'][
+            out['spikes'] - 1]
         out['pos_spike_mag'] = np.maximum(out['spike_mag'], 0)
     else:
         out['estimated_calcium'] = None
