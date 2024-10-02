@@ -14,7 +14,7 @@ Description: Computes optimal changepoint models using the
  the first change must be up, second change down, third change up, etc.
  For more info about the models and algorithms,
  read "Constrained Dynamic Programming and Supervised Penalty Learning 
- Algorithms for Peak Detection in Genomic Data"
+ Algorithms for Peak Detection"
  <https://jmlr.org/papers/v21/18-843.html> by TD Hocking et al.
 Depends: R (>= 2.10)
 Imports: penaltyLearning
