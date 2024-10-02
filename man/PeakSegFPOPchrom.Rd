@@ -4,7 +4,8 @@
 \description{Find the optimal change-points using the Poisson loss and the
 PeakSeg constraint. This function is a user-friendly interface to
 the \code{\link{PeakSegFPOP}} function.}
-\usage{PeakSegFPOPchrom(count.df, penalty = NULL)}
+\usage{PeakSegFPOPchrom(count.df, 
+    penalty = NULL)}
 \arguments{
   \item{count.df}{data.frame with columns count, chromStart, chromEnd.}
   \item{penalty}{non-negative numeric scalar: \code{penalty} parameter (smaller for more
@@ -15,7 +16,7 @@ peaks, larger for fewer peaks).}
 segmentation model, loss summarizes the penalized \code{\link{PoissonLoss}} and
 feasibilty of the computed model.}
 
-\author{Toby Dylan Hocking}
+\author{Toby Dylan Hocking <toby.hocking@r-project.org> [aut, cre]}
 
 
 

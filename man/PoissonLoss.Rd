@@ -6,19 +6,17 @@
 which case the probability mass function takes a value of 1 when
 the data is 0 (and 0 otherwise). Thus the log-likelihood of a
 maximum likelihood segment with mean zero must be zero.}
-\usage{PoissonLoss(count, seg.mean, weight = 1)}
+\usage{PoissonLoss(count, seg.mean, 
+    weight = 1)}
 \arguments{
-  \item{count}{
-}
-  \item{seg.mean}{
-}
-  \item{weight}{
-}
+  \item{count}{count }
+  \item{seg.mean}{seg.mean }
+  \item{weight}{weight }
 }
 
 
 
-\author{Toby Dylan Hocking}
+\author{Toby Dylan Hocking <toby.hocking@r-project.org> [aut, cre]}
 
 
 

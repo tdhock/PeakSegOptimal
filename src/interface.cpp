@@ -16,7 +16,7 @@ void PeakSegPDPALog_interface
     (data_ptr, weight_ptr, *data_count, *maxSegments,
      cost_mat, end_mat, mean_mat, intervals_mat);
   if(status == ERROR_MIN_MAX_SAME){
-    error("data[i]=%d for all i", data_ptr[0]);
+    Rf_error("data[i]=%d for all i", data_ptr[0]);
   }
 }
   
@@ -40,7 +40,7 @@ void PeakSegFPOPLog_interface
      *data_count, *penalty,
      cost_mat, end_vec, mean_vec, intervals_mat);
   if(status == ERROR_MIN_MAX_SAME){
-    error("data[i]=%d for all i", data_ptr[0]);
+    Rf_error("data[i]=%d for all i", data_ptr[0]);
   }
 }
 

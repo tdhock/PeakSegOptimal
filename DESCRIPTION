@@ -1,7 +1,9 @@
 Package: PeakSegOptimal
-Maintainer: Toby Dylan Hocking <toby.hocking@r-project.org>
-Author: Toby Dylan Hocking
-Version: 2019.12.4
+Authors@R: person(given = c("Toby", "Dylan"),
+ family = "Hocking",
+ role = c("aut", "cre"),
+ email = "toby.hocking@r-project.org")
+Version: 2024.10.1
 License: GPL-3
 URL: https://github.com/tdhock/PeakSegOptimal
 BugReports: https://github.com/tdhock/PeakSegOptimal/issues

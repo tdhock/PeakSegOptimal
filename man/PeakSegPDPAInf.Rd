@@ -6,7 +6,9 @@ PeakSeg constraint. This function is an interface to the C++ code
 which always uses -Inf for the first interval's lower limit and
 Inf for the last interval's upper limit -- it is for testing the
 number of intervals between the two implementations.}
-\usage{PeakSegPDPAInf(count.vec, weight.vec = rep(1, length(count.vec)), 
+\usage{PeakSegPDPAInf(count.vec, 
+    weight.vec = rep(1, 
+        length(count.vec)), 
     max.segments = NULL)}
 \arguments{
   \item{count.vec}{integer vector of count data.}
@@ -21,7 +23,7 @@ ends.mat (optimal position of segment ends, 1-indexed), mean.mat
 by the functional pruning algorithm). To recover the solution in
 terms of (M,C) variables, see the example.}
 
-\author{Toby Dylan Hocking}
+\author{Toby Dylan Hocking <toby.hocking@r-project.org> [aut, cre]}
 
 
 

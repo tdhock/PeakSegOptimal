@@ -24,7 +24,9 @@ constraints are active for non-zero change-point variables, the
 recovered model is not feasible for the strict inequality
 constraints of the PeakSeg problem, and the optimum of the PeakSeg
 problem is undefined.}
-\usage{PeakSegFPOP(count.vec, weight.vec = rep(1, length(count.vec)), 
+\usage{PeakSegFPOP(count.vec, 
+    weight.vec = rep(1, 
+        length(count.vec)), 
     penalty = NULL)}
 \arguments{
   \item{count.vec}{integer vector of length >= 3: non-negative count data to segment.}
@@ -40,7 +42,7 @@ segment means), intervals.mat (number of intervals stored by the
 functional pruning algorithm). To recover the solution in terms of
 (M,C) variables, see the example.}
 
-\author{Toby Dylan Hocking}
+\author{Toby Dylan Hocking <toby.hocking@r-project.org> [aut, cre]}
 
 
 

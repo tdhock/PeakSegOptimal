@@ -1,163 +1,102 @@
-TODOs
+Changes in version 2024.10.1
 
-Regularized isotonic regression solver, square loss and penalized
-(FPOP) parameterization.
+- Rf_error in src/interface.cpp, thanks CRAN.
 
-2019.12.4
+Changes in version 2019.12.4
 
-update tests.
+- update tests.
 
-2018.12.11 PR#21
+Changes in version 2018.12.11
 
-Error for constant data.
+- Author: PR#21
+- Error for constant data.
 
-2017.07.12
+Changes in version 2017.07.12
 
-cast to double in PDPA as well.
+- cast to double in PDPA as well.
 
-2017.07.11
+Changes in version 2017.07.11
 
-cast to double before taking log, to avoid compile error on solaris
-(in PeakSegFPOP).
+- cast to double before taking log, to avoid compile error on solaris (in PeakSegFPOP).
+- instead of printf, use Rprintf from R.h, to avoid CRAN check NOTE.
 
-instead of printf, use Rprintf from R.h, to avoid CRAN check NOTE.
+Changes in version 2017.06.20
 
-2017.06.20
+- Register native routines.
+- removed interval regression code, added dependency on penaltyLearning.
+- removed problems.R, which is now in the PeakSegPipeline pkg.
 
-Register native routines.
+Changes in version 2017.04.17
 
-removed interval regression code, added dependency on penaltyLearning.
+- PeakSegPDPAInf which always uses Inf as upper limit of intervals, instead of max(data). This results in more intervals and is thus slower than PeakSegPDPA by a constant factor. 
 
-removed problems.R, which is now in the PeakSegPipeline pkg.
+Changes in version 2017.03.31
 
-2017.04.17
+- Import data.table >= 1.9.8 (from CRAN not GitHub).
 
-PeakSegPDPAInf which always uses Inf as upper limit of intervals,
-instead of max(data). This results in more intervals and is thus
-slower than PeakSegPDPA by a constant factor. 
+Changes in version 2017.02.27
 
-2017.03.31
+- PREV_NOT_SET in min-less since set_prev_seg_end is always called after.
+- clarify docs, example shows how to recover solution in terms of (M,C) variables.
+- mass.spec test case and bugfix.
+- problem.target now considers infeasible models (before, we assigned infeasible models infinite cost).
+- problem.predict now allows predicting infeasible models (before, we took the closest model inside the target interval). Now the target interval is not used at all during prediction.
+- since model training now includes fitting a Gaussian model to the log(bases) values of all peaks which are perfectly predicted in the training data, we use that model during prediction to filter all peaks outside of the 95% confidence interval.
 
-Import data.table >= 1.9.8 (from CRAN not GitHub).
+Changes in version 2016.11.01
 
-2017.02.27
+- no longer printf when more than NEWTON_STEPS in root finding C++ code.
+- New functions oracleModelComplexity, PPN.cores, mclapply.or.stop, problem.predict.allSamples
+- simplify arguments of problem.* functions.
+- more robust checking of penalty_segments.bed in problem.PeakSegFPOP
+- problem.coverage uses coverage.bigwig if it is present
 
-PREV_NOT_SET in min-less since set_prev_seg_end is always called after.
+Changes in version 2016.10.16
 
-clarify docs, example shows how to recover solution in terms of (M,C)
-variables.
+- Many fixes for min-less/more/env bugs which were encountered while running the PeakSegFPOP command line program on large data sets (test cases in test-cosegData.R).
+- problems.R contains problem.* functions which run the PeakSegFPOP command line program and parse its output (compute the target interval, features, predicted peaks).
 
-mass.spec test case and bugfix.
+Changes in version 2016.09.26
 
-problem.target now considers infeasible models (before, we assigned
-infeasible models infinite cost).
+- Bugfix for min-less: only add a constant piece at the end if we need to. New simulated data set in test-simulation.R which was crashing before the bugfix.
 
-problem.predict now allows predicting infeasible models (before, we
-took the closest model inside the target interval). Now the target
-interval is not used at all during prediction.
+Changes in version 2016.09.25
 
-since model training now includes fitting a Gaussian model to the
-log(bases) values of all peaks which are perfectly predicted in the
-training data, we use that model during prediction to filter all peaks
-outside of the 95% confidence interval.
+- Bugfix in C++ Minimize function which sometimes returned infinite cost when the minimum is exactly on the interval border.
 
-2016.11.01
+Changes in version 2016.09.16
 
-no longer printf when more than NEWTON_STEPS in root finding C++ code.
+- New test-simulation.R which previously was failing the run-time min-more check. Fixed by not adding an interval at the end of min-more, if we end on a degenerate linear function.
+- New H3K4me3_PGP_immune_chunk24 data set, one of the samples for which the PeakSegPDPA solution with 13 segments was not as likely as the PeakSegDP solution. I figured out that this was being caused by a bug in the "not equal on the sides, zero crossing points" code. When we compare the cost of the first interval (with min_log_mean at -Inf), we still use the cost at the middle, but now we compute the middle in the original space (so the smaller interval limit is at least 0, never -Inf).
 
-New functions oracleModelComplexity, PPN.cores, mclapply.or.stop,
-problem.predict.allSamples
+Changes in version 2016.08.06
 
-simplify arguments of problem.* functions.
+- Limited memory FPOP version at https://github.com/tdhock/PeakSegFPOP
+- To avoid root finding problems in large data sets, we now store the mean cost rather than total cost in the C++ code. The R functions still report the total cost.
 
-more robust checking of penalty_segments.bed in problem.PeakSegFPOP
+Changes in version 2016.08.02
 
-problem.coverage uses coverage.bigwig if it is present
+- PeakSegFPOPall C++ function which can start or end either up or down.
+- PeakSegFPOPLog C++ function forces starts and ends down. This is used by the R function PeakSegFPOP.
+- Bugfix in min_more computation for intersections between constant cost and degenerate linear cost.
+- Bugfix in decoding: we no longer call Minimize for segments other than the last one. Now we store the previous segment mean (which was already computed by the min-less/more operator). No more bool equality_constraint_active, instead test prev_seg_mean == INFINITY.
 
-2016.10.16
+Changes in version 2016.07.13
 
-Many fixes for min-less/more/env bugs which were encountered while
-running the PeakSegFPOP command line program on large data sets (test
-cases in test-cosegData.R).
+- FPOP version of PeakSeg constrained, Poisson loss problem.
 
-problems.R contains problem.* functions which run the PeakSegFPOP
-command line program and parse its output (compute the target
-interval, features, predicted peaks).
+Changes in version 2016.07.12
 
-2016.09.26
+- For numerical stability, the PeakSegPDPA intervals are in now the log space. That means if the data min is 0, then there will be an interval with -Inf for its lower limit. Smaller root finding is in the f(m)=Linear*e^m+Log*m+Constant space, and larger root finding is in the g(x)=Linear*x+Log*log(x)+Constant space.
 
-Bugfix for min-less: only add a constant piece at the end if we need
-to. New simulated data set in test-simulation.R which was crashing
-before the bugfix.
+Changes in version 2016.07.06
 
-2016.09.25
+- The Lambert W root finding method was numerically unstable, for example the roots of the cost function -628*x+log(x)-776.140660 could not be computed correctly since exp(-776) is exactly zero using doubles. Instead I implemented a bound-constrained Newton root finding method which seems to be more stable.
 
-Bugfix in C++ Minimize function which sometimes returned infinite cost
-when the minimum is exactly on the interval border.
+Changes in version 2016.07.03
 
-2016.09.16
+- Some bugs fixed in the min env and min less computations.
 
-New test-simulation.R which previously was failing the run-time
-min-more check. Fixed by not adding an interval at the end of
-min-more, if we end on a degenerate linear function.
+Changes in version 2016.06.18
 
-New H3K4me3_PGP_immune_chunk24 data set, one of the samples for which
-the PeakSegPDPA solution with 13 segments was not as likely as the
-PeakSegDP solution. I figured out that this was being caused by a bug
-in the "not equal on the sides, zero crossing points" code. When we
-compare the cost of the first interval (with min_log_mean at -Inf), we
-still use the cost at the middle, but now we compute the middle in the
-original space (so the smaller interval limit is at least 0, never
--Inf).
-
-2016.08.06
-
-Limited memory FPOP version at https://github.com/tdhock/PeakSegFPOP
-
-To avoid root finding problems in large data sets, we now store the
-mean cost rather than total cost in the C++ code. The R functions
-still report the total cost.
-
-2016.08.02
-
-PeakSegFPOPall C++ function which can start or end either up or down.
-
-PeakSegFPOPLog C++ function forces starts and ends down. This is used
-by the R function PeakSegFPOP.
-
-Bugfix in min_more computation for intersections between constant cost
-and degenerate linear cost.
-
-Bugfix in decoding: we no longer call Minimize for segments other than
-the last one. Now we store the previous segment mean (which was
-already computed by the min-less/more operator). No more bool
-equality_constraint_active, instead test prev_seg_mean == INFINITY.
-
-2016.07.13
-
-FPOP version of PeakSeg constrained, Poisson loss problem.
-
-2016.07.12
-
-For numerical stability, the PeakSegPDPA intervals are in now the log
-space. That means if the data min is 0, then there will be an interval
-with -Inf for its lower limit. Smaller root finding is in the
-f(m)=Linear*e^m+Log*m+Constant space, and larger root finding is in
-the g(x)=Linear*x+Log*log(x)+Constant space.
-
-2016.07.06
-
-The Lambert W root finding method was numerically unstable, for
-example the roots of the cost function -628*x+log(x)-776.140660 could
-not be computed correctly since exp(-776) is exactly zero using
-doubles. Instead I implemented a bound-constrained Newton root finding
-method which seems to be more stable.
-
-2016.07.03
-
-Some bugs fixed in the min env and min less computations.
-
-2016.06.18
-
-First working C++ solver for Segment Neighborhood problem with Poisson
-Loss and PeakSeg constraint (PeakSegPDPA function).
+- First working C++ solver for Segment Neighborhood problem with Poisson Loss and PeakSeg constraint (PeakSegPDPA function).

@@ -4,7 +4,8 @@
 \description{Find the optimal change-points using the Poisson loss and the
 PeakSeg constraint. This function is a user-friendly interface to
 the \code{\link{PeakSegPDPA}} function.}
-\usage{PeakSegPDPAchrom(count.df, max.peaks = NULL)}
+\usage{PeakSegPDPAchrom(count.df, 
+    max.peaks = NULL)}
 \arguments{
   \item{count.df}{data.frame with columns count, chromStart, chromEnd.}
   \item{max.peaks}{integer > 0: maximum number of peaks.}
@@ -17,7 +18,7 @@ modelSelection.feasible describes the set of all linear penalty
 modelSelection.decreasing selects from all models that decrease
 the Poisson loss relative to simpler models (same as \code{\link{PeakSegFPOP}}).}
 
-\author{Toby Dylan Hocking}
+\author{Toby Dylan Hocking <toby.hocking@r-project.org> [aut, cre]}
 
 
 

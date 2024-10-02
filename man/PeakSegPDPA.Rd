@@ -22,7 +22,9 @@ m_i>=m_{i+1}. Note that when the equality constraints are active
 for non-zero change-point variables, the recovered model is not
 feasible for the strict inequality constraints of the PeakSeg
 problem, and the optimum of the PeakSeg problem is undefined.}
-\usage{PeakSegPDPA(count.vec, weight.vec = rep(1, length(count.vec)), 
+\usage{PeakSegPDPA(count.vec, 
+    weight.vec = rep(1, 
+        length(count.vec)), 
     max.segments = NULL)}
 \arguments{
   \item{count.vec}{integer vector of count data.}
@@ -37,7 +39,7 @@ ends.mat (optimal position of segment ends, 1-indexed), mean.mat
 by the functional pruning algorithm). To recover the solution in
 terms of (M,C) variables, see the example.}
 
-\author{Toby Dylan Hocking}
+\author{Toby Dylan Hocking <toby.hocking@r-project.org> [aut, cre]}
 
 
 
