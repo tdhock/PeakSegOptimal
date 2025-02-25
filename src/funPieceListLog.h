@@ -1,5 +1,6 @@
 /* -*- compile-command: "R CMD INSTALL .." -*- */
 
+#define ERROR_MIN_MAX_SAME 1
 #include <list>
 
 // NOTE: please only define prototypes in this file (do not define

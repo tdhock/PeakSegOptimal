@@ -167,3 +167,14 @@ test_that("error for negative data", {
     PeakSegPDPAchrom(df, 1L)
   })
 })
+
+pos <- 1:3
+rep.df <- data.frame(
+  count=0L,
+  chromStart=pos,
+  chromEnd=pos+1L)
+test_that("PDPA errors for all same data", {
+  expect_error({
+    PeakSegPDPAchrom(rep.df, 1L)
+  }, "data[i]=0 for all i", fixed=TRUE)
+})

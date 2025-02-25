@@ -1,6 +1,7 @@
 /* -*- compile-command: "R CMD INSTALL .. && R -e 'library(PeakSegOptimal);example(PeakSegFPOP)'" -*- */
 
 #include "UnconstrainedPDPA.h"
+#include "funPieceListLog.h"
 #include "PeakSegPDPALog.h"
 #include "PeakSegFPOPLog.h"
 #include <R.h>
@@ -12,8 +13,12 @@ void PeakSegPDPALog_interface
  double *cost_mat, int *end_mat,
  double *mean_mat, int *intervals_mat
  ){
-  PeakSegPDPALog(data_ptr, weight_ptr, *data_count, *maxSegments,
-		 cost_mat, end_mat, mean_mat, intervals_mat);
+  int status = PeakSegPDPALog
+    (data_ptr, weight_ptr, *data_count, *maxSegments,
+     cost_mat, end_mat, mean_mat, intervals_mat);
+  if(status == ERROR_MIN_MAX_SAME){
+    Rf_error("data[i]=%d for all i", data_ptr[0]);
+  }
 }
   
 void UnconstrainedPDPA_interface
@@ -41,9 +46,13 @@ void PeakSegFPOPLog_interface
  int *data_count, double *penalty,
  double *cost_mat, int *end_vec,
  double *mean_vec, int *intervals_mat){
-  PeakSegFPOPLog(data_ptr, weight_ptr,
-		 *data_count, *penalty,
-		 cost_mat, end_vec, mean_vec, intervals_mat);
+  int status = PeakSegFPOPLog
+    (data_ptr, weight_ptr,
+     *data_count, *penalty,
+     cost_mat, end_vec, mean_vec, intervals_mat);
+  if(status == ERROR_MIN_MAX_SAME){
+    Rf_error("data[i]=%d for all i", data_ptr[0]);
+  }
 }
 
 R_CMethodDef cMethods[] = {

@@ -6,22 +6,24 @@ PeakSeg constraint. This function is an interface to the C++ code
 which always uses -Inf for the first interval's lower limit and
 Inf for the last interval's upper limit -- it is for testing the
 number of intervals between the two implementations.}
-\usage{PeakSegPDPAInf(count.vec, weight.vec = rep(1, length(count.vec)), 
+\usage{PeakSegPDPAInf(count.vec, 
+    weight.vec = rep(1, 
+        length(count.vec)), 
     max.segments = NULL)}
 \arguments{
   \item{count.vec}{integer vector of count data.}
-  \item{weight.vec}{numeric vector (same length as count.vec) of positive weights.}
+  \item{weight.vec}{numeric vector (same length as \code{count.vec}) of positive weights.}
   \item{max.segments}{integer of length 1: maximum number of segments (must be >= 2).}
 }
 
-\value{List of model parameters. count.vec, weight.vec, n.data,
-max.segments (input parameters), cost.mat (optimal Poisson loss),
+\value{List of model parameters. \code{count.vec}, \code{weight.vec}, n.data,
+\code{max.segments} (input parameters), cost.mat (optimal Poisson loss),
 ends.mat (optimal position of segment ends, 1-indexed), mean.mat
 (optimal segment means), intervals.mat (number of intervals stored
 by the functional pruning algorithm). To recover the solution in
 terms of (M,C) variables, see the example.}
 
-\author{Toby Dylan Hocking}
+\author{Toby Dylan Hocking <toby.hocking@r-project.org> [aut, cre]}
 
 
 

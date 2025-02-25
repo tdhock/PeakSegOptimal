@@ -1,20 +1,25 @@
 Package: PeakSegOptimal
-Maintainer: Toby Dylan Hocking <toby.hocking@r-project.org>
-Author: Toby Dylan Hocking
-Version: 2017.07.12
+Authors@R: person(given = c("Toby", "Dylan"),
+ family = "Hocking",
+ role = c("aut", "cre"),
+ email = "toby.hocking@r-project.org")
+Version: 2024.10.1
 License: GPL-3
+URL: https://github.com/tdhock/PeakSegOptimal
+BugReports: https://github.com/tdhock/PeakSegOptimal/issues
 Title: Optimal Segmentation Subject to Up-Down Constraints
 Description: Computes optimal changepoint models using the
  Poisson likelihood for non-negative count data,
  subject to the PeakSeg constraint:
  the first change must be up, second change down, third change up, etc.
  For more info about the models and algorithms,
- read "A log-linear time algorithm for constrained changepoint detection"
- <arXiv:1703.03352> by TD Hocking et al.
+ read "Constrained Dynamic Programming and Supervised Penalty Learning 
+ Algorithms for Peak Detection"
+ <https://jmlr.org/papers/v21/18-843.html> by TD Hocking et al.
 Depends: R (>= 2.10)
 Imports: penaltyLearning
 Suggests: 
  PeakSegDP (>= 2016.08.06),
  cosegData,
  ggplot2, testthat, data.table (>= 1.9.8)
-Remotes: tdhock/cosegData, tdhock/PeakSegDP
+Remotes: tdhock/cosegData

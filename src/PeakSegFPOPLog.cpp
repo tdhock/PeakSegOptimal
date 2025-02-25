@@ -6,7 +6,7 @@
 #include <math.h>
 #include <R.h> // for Rprintf
 
-void PeakSegFPOPLog
+int PeakSegFPOPLog
 (int *data_vec, double *weight_vec, int data_count,
  double penalty,
  // the following matrices are for output.
@@ -27,6 +27,9 @@ void PeakSegFPOPLog
     if(max_log_mean < log_data){
       max_log_mean = log_data;
     }
+  }
+  if(min_log_mean == max_log_mean){
+    return ERROR_MIN_MAX_SAME;
   }
   std::vector<PiecewisePoissonLossLog> cost_model_mat(data_count * 2);
   PiecewisePoissonLossLog *up_cost, *down_cost, *up_cost_prev, *down_cost_prev;
@@ -186,4 +189,5 @@ void PeakSegFPOPLog
     }
     out_i++;
   }//for(data_i
+  return 0;
 }

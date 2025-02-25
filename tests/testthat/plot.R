@@ -92,28 +92,3 @@ viz.list <- gdata("
 4.00000000000000022204e-01 -7.00000000000000000000e+00 -9.01950994083225410236e+00        2.570013        2.840016        2.890372 2
 2.00000000000000011102e-01 -4.00000000000000000000e+00 -1.41163501263891912885e+01        2.840016        2.995732        2.803360 3
 ")
-xi <- NA # the point at which the error was detected.
-gg <- ggplot()+
-  geom_vline(xintercept=xi, linetype="dashed")+
-  geom_point(aes(log.mean, cost, color=fun),
-            size=2,
-            alpha=0.5,
-            data=viz.list$funs)
-if(!is.null(viz.list$vlines)){
-  gg <- gg+
-    geom_vline(aes(xintercept=min_log_mean, color=fun),
-               data=viz.list$vlines)
-}
-print(gg)
-
-sapply(viz.list$coefs, function(dt){
-  ploss(dt[min_log_mean < xi & xi < max_log_mean], exp(xi))
-})
-
-gg+
-  coord_cartesian(xlim=c(-290, -280), ylim=c(16225, 16300))
-
-gg+
-  coord_cartesian(ylim=c(-0.966165, -0.966160), xlim=c(3.51898, 3.519))
-
-PeakSegPipeline::PeakSegFPOP_disk("~/coverage.bedGraph", "48402378.5676387")

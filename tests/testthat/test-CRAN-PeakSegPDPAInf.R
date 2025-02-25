@@ -30,3 +30,17 @@ test_that("same cost for both PDPA algos", {
   expect_equal(nrow(not.equal), 0)
 })
 
+pos <- 1:3
+rep.df <- data.frame(
+  count=5L,
+  chromStart=pos,
+  chromEnd=pos+1L)
+test_that("PeakSegPDPAInf is fine for all same data", {
+  L <- with(rep.df, PeakSegPDPAInf(count, chromEnd-chromStart, 3L))
+  expect_equal(L$mean.mat[1,], c(5, Inf, Inf))
+  expect_equal(L$mean.mat[2,], c(5, 5, Inf))
+  expect_equal(L$mean.mat[3,], c(5, 5, 5))
+  expect_equal(L$ends.mat[1,], c(0, 0, 0))
+  expect_equal(L$ends.mat[2,], c(0, 2, 0))
+  expect_equal(L$ends.mat[3,], c(0, 1, 2))
+})

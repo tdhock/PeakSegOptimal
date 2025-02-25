@@ -1,3 +1,5 @@
 .travis.yml
 README.org
 build.sh
+^.*\.Rproj$
+^\.Rproj\.user$

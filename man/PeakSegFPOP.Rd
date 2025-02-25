@@ -5,42 +5,44 @@
 PeakSeg constraint. For N data points, the functional pruning
 algorithm is O(N log N) time and memory. It recovers the exact
 solution to the following optimization problem. Let Z be an
-N-vector of count data (count.vec, non-negative integers), let W
-be an N-vector of positive weights (weight.vec), and let penalty
+N-vector of count data (\code{count.vec}, non-negative integers), let W
+be an N-vector of positive weights (\code{weight.vec}), and let \code{penalty}
 be a non-negative real number. Find the N-vector M of real numbers
 (segment means) and (N-1)-vector C of change-point indicators in
-{-1,0,1} which minimize the penalized Poisson Loss,
-penalty*sum_{i=1}^{N_1} I(c_i=1) + sum_{i=1}^N
+-1,0,1 which minimize the penalized Poisson Loss,
+penalty*sum_[i=1]^[N_1] I(c_i=1) + sum_[i=1]^N
 w_i*[m_i-z_i*log(m_i)], subject to constraints: (1) the first
-change is up and the next change is down, etc (sum_{i=1}^t c_i in
-{0,1} for all t<N-1), and (2) the last change is down
-0=sum_{i=1}^{N-1}c_i, and (3) Every zero-valued change-point
+change is up and the next change is down, etc (sum_[i=1]^t c_i in
+0,1 for all t<N-1), and (2) the last change is down
+0=sum_[i=1]^[N-1] c_i, and (3) Every zero-valued change-point
 variable has an equal segment mean after: c_i=0 implies
-m_i=m_{i+1}, (4) every positive-valued change-point variable may
-have an up change after: c_i=1 implies m_i<=m_{i+1}, (5) every
+m_i=m_[i+1], (4) every positive-valued change-point variable may
+have an up change after: c_i=1 implies m_i<=m_[i+1], (5) every
 negative-valued change-point variable may have a down change
-after: c_i=-1 implies m_i>=m_{i+1}. Note that when the equality
+after: c_i=-1 implies m_i>=m_[i+1]. Note that when the equality
 constraints are active for non-zero change-point variables, the
 recovered model is not feasible for the strict inequality
 constraints of the PeakSeg problem, and the optimum of the PeakSeg
 problem is undefined.}
-\usage{PeakSegFPOP(count.vec, weight.vec = rep(1, length(count.vec)), 
+\usage{PeakSegFPOP(count.vec, 
+    weight.vec = rep(1, 
+        length(count.vec)), 
     penalty = NULL)}
 \arguments{
   \item{count.vec}{integer vector of length >= 3: non-negative count data to segment.}
-  \item{weight.vec}{numeric vector (same length as count.vec) of positive weights.}
-  \item{penalty}{non-negative numeric scalar: penalty parameter (smaller for more
+  \item{weight.vec}{numeric vector (same length as \code{count.vec}) of positive weights.}
+  \item{penalty}{non-negative numeric scalar: \code{penalty} parameter (smaller for more
 peaks, larger for fewer peaks).}
 }
 
-\value{List of model parameters. count.vec, weight.vec, n.data, penalty
+\value{List of model parameters. \code{count.vec}, \code{weight.vec}, n.data, \code{penalty}
 (input parameters), cost.mat (optimal Poisson loss), ends.vec
 (optimal position of segment ends, 1-indexed), mean.vec (optimal
 segment means), intervals.mat (number of intervals stored by the
 functional pruning algorithm). To recover the solution in terms of
 (M,C) variables, see the example.}
 
-\author{Toby Dylan Hocking}
+\author{Toby Dylan Hocking <toby.hocking@r-project.org> [aut, cre]}
 
 
 
@@ -95,6 +97,6 @@ ggplot()+
   facet_grid(label ~ .)+
   geom_line(aes(data, intervals), data=FPOP.intervals)+
   scale_y_continuous(
-    "intervals stored by the\nconstrained optimal segmentation algorithm")
+    "intervals stored by the\\nconstrained optimal segmentation algorithm")
 
 }
