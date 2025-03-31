@@ -1,3 +1,7 @@
+Changes in version 2025.3.31
+
+- UnconstrainedFPOP() with optional verbose output.
+
 Changes in version 2024.10.1
 
 - Rf_error in src/interface.cpp, thanks CRAN.

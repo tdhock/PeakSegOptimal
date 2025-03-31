@@ -61,55 +61,21 @@ UnconstrainedFPOP <- structure(function
 ### (M,C) variables, see the example.
 }, ex=function(){
 
-  ## Use the algo to compute the solution list.
-  library(PeakSegOptimal)
-  data("H3K4me3_XJ_immune_chunk1", envir=environment())
-  by.sample <-
-    split(H3K4me3_XJ_immune_chunk1, H3K4me3_XJ_immune_chunk1$sample.id)
-  n.data.vec <- sapply(by.sample, nrow)
-  one <- by.sample[[1]]
-  count.vec <- one$coverage
-  weight.vec <- with(one, chromEnd-chromStart)
-  penalty <- 1000
-  fit <- PeakSegFPOP(count.vec, weight.vec, penalty)
+  mean_vec <- c(10,20,5,25)
+  N_per_seg <- 10
+  data_mean_vec <- rep(mean_vec, each=N_per_seg)
+  N_data <- length(data_mean_vec)
+  set.seed(1)
+  data_value <- rpois(N_data, data_mean_vec)
+  fit <- UnconstrainedFPOP(data_value, penalty=10, verbose_file = tempfile())
 
-  ## Recover the solution in terms of (M,C) variables.
-  change.vec <- with(fit, rev(ends.vec[ends.vec>0]))
-  change.sign.vec <- rep(c(1, -1), length(change.vec)/2)
-  end.vec <- c(change.vec, fit$n.data)
-  start.vec <- c(1, change.vec+1)
-  length.vec <- end.vec-start.vec+1
-  mean.vec <- rev(fit$mean.vec[1:(length(change.vec)+1)])
-  M.vec <- rep(mean.vec, length.vec)
-  C.vec <- rep(0, fit$n.data-1)
-  C.vec[change.vec] <- change.sign.vec
-  diff.vec <- diff(M.vec)
-  data.frame(
-    change=c(C.vec, NA),
-    mean=M.vec,
-    equality.constraint.active=c(sign(diff.vec) != C.vec, NA))
-  stopifnot(cumsum(sign(C.vec)) %in% c(0, 1))
-
-  ## Compute penalized Poisson loss of M.vec and compare to the value reported
-  ## in the fit solution list.
-  n.peaks <- sum(C.vec==1)
-  rbind(
-    n.peaks*penalty + PoissonLoss(count.vec, M.vec, weight.vec),
-    fit$cost.vec[2, fit$n.data])
-
-  ## Plot the number of intervals stored by the algorithm.
-  FPOP.intervals <- data.frame(
-    label=ifelse(as.numeric(row(fit$intervals.vec))==1, "up", "down"),
-    data=as.numeric(col(fit$intervals.vec)),
-    intervals=as.numeric(fit$intervals.vec))
-  library(ggplot2)
-  ggplot()+
-    theme_bw()+
-    theme(panel.margin=grid::unit(0, "lines"))+
-    facet_grid(label ~ .)+
-    geom_line(aes(data, intervals), data=FPOP.intervals)+
-    scale_y_continuous(
-      "intervals stored by the\nconstrained optimal segmentation algorithm")
+  if(require(ggplot2)){
+    ggplot()+
+      geom_tile(aes(
+        data_index, change, fill=cost),
+        data=fit$index_dt)+
+      scale_fill_gradient(low="white", high="red")
+  }
 
 })
 

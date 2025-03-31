@@ -66,6 +66,7 @@ int UnconstrainedFPOPLog
       (cost_vec+data_i,
        all_log_mean_vec+data_i,
        all_end_vec+data_i,
+       data_i,
        verbose_fstream);
   }
   // Decoding, and writing to the output.

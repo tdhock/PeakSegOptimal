@@ -722,7 +722,8 @@ void PiecewisePoissonLossLog::Minimize
 void PiecewisePoissonLossLog::Min_maybe_verbose
 (double *best_cost,
  double *best_log_mean,
- int *data_i,
+ int *change_ptr,
+ int data_i,
  std::ofstream &verbose_fstream){
   double candidate_cost, candidate_log_mean;
   int verbose=verbose_fstream.is_open();
@@ -742,7 +743,7 @@ void PiecewisePoissonLossLog::Min_maybe_verbose
     if(candidate_cost < *best_cost){
       *best_cost = candidate_cost;
       *best_log_mean = candidate_log_mean;
-      *data_i = it->data_i;
+      *change_ptr = it->data_i;
     }
   }
 }

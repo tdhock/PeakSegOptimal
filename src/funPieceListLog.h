@@ -63,7 +63,8 @@ class PiecewisePoissonLossLog {
   void Min_maybe_verbose
     (double *best_cost,
      double *best_mean,
-     int *data_i,
+     int*,
+     int,
      std::ofstream&);
 };
 
