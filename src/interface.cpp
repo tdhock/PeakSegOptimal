@@ -35,10 +35,11 @@ void UnconstrainedPDPA_interface
 void UnconstrainedFPOP_interface
 (int *data_ptr, double *weight_ptr,
  int *data_count, double *penalty,
+ char **verbose_file,
  double *cost_vec, int *end_vec,
  double *mean_vec, int *intervals_vec
  ){
-  UnconstrainedFPOPLog(data_ptr, weight_ptr, *data_count, *penalty,
+  UnconstrainedFPOPLog(data_ptr, weight_ptr, *data_count, *penalty, *verbose_file,
 		 cost_vec, end_vec, mean_vec, intervals_vec);
 }
 
@@ -72,7 +73,7 @@ R_CMethodDef cMethods[] = {
    //,{REALSXP, REALSXP, INTSXP, INTSXP, REALSXP}
   },
   {"UnconstrainedFPOP_interface",
-   (DL_FUNC) &UnconstrainedFPOP_interface, 8
+   (DL_FUNC) &UnconstrainedFPOP_interface, 9
    //,{REALSXP, REALSXP, INTSXP, INTSXP, REALSXP}
   },
   {"PeakSegPDPALog_interface",

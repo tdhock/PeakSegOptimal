@@ -1,6 +1,6 @@
 int UnconstrainedFPOPLog
-(int *data_vec, double *weight_vec, int data_count,
- double penalty,
+(const int *data_vec, const double *weight_vec, const int data_count,
+ const double penalty, const char*,
  // the following vectors are for output.
  // cost_vec and intervals_vec store the optimal cost and number of intervals
  // at each time point, for the up and down cost models.

@@ -13,9 +13,13 @@ UnconstrainedFPOP <- structure(function
 ### integer vector of length >= 3: non-negative count data to segment.
  weight.vec=rep(1, length(count.vec)),
 ### numeric vector (same length as count.vec) of positive weights.
- penalty=NULL
+ penalty=NULL,
 ### non-negative numeric scalar: penalty parameter (smaller for more
 ### peaks, larger for fewer peaks).
+  verbose_file=""
+### String: file name to output candidate indices (slow but useful for
+### analysis of the algorithm). Default "" means to not output indices
+### (fast).
 ){
   n.data <- length(count.vec)
   stopifnot(1 <= n.data)
@@ -37,6 +41,7 @@ UnconstrainedFPOP <- structure(function
     weight.vec=as.numeric(weight.vec),
     n.data=as.integer(n.data),
     penalty=as.numeric(penalty),
+    verbose_file=as.character(verbose_file),
     cost.vec=as.double(cost.vec),
     ends.vec=as.integer(ends.vec),
     mean.vec=as.double(mean.vec),
