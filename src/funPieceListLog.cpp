@@ -731,15 +731,15 @@ void PiecewisePoissonLossLog::Min_maybe_verbose
   *best_cost = INFINITY;
   for(it=piece_list.begin(); it != piece_list.end(); it++){
     candidate_log_mean = it->argmin();
+    if(verbose){
+      verbose_fstream << data_i << "\t" << it->data_i << "\t" << it->getCost(candidate_log_mean) << "\n";
+    }
     if(candidate_log_mean < it->min_log_mean){
       candidate_log_mean = it->min_log_mean;
     }else if(it->max_log_mean < candidate_log_mean){
       candidate_log_mean = it->max_log_mean;
     }
     candidate_cost = it->getCost(candidate_log_mean);
-    if(verbose){
-      verbose_fstream << data_i << "\t" << it->data_i << "\t" << candidate_cost << "\n";
-    }
     if(candidate_cost < *best_cost){
       *best_cost = candidate_cost;
       *best_log_mean = candidate_log_mean;
