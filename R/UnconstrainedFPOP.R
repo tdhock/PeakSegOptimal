@@ -49,6 +49,9 @@ UnconstrainedFPOP <- structure(function
     PACKAGE="PeakSegOptimal")
   ## 1-indexed segment ends!
   result.list$ends.vec <- result.list$ends.vec+1L
+  if(file.exists(verbose_file)){
+    result.list$index_dt <- data.table::fread(verbose_file)
+  }
   result.list
 ### List of model parameters. count.vec, weight.vec, n.data, penalty
 ### (input parameters), cost.vec (optimal Poisson loss), ends.vec
