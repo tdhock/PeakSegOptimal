@@ -255,6 +255,34 @@ double PoissonLossPieceLog::getDeriv(double log_mean){
   return linear_term + Log;
 }
 
+void PiecewisePoissonLossLog::set_to_unconstrained_min_of
+(PiecewisePoissonLossLog *input, int verbose){
+  PoissonLossPieceListLog::iterator it = input->piece_list.begin();
+  double best_cost = INFINITY;
+  double min_log_mean = it->min_log_mean;
+  double best_log_mean;
+  while(it != input->piece_list.end()){
+    double mu = it->argmin();
+    if(it->max_log_mean < mu){
+      mu = it->max_log_mean;
+    }
+    if(mu < it->min_log_mean){
+      mu = it->min_log_mean;
+    }
+    double mu_cost = it->getCost(mu);
+    if(mu_cost < best_cost){
+      best_cost = mu_cost;
+      best_log_mean = mu;
+    }
+    it++;
+  }
+  it--;
+  piece_list.clear();
+  piece_list.emplace_back(0, 0, best_cost,
+			  min_log_mean, it->max_log_mean, PREV_NOT_SET,
+			  best_log_mean);
+}
+
 void PiecewisePoissonLossLog::set_to_min_less_of
 (PiecewisePoissonLossLog *input, int verbose){
   piece_list.clear();
@@ -687,6 +715,35 @@ void PiecewisePoissonLossLog::Minimize
       *best_log_mean = candidate_log_mean;
       *data_i = it->data_i;
       *prev_log_mean = it->prev_log_mean;
+    }
+  }
+}
+
+void PiecewisePoissonLossLog::Min_maybe_verbose
+(double *best_cost,
+ double *best_log_mean,
+ int *change_ptr,
+ int data_i,
+ std::ofstream &verbose_fstream){
+  double candidate_cost, candidate_log_mean;
+  int verbose=verbose_fstream.is_open();
+  PoissonLossPieceListLog::iterator it;
+  *best_cost = INFINITY;
+  for(it=piece_list.begin(); it != piece_list.end(); it++){
+    candidate_log_mean = it->argmin();
+    if(verbose){
+      verbose_fstream << data_i << "\t" << it->data_i << "\t" << it->getCost(candidate_log_mean) << "\n";
+    }
+    if(candidate_log_mean < it->min_log_mean){
+      candidate_log_mean = it->min_log_mean;
+    }else if(it->max_log_mean < candidate_log_mean){
+      candidate_log_mean = it->max_log_mean;
+    }
+    candidate_cost = it->getCost(candidate_log_mean);
+    if(candidate_cost < *best_cost){
+      *best_cost = candidate_cost;
+      *best_log_mean = candidate_log_mean;
+      *change_ptr = it->data_i;
     }
   }
 }

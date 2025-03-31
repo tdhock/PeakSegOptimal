@@ -2,6 +2,7 @@
 
 #define ERROR_MIN_MAX_SAME 1
 #include <list>
+#include <fstream>
 
 // NOTE: please only define prototypes in this file (do not define
 // methods directly -- instead define them in funPieceList.cpp). This
@@ -39,6 +40,7 @@ class PiecewisePoissonLossLog {
  public:
   PoissonLossPieceListLog piece_list;
   void set_to_min_less_of(PiecewisePoissonLossLog *, int);
+  void set_to_unconstrained_min_of(PiecewisePoissonLossLog *, int);
   void set_to_min_more_of(PiecewisePoissonLossLog *, int);
   void set_to_min_env_of
     (PiecewisePoissonLossLog *, PiecewisePoissonLossLog *, int);
@@ -58,6 +60,12 @@ class PiecewisePoissonLossLog {
      double *best_mean,
      int *data_i,
      double *prev_log_mean);
+  void Min_maybe_verbose
+    (double *best_cost,
+     double *best_mean,
+     int*,
+     int,
+     std::ofstream&);
 };
 
 bool sameFuns(PoissonLossPieceListLog::iterator, PoissonLossPieceListLog::iterator);
