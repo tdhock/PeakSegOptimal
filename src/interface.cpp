@@ -44,6 +44,21 @@ void PeakSegFPOPLog_interface
   }
 }
 
+void PeakSegFPOPLogUnconstrained_interface
+(int *data_ptr, double *weight_ptr,
+ int *data_count, double *penalty,
+ double *cost_mat, int *end_vec,
+ double *mean_vec, int *intervals_mat){
+  int status = PeakSegFPOPLogUnconstrained(
+    data_ptr, weight_ptr,
+    *data_count, *penalty,
+    cost_mat, end_vec, mean_vec, intervals_mat);
+  
+  if(status == ERROR_MIN_MAX_SAME){
+    Rf_error("data[i]=%d for all i", data_ptr[0]);
+  }
+}
+
 R_CMethodDef cMethods[] = {
   {"PeakSegPDPALog_interface",
    (DL_FUNC) &PeakSegPDPALog_interface, 8
@@ -57,6 +72,8 @@ R_CMethodDef cMethods[] = {
    (DL_FUNC) &PeakSegFPOPLog_interface, 8
    //,{INTSXP, REALSXP, REALSXP, INTSXP}
   },
+  {"PeakSegFPOPLogUnconstrained_interface",
+   (DL_FUNC) &PeakSegFPOPLogUnconstrained_interface, 8},
   {NULL, NULL, 0}
 };
 
