@@ -453,6 +453,84 @@ void PiecewisePoissonLossLog::set_to_min_less_of
   }
 }
 
+void PiecewisePoissonLossLog::set_to_unconstrained_min_of
+(PiecewisePoissonLossLog *input, int verbose){
+  
+  piece_list.clear();
+  
+  double global_min_cost = INFINITY;
+  double global_min_log_mean = 0;
+  int global_min_data_i = PREV_NOT_SET;
+  
+  // absolute minimum across all pieces
+  PoissonLossPieceListLog::iterator it;
+  for(it = input->piece_list.begin(); it != input->piece_list.end(); it++){
+    
+    if(it->Log == 0){
+      // checking endpoints ,degenerate case
+      double left_cost = it->getCost(it->min_log_mean);
+      double right_cost = it->getCost(it->max_log_mean);
+      
+      if(left_cost < global_min_cost){
+        global_min_cost = left_cost;
+        global_min_log_mean = it->min_log_mean;
+        global_min_data_i = it->data_i;
+      }
+      if(right_cost < global_min_cost){
+        global_min_cost = right_cost;
+        global_min_log_mean = it->max_log_mean;
+        global_min_data_i = it->data_i;
+      }
+      
+    } else {
+      // non-degenerate case
+      double mu = it->argmin();
+      
+      if(it->min_log_mean <= mu && mu <= it->max_log_mean){
+        double mu_cost = it->getCost(mu);
+        if(mu_cost < global_min_cost){
+          global_min_cost = mu_cost;
+          global_min_log_mean = mu;
+          global_min_data_i = it->data_i;
+        }
+      }
+      
+      double left_cost = it->getCost(it->min_log_mean);
+      double right_cost = it->getCost(it->max_log_mean);
+      
+      if(left_cost < global_min_cost){
+        global_min_cost = left_cost;
+        global_min_log_mean = it->min_log_mean;
+        global_min_data_i = it->data_i;
+      }
+      if(right_cost < global_min_cost){
+        global_min_cost = right_cost;
+        global_min_log_mean = it->max_log_mean;
+        global_min_data_i = it->data_i;
+      }
+    }
+  }
+  
+  PoissonLossPieceListLog::iterator first_it = input->piece_list.begin();
+  PoissonLossPieceListLog::iterator last_it = input->piece_list.end();
+  last_it--;
+  
+  double min_range = first_it->min_log_mean;
+  double max_range = last_it->max_log_mean;
+  
+  piece_list.emplace_back(
+    0.0, 0.0, global_min_cost,
+    min_range, max_range,
+    global_min_data_i,
+    global_min_log_mean
+  );
+  
+  if(verbose){
+    Rprintf("set_to_unconstrained_min_of: cost=%f at log_mean=%f\n", 
+            global_min_cost, global_min_log_mean);
+  }
+}
+
 void PiecewisePoissonLossLog::set_to_min_more_of
 (PiecewisePoissonLossLog *input, int verbose){
   piece_list.clear();
