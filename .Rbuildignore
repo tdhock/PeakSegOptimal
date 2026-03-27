@@ -1,4 +1,5 @@
 .travis.yml
+^\.github$
 README.org
 build.sh
 ^.*\.Rproj$
