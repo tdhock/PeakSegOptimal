@@ -2,6 +2,47 @@ PeakSegOptimal: Optimal Segmentation Subject to Up-Down Constraints
 
 [[https://travis-ci.org/tdhock/PeakSegOptimal][https://travis-ci.org/tdhock/PeakSegOptimal.png?branch=master]]
 
+** [[https://github.com/rstats-gsoc/gsoc2026/wiki/gfpop][GSoC 2026]]: New solvers
+
+Two new FPOP solvers for the Medium and Hard tests:
+
+- =PoissonFPOPunconstrained= — unconstrained optimal partitioning (Poisson loss). 2-state up/down model collapsed to 1 state, monotonicity operators replaced with =set_to_unconstrained_min_of=.
+- =NormalFPOPisotonic= — regularized isotonic regression (Normal loss). Uses =set_to_min_less_of= for non-decreasing constraint. =NormalLossPiece= inherits from a shared =LossPiece= base class alongside =PoissonLossPieceLog=. Validated against =isoreg()= (penalty=0) and =fpop::Fpop()=.
+
+*** Run the tests
+
+From the package root:
+
+#+BEGIN_SRC bash
+git clone https://github.com/williamzhang7792/PeakSegOptimal.git
+cd PeakSegOptimal
+R CMD INSTALL .
+#+END_SRC
+
+#+BEGIN_SRC R
+library(testthat)
+library(PeakSegOptimal)
+test_file("tests/testthat/test-PoissonFPOPunconstrained.R")  ## 28 tests
+test_file("tests/testthat/test-NormalFPOPisotonic.R")         ## 17 tests
+#+END_SRC
+
+Passes =R CMD check --no-manual= with no new warnings.
+
+Optional (tests skip gracefully if missing):
+- =install.packages("fpop")=
+
+*** What changed
+
+New files: =src/PoissonFPOPunconstrained.{cpp,h}=, =src/NormalFPOPisotonic.{cpp,h}=,
+=src/LossPiece.h=, =R/PoissonFPOPunconstrained.R=, =R/NormalFPOPisotonic.R=,
+=man/PoissonFPOPunconstrained.Rd=, =man/NormalFPOPisotonic.Rd=,
+=tests/testthat/test-PoissonFPOPunconstrained.R=, =tests/testthat/test-NormalFPOPisotonic.R=.
+
+Modified: =src/funPieceListLog.{h,cpp}= (added =set_to_unconstrained_min_of=),
+=src/interface.cpp= (registered new C entry points), =NAMESPACE=.
+
+-----
+
 NOTE: the name of the package has been changed from coseg to PeakSegOptimal, to
 avoid confusion with the [[https://cran.r-project.org/web/packages/CoSeg/index.html][CoSeg]] package on CRAN (which is completely
 unrelated to this package).

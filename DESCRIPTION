@@ -21,5 +21,6 @@ Imports: penaltyLearning
 Suggests: 
  PeakSegDP (>= 2016.08.06),
  cosegData,
+ fpop,
  ggplot2, testthat, data.table (>= 1.9.8)
 Remotes: tdhock/cosegData

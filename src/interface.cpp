@@ -3,6 +3,8 @@
 #include "funPieceListLog.h"
 #include "PeakSegPDPALog.h"
 #include "PeakSegFPOPLog.h"
+#include "PoissonFPOPunconstrained.h"
+#include "NormalFPOPisotonic.h"
 #include <R.h>
 #include <R_ext/Rdynload.h>
 
@@ -44,6 +46,35 @@ void PeakSegFPOPLog_interface
   }
 }
 
+void PoissonFPOPunconstrained_interface
+(int *data_ptr, double *weight_ptr,
+ int *data_count, double *penalty,
+ double *cost_vec, int *end_vec,
+ double *mean_vec, int *intervals_vec){
+  int status = PoissonFPOPunconstrainedLog
+    (data_ptr, weight_ptr,
+     *data_count, *penalty,
+     cost_vec, end_vec, mean_vec, intervals_vec);
+  if(status == ERROR_NEGATIVE_DATA){
+    Rf_error("Negative values not allowed for Poisson loss");
+  }
+  if(status == ERROR_MIN_MAX_SAME){
+    Rf_error("data[i]=%d for all i", data_ptr[0]);
+  }
+}
+
+void NormalFPOPisotonic_interface
+(double *data_ptr, int *data_count, double *penalty,
+ double *cost_vec, int *end_vec,
+ double *mean_vec, int *intervals_vec){
+  int status = NormalFPOPisotonic
+    (data_ptr, *data_count, *penalty,
+     cost_vec, end_vec, mean_vec, intervals_vec);
+  if(status == ERROR_MIN_MAX_SAME){
+    Rf_error("data[i]=%f for all i", data_ptr[0]);
+  }
+}
+
 R_CMethodDef cMethods[] = {
   {"PeakSegPDPALog_interface",
    (DL_FUNC) &PeakSegPDPALog_interface, 8
@@ -56,6 +87,12 @@ R_CMethodDef cMethods[] = {
   {"PeakSegFPOPLog_interface",
    (DL_FUNC) &PeakSegFPOPLog_interface, 8
    //,{INTSXP, REALSXP, REALSXP, INTSXP}
+  },
+  {"PoissonFPOPunconstrained_interface",
+   (DL_FUNC) &PoissonFPOPunconstrained_interface, 8
+  },
+  {"NormalFPOPisotonic_interface",
+   (DL_FUNC) &NormalFPOPisotonic_interface, 7
   },
   {NULL, NULL, 0}
 };

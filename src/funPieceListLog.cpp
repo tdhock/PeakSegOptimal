@@ -1208,3 +1208,16 @@ void PiecewisePoissonLossLog::push_piece
        it->data_i, it->prev_log_mean);
   }
 }
+
+void PiecewisePoissonLossLog::set_to_unconstrained_min_of
+(PiecewisePoissonLossLog *input){
+  double best_cost, best_log_mean, prev_log_mean_val;
+  int prev_seg_end;
+  input->Minimize(&best_cost, &best_log_mean, &prev_seg_end, &prev_log_mean_val);
+  piece_list.clear();
+  piece_list.emplace_back(
+    0.0, 0.0, best_cost,
+    input->piece_list.front().min_log_mean,
+    input->piece_list.back().max_log_mean,
+    prev_seg_end, best_log_mean);
+}
